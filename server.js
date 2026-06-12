@@ -145,9 +145,17 @@ async function callJson(url, options) {
     body = { raw: text };
   }
   if (!response.ok) {
-    const error = new Error(body.message || `Request failed with ${response.status}`);
+    const billingMessage = response.status === 402
+      ? "DocuPipe returned 402 Payment Required. Upload/parse can succeed while standardization fails when the DocuPipe account has no available standardization credits or billing access. Add DocuPipe credits, or set APP_MODE=mock on Render for a free demo."
+      : null;
+    const error = new Error(billingMessage || body.message || `Request failed with ${response.status}`);
     error.statusCode = response.status;
-    error.details = body;
+    error.details = {
+      ...body,
+      upstreamStatus: response.status,
+      upstreamUrl: url,
+      hint: billingMessage || undefined
+    };
     throw error;
   }
   return body;
