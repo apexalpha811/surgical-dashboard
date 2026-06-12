@@ -1,0 +1,14 @@
+{
+  "name": "culver-city-surgical-dashboard-docupipe",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DocuPipe and Stedi-enabled clone of the Culver City Surgical dashboard.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check lib/docupipe.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

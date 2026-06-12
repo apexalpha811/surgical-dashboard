@@ -1,0 +1,589 @@
+[
+  {
+    "id": "claim-intake-837p",
+    "name": "Professional Claim Intake",
+    "enabled": true,
+    "docupipeSchemaId": "3CNrau0Z",
+    "stediTarget": "professionalClaim837P",
+    "dashboardTarget": "claims",
+    "stediEndpoint": "/change/medicalnetwork/professionalclaims/v3/submission",
+    "guidelines": "Extract patient, payer, provider, claim, service line, and diagnosis details from professional claim documents. Prefer printed values and keep codes exact.",
+    "jsonSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "description": "Extract ASC professional claim data for a Stedi 837P style claim draft.",
+      "type": "object",
+      "properties": {
+        "documentType": {
+          "type": "string",
+          "description": "Document category.",
+          "enum": [
+            "claim"
+          ]
+        },
+        "patient": {
+          "type": "object",
+          "properties": {
+            "fullName": {
+              "type": "string",
+              "description": "Patient name exactly as shown."
+            },
+            "dateOfBirth": {
+              "type": "string",
+              "description": "Date of birth."
+            },
+            "memberId": {
+              "type": "string",
+              "description": "Subscriber/member ID."
+            }
+          }
+        },
+        "payer": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Payer name."
+            },
+            "stediId": {
+              "type": "string",
+              "description": "Stedi payer ID."
+            }
+          }
+        },
+        "provider": {
+          "type": "object",
+          "properties": {
+            "organizationName": {
+              "type": "string",
+              "description": "Billing organization or facility name."
+            },
+            "npi": {
+              "type": "string",
+              "description": "Provider NPI."
+            },
+            "taxId": {
+              "type": "string",
+              "description": "Tax ID or EIN."
+            }
+          }
+        },
+        "claim": {
+          "type": "object",
+          "properties": {
+            "claimNumber": {
+              "type": "string",
+              "description": "Internal claim number or control number."
+            },
+            "dateOfService": {
+              "type": "string",
+              "description": "Primary date of service."
+            },
+            "totalChargeAmount": {
+              "type": "number",
+              "description": "Total billed amount."
+            }
+          }
+        },
+        "serviceLines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cptCode": {
+                "type": "string",
+                "description": "CPT or HCPCS procedure code."
+              },
+              "units": {
+                "type": "integer",
+                "description": "Service units."
+              },
+              "chargeAmount": {
+                "type": "number",
+                "description": "Line charge amount."
+              }
+            }
+          }
+        },
+        "diagnosisCodes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "ICD-10 code."
+          }
+        }
+      }
+    },
+    "fieldMappings": [
+      {
+        "source": "patient.fullName",
+        "dashboard": "claims.patient",
+        "stedi": "subscriber"
+      },
+      {
+        "source": "provider.npi",
+        "dashboard": "claims.providerFull",
+        "stedi": "billingProvider.npi"
+      },
+      {
+        "source": "claim.totalChargeAmount",
+        "dashboard": "claims.billed",
+        "stedi": "claimInformation.claimChargeAmount"
+      }
+    ]
+  },
+  {
+    "id": "eligibility-card",
+    "name": "Eligibility Card Intake",
+    "enabled": true,
+    "docupipeSchemaId": "",
+    "stediTarget": "eligibility270",
+    "dashboardTarget": "eligibility",
+    "stediEndpoint": "/change/medicalnetwork/eligibility/v3",
+    "guidelines": "Extract member ID, payer, subscriber name, date of birth, group number, plan name, and service date. If the document is an insurance card with front and back images, combine both sides into one result.",
+    "jsonSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "description": "Extract insurance card or benefits document data for a Stedi 270 eligibility request.",
+      "type": "object",
+      "properties": {
+        "documentType": {
+          "type": "string",
+          "description": "Document category.",
+          "enum": [
+            "eligibility"
+          ]
+        },
+        "subscriber": {
+          "type": "object",
+          "description": "Subscriber or patient details.",
+          "properties": {
+            "firstName": {
+              "type": "string",
+              "description": "Subscriber first name."
+            },
+            "lastName": {
+              "type": "string",
+              "description": "Subscriber last name."
+            },
+            "fullName": {
+              "type": "string",
+              "description": "Subscriber full name exactly as printed."
+            },
+            "dateOfBirth": {
+              "type": "string",
+              "format": "date",
+              "description": "Date of birth in YYYY-MM-DD format."
+            },
+            "memberId": {
+              "type": "string",
+              "description": "Member ID."
+            },
+            "groupNumber": {
+              "type": "string",
+              "description": "Group number."
+            }
+          }
+        },
+        "payer": {
+          "type": "object",
+          "description": "Insurance payer details.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Payer name."
+            },
+            "stediId": {
+              "type": "string",
+              "description": "Stedi payer ID if known or printed."
+            },
+            "phone": {
+              "type": "string",
+              "description": "Payer phone number."
+            }
+          }
+        },
+        "plan": {
+          "type": "object",
+          "description": "Plan details.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Plan name."
+            },
+            "type": {
+              "type": "string",
+              "description": "Plan type such as PPO, HMO, EPO, POS, Medicare, or Medicaid."
+            },
+            "effectiveDate": {
+              "type": "string",
+              "format": "date",
+              "description": "Effective date in YYYY-MM-DD format."
+            }
+          }
+        },
+        "encounter": {
+          "type": "object",
+          "description": "Service context for the eligibility request.",
+          "properties": {
+            "dateOfService": {
+              "type": "string",
+              "format": "date",
+              "description": "Eligibility service date in YYYY-MM-DD format."
+            },
+            "serviceTypeCodes": {
+              "type": "array",
+              "description": "Service type codes. Use 30 if only generic medical coverage is shown.",
+              "items": {
+                "type": "string",
+                "description": "Service type code."
+              }
+            }
+          }
+        }
+      }
+    },
+    "fieldMappings": [
+      {
+        "source": "subscriber.memberId",
+        "dashboard": "eligibility.member",
+        "stedi": "subscriber.memberId"
+      },
+      {
+        "source": "subscriber.dateOfBirth",
+        "dashboard": "eligibility.dob",
+        "stedi": "subscriber.dateOfBirth"
+      },
+      {
+        "source": "payer.name",
+        "dashboard": "eligibility.payer",
+        "stedi": "tradingPartnerServiceId"
+      },
+      {
+        "source": "plan.name",
+        "dashboard": "eligibility.plan",
+        "stedi": "benefit lookup context"
+      }
+    ]
+  },
+  {
+    "id": "era-denial-pdf",
+    "name": "ERA or Denial PDF",
+    "enabled": true,
+    "docupipeSchemaId": "",
+    "stediTarget": "appealsFromEra",
+    "dashboardTarget": "appeals",
+    "stediEndpoint": "/change/medicalnetwork/reports/v2/{transactionId}/835",
+    "guidelines": "Extract denied claims, CARC codes, RARC codes, payer names, patient names, service dates, billed amounts, paid amounts, denied amounts, and reason text. Create one denial item per claim or service line when the document lists multiple denials.",
+    "jsonSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "description": "Extract ERA, EOB, or denial letter data into appeal-ready denial records.",
+      "type": "object",
+      "properties": {
+        "documentType": {
+          "type": "string",
+          "description": "Document category.",
+          "enum": [
+            "era",
+            "denial",
+            "eob"
+          ]
+        },
+        "payer": {
+          "type": "object",
+          "description": "Payer information.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Payer name."
+            },
+            "stediId": {
+              "type": "string",
+              "description": "Stedi payer ID if known."
+            },
+            "paymentTraceNumber": {
+              "type": "string",
+              "description": "EFT, check, or trace number."
+            }
+          }
+        },
+        "denials": {
+          "type": "array",
+          "description": "Denied claim or service line records.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "patientName": {
+                "type": "string",
+                "description": "Patient name."
+              },
+              "claimNumber": {
+                "type": "string",
+                "description": "Claim number or patient control number."
+              },
+              "payerClaimNumber": {
+                "type": "string",
+                "description": "Payer claim number."
+              },
+              "dateOfService": {
+                "type": "string",
+                "format": "date",
+                "description": "Date of service in YYYY-MM-DD format."
+              },
+              "cptCodes": {
+                "type": "array",
+                "description": "CPT or HCPCS codes on the denied line.",
+                "items": {
+                  "type": "string",
+                  "description": "CPT or HCPCS code."
+                }
+              },
+              "diagnosisCodes": {
+                "type": "array",
+                "description": "ICD-10 diagnosis codes if shown.",
+                "items": {
+                  "type": "string",
+                  "description": "ICD-10 code."
+                }
+              },
+              "carcCode": {
+                "type": "string",
+                "description": "CARC denial code such as CO-50."
+              },
+              "rarcCodes": {
+                "type": "array",
+                "description": "RARC remark codes.",
+                "items": {
+                  "type": "string",
+                  "description": "RARC code."
+                }
+              },
+              "reason": {
+                "type": "string",
+                "description": "Denial reason text."
+              },
+              "billedAmount": {
+                "type": "number",
+                "description": "Billed amount in USD."
+              },
+              "paidAmount": {
+                "type": "number",
+                "description": "Paid amount in USD."
+              },
+              "deniedAmount": {
+                "type": "number",
+                "description": "Denied amount in USD."
+              }
+            }
+          }
+        }
+      }
+    },
+    "fieldMappings": [
+      {
+        "source": "denials[].claimNumber",
+        "dashboard": "appeals.claimNumber",
+        "stedi": "835 CLP patient control number"
+      },
+      {
+        "source": "denials[].carcCode",
+        "dashboard": "appeals.denialCode",
+        "stedi": "835 CAS adjustment reason"
+      },
+      {
+        "source": "denials[].deniedAmount",
+        "dashboard": "appeals.amountDenied",
+        "stedi": "835 adjustment amount"
+      }
+    ]
+  },
+  {
+    "id": "claim-attachment-packet",
+    "name": "Claim Attachment Packet",
+    "enabled": true,
+    "docupipeSchemaId": "",
+    "stediTarget": "claimAttachment275",
+    "dashboardTarget": "attachments",
+    "stediEndpoint": "/claim-attachments/file",
+    "guidelines": "Extract attachment metadata, document type, patient, claim number, payer, service date, page count, and clinical summary. Do not summarize legal consents or signatures. Preserve names and dates exactly.",
+    "jsonSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "description": "Extract clinical attachment packet metadata for a Stedi 275 claim attachment workflow.",
+      "type": "object",
+      "properties": {
+        "documentType": {
+          "type": "string",
+          "description": "Document category.",
+          "enum": [
+            "attachment"
+          ]
+        },
+        "claimNumber": {
+          "type": "string",
+          "description": "Claim number or patient control number."
+        },
+        "patientName": {
+          "type": "string",
+          "description": "Patient full name."
+        },
+        "payerName": {
+          "type": "string",
+          "description": "Payer name."
+        },
+        "dateOfService": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of service in YYYY-MM-DD format."
+        },
+        "attachment": {
+          "type": "object",
+          "description": "Attachment file details.",
+          "properties": {
+            "documentName": {
+              "type": "string",
+              "description": "Document title or filename."
+            },
+            "documentType": {
+              "type": "string",
+              "description": "Attachment report type such as operative report, imaging, anesthesia record, or pathology."
+            },
+            "pageCount": {
+              "type": "integer",
+              "description": "Number of pages."
+            },
+            "clinicalSummary": {
+              "type": "string",
+              "description": "Short clinical summary for billing review."
+            }
+          }
+        }
+      }
+    },
+    "fieldMappings": [
+      {
+        "source": "claimNumber",
+        "dashboard": "attachments.claim",
+        "stedi": "claimAttachmentReference.patientControlNumber"
+      },
+      {
+        "source": "payerName",
+        "dashboard": "attachments.payer",
+        "stedi": "payer context"
+      },
+      {
+        "source": "attachment.documentType",
+        "dashboard": "attachments.doc",
+        "stedi": "attachment report type"
+      }
+    ]
+  },
+  {
+    "id": "provider-enrollment-doc",
+    "name": "Provider Enrollment Document",
+    "enabled": true,
+    "docupipeSchemaId": "",
+    "stediTarget": "providerEnrollment",
+    "dashboardTarget": "providers",
+    "stediEndpoint": "/providers",
+    "guidelines": "Extract provider enrollment data, provider name, NPI, taxonomy, tax ID, specialty, payer, enrollment transaction type, signature dates, and requested supporting documents.",
+    "jsonSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "description": "Extract provider and enrollment details for Stedi provider and enrollment workflows.",
+      "type": "object",
+      "properties": {
+        "documentType": {
+          "type": "string",
+          "description": "Document category.",
+          "enum": [
+            "providerEnrollment"
+          ]
+        },
+        "provider": {
+          "type": "object",
+          "description": "Provider details.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Provider full name or organization name."
+            },
+            "firstName": {
+              "type": "string",
+              "description": "Provider first name."
+            },
+            "lastName": {
+              "type": "string",
+              "description": "Provider last name."
+            },
+            "credential": {
+              "type": "string",
+              "description": "Credential such as MD, DO, NP, or PA."
+            },
+            "specialty": {
+              "type": "string",
+              "description": "Provider specialty."
+            },
+            "npi": {
+              "type": "string",
+              "description": "Provider NPI."
+            },
+            "taxonomyCode": {
+              "type": "string",
+              "description": "Taxonomy code."
+            },
+            "taxId": {
+              "type": "string",
+              "description": "Tax ID or EIN."
+            }
+          }
+        },
+        "enrollment": {
+          "type": "object",
+          "description": "Enrollment details.",
+          "properties": {
+            "payerName": {
+              "type": "string",
+              "description": "Payer name."
+            },
+            "transactionType": {
+              "type": "string",
+              "description": "Enrollment transaction type such as 837P claims, 837I claims, 835 ERA, or 270 eligibility."
+            },
+            "submittedDate": {
+              "type": "string",
+              "format": "date",
+              "description": "Submitted or signature date in YYYY-MM-DD format."
+            },
+            "requestedDocuments": {
+              "type": "array",
+              "description": "Supporting documents requested by payer.",
+              "items": {
+                "type": "string",
+                "description": "Document name."
+              }
+            }
+          }
+        }
+      }
+    },
+    "fieldMappings": [
+      {
+        "source": "provider.name",
+        "dashboard": "providers.name",
+        "stedi": "providers.name"
+      },
+      {
+        "source": "provider.npi",
+        "dashboard": "providers.npi",
+        "stedi": "providers.npi"
+      },
+      {
+        "source": "provider.taxonomyCode",
+        "dashboard": "providers.tax",
+        "stedi": "providers.taxonomyCode"
+      },
+      {
+        "source": "enrollment.payerName",
+        "dashboard": "enrollments.payer",
+        "stedi": "enrollments.payer"
+      }
+    ]
+  }
+]

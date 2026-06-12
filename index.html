@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Culver City Surgical | Billing Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --lime:#B6C800;
+  --blue:#1D00C6;
+  --radius:10px;
+  --maxw:1360px;
+}
+[data-theme="dark"]{
+  --bg:#0A0A0F;
+  --text:#FFFFFF;
+  --sub:#A0A0A8;
+  --card:#12121A;
+  --card2:#181824;
+  --border:#1E1E2E;
+  --accent-text:#B6C800;
+  --blue-soft:rgba(29,0,198,.25);
+  --lime-soft:rgba(182,200,0,.12);
+  --ok:#7BD88F; --warn:#E8B341; --bad:#E86060;
+  --ok-bg:rgba(123,216,143,.12); --warn-bg:rgba(232,179,65,.12); --bad-bg:rgba(232,96,96,.12);
+  --esc:#E8963C; --esc-bg:rgba(232,150,60,.14);
+}
+[data-theme="light"]{
+  --bg:#F6F6F2;
+  --text:#0A0A0F;
+  --sub:#5C5C66;
+  --card:#FFFFFF;
+  --card2:#EFEFE8;
+  --border:#DEDEd4;
+  --accent-text:#6B7600;
+  --blue-soft:rgba(29,0,198,.08);
+  --lime-soft:rgba(182,200,0,.18);
+  --ok:#1E7A38; --warn:#8A6410; --bad:#A32D2D;
+  --ok-bg:rgba(30,122,56,.1); --warn-bg:rgba(138,100,16,.12); --bad-bg:rgba(163,45,45,.1);
+  --esc:#9A5B10; --esc-bg:rgba(200,120,30,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  min-height:100vh;transition:background .25s ease,color .25s ease;
+}
+.app{display:flex;min-height:100vh;max-width:1920px;margin:0 auto}
+
+/* ---------- Sidebar ---------- */
+.sidebar{
+  width:248px;flex-shrink:0;background:var(--card);border-right:1px solid var(--border);
+  padding:24px 16px;display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.logo{display:flex;align-items:center;gap:10px;padding:0 10px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.logo-mark{width:36px;height:36px;border-radius:9px;background:var(--lime);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.95rem;color:#0A0A0F;flex-shrink:0}
+.logo-name{font-weight:700;font-size:.92rem;line-height:1.2}
+.logo-name span{display:block;font-size:.68rem;font-weight:500;color:var(--sub)}
+.nav-group{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);padding:14px 10px 6px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;
+  font-size:.84rem;font-weight:500;color:var(--sub);cursor:pointer;border:none;background:none;
+  font-family:inherit;width:100%;text-align:left;transition:background .15s,color .15s;
+}
+.nav-item:hover{color:var(--text);background:var(--card2)}
+.nav-item.active{background:var(--lime-soft);color:var(--accent-text);font-weight:600}
+.sidebar-foot{margin-top:auto;padding:14px 10px 0;border-top:1px solid var(--border);font-size:.7rem;color:var(--sub)}
+
+/* ---------- Main ---------- */
+.main{flex:1;min-width:0;padding:24px clamp(16px,3vw,40px) 60px}
+.topbar{display:flex;align-items:center;gap:14px;margin-bottom:26px;flex-wrap:wrap}
+.topbar h1{font-size:clamp(1.15rem,2vw,1.5rem);font-weight:700;letter-spacing:-.01em}
+.topbar .crumb{font-size:.78rem;color:var(--sub)}
+.spacer{flex:1}
+.search{
+  display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);
+  border-radius:999px;padding:9px 16px;min-width:200px;color:var(--sub);font-size:.8rem;
+}
+.theme-toggle{
+  display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);
+  border-radius:999px;padding:6px;cursor:pointer;font-family:inherit;
+}
+.theme-toggle button{
+  border:none;background:none;font-family:inherit;font-size:.74rem;font-weight:600;
+  padding:6px 14px;border-radius:999px;cursor:pointer;color:var(--sub);
+}
+.theme-toggle button.on{background:var(--lime);color:#0A0A0F}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700}
+
+.btn{
+  display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:999px;border:none;
+  background:var(--lime);color:#0A0A0F;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;
+}
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:999px;
+  border:1px solid var(--border);background:none;color:var(--text);font-family:inherit;
+  font-size:.78rem;font-weight:600;cursor:pointer;transition:border-color .2s;
+}
+.btn-ghost:hover{border-color:var(--lime)}
+.btn-ghost:disabled{opacity:.4;cursor:default}
+.btn-sm{padding:6px 14px;font-size:.72rem}
+
+/* ---------- Cards / layout ---------- */
+.grid{display:grid;gap:16px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px}
+.kpi .lbl{font-size:.72rem;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.06em}
+.kpi .val{font-size:clamp(1.4rem,2.2vw,1.8rem);font-weight:800;margin:6px 0 4px;letter-spacing:-.02em}
+.kpi .delta{font-size:.72rem;font-weight:600;color:var(--sub)}
+.delta.up{color:var(--ok)}.delta.down{color:var(--bad)}
+.card h3{font-size:.92rem;font-weight:700;margin-bottom:4px}
+.card .sub{font-size:.74rem;color:var(--sub);margin-bottom:14px}
+.endpoint{
+  display:inline-block;font-family:ui-monospace,Consolas,monospace;font-size:.66rem;
+  background:var(--blue-soft);color:var(--text);border:1px solid var(--border);
+  border-radius:6px;padding:3px 8px;margin:2px 4px 2px 0;white-space:nowrap;
+}
+.endpoint b{color:var(--accent-text);font-weight:700}
+
+/* ---------- Tables ---------- */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.78rem;min-width:560px}
+th{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--sub);text-align:left;padding:8px 12px;border-bottom:1px solid var(--border)}
+td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr.row-click{cursor:pointer}
+tr.row-click:hover td{background:var(--card2)}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.66rem;font-weight:700;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.info{background:var(--blue-soft);color:var(--text)}
+.pill.esc{background:var(--esc-bg);color:var(--esc)}
+.pill.gray{background:var(--card2);color:var(--sub)}
+.mono{font-family:ui-monospace,Consolas,monospace;font-size:.72rem}
+.money{font-weight:700;font-variant-numeric:tabular-nums}
+.pager{display:flex;align-items:center;gap:12px;margin-top:14px;font-size:.74rem;color:var(--sub);flex-wrap:wrap}
+
+/* ---------- Forms ---------- */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.field label{display:block;font-size:.68rem;font-weight:600;color:var(--sub);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.field input,.field select{
+  width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;
+  padding:10px 12px;color:var(--text);font-family:inherit;font-size:.8rem;
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--lime)}
+
+/* ---------- Drawer ---------- */
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:90;opacity:0;pointer-events:none;transition:opacity .2s}
+.ovl.open{opacity:1;pointer-events:auto}
+.drawer{
+  position:fixed;top:0;right:0;height:100vh;width:min(500px,100vw);background:var(--card);
+  border-left:1px solid var(--border);z-index:100;transform:translateX(100%);
+  transition:transform .25s ease;overflow-y:auto;padding:24px;
+}
+.drawer.open{transform:none}
+.drawer table{min-width:0}
+.d-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:6px}
+.d-head h2{font-size:1.05rem;font-weight:800;letter-spacing:-.01em}
+.d-head .x{margin-left:auto;background:none;border:1px solid var(--border);border-radius:8px;color:var(--sub);width:30px;height:30px;cursor:pointer;font-size:.9rem;flex-shrink:0}
+.d-sub{font-size:.74rem;color:var(--sub);margin-bottom:14px}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:7px 14px;font-size:.78rem;margin:12px 0}
+.kv dt{color:var(--sub)}
+.kv dd{font-weight:600;overflow-wrap:anywhere}
+.dsec{margin-top:20px;border-top:1px solid var(--border);padding-top:14px}
+.dsec h4{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--sub);margin-bottom:10px}
+.x12{font-family:ui-monospace,Consolas,monospace;font-size:.66rem;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px;overflow-x:auto;white-space:pre;color:var(--sub);line-height:1.7}
+
+/* ---------- Misc ---------- */
+.section{display:none}
+.section.active{display:block}
+.two-col{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:.74rem}
+.bar-row .bl{width:120px;color:var(--sub);flex-shrink:0}
+.bar-track{flex:1;height:8px;background:var(--card2);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;background:var(--lime)}
+.bar-fill.b{background:var(--blue)}
+.bar-row .bv{width:64px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tag{font-size:.66rem;font-weight:600;background:var(--card2);border:1px solid var(--border);border-radius:999px;padding:4px 12px;color:var(--sub)}
+.empty-note{font-size:.74rem;color:var(--sub);padding:8px 0}
+.loc-card{display:flex;flex-direction:column;gap:8px}
+.loc-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.loc-meta{font-size:.74rem;color:var(--sub);line-height:1.6}
+.menu-btn{display:none}
+
+/* ---------- Appeals ---------- */
+.btn-ai{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:999px;border:none;background:#7C3AED;color:#fff;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer}
+.btn-ai:hover{background:#6D28D9}
+th.sort{cursor:pointer;user-select:none}
+th.sort:hover{color:var(--text)}
+.letter{font-size:.78rem;line-height:1.7;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;white-space:pre-wrap}
+.letter[contenteditable="true"]{border-color:var(--lime);outline:none}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--lime);color:var(--text);padding:12px 20px;border-radius:999px;font-size:.8rem;font-weight:600;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.modal-ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:110;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:48px 16px}
+.modal-ovl.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:min(560px,100%);height:max-content}
+
+/* ---------- DocuPipe ---------- */
+.docu-layout{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:16px;align-items:start}
+.docu-stack{display:flex;flex-direction:column;gap:16px}
+.docu-actions{display:flex;gap:8px;flex-wrap:wrap}
+.docu-upload{border:1px dashed var(--border);border-radius:var(--radius);background:var(--card2);padding:16px;display:flex;flex-direction:column;gap:10px}
+.docu-upload input[type=file]{width:100%;font-size:.76rem;color:var(--sub)}
+.docu-code{width:100%;min-height:220px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:ui-monospace,Consolas,monospace;font-size:.72rem;line-height:1.55;padding:12px;resize:vertical}
+.docu-code.small{min-height:90px}
+.docu-json{font-family:ui-monospace,Consolas,monospace;font-size:.68rem;line-height:1.55;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px;white-space:pre;overflow:auto;max-height:420px;color:var(--sub)}
+.docu-history-list{display:flex;flex-direction:column;gap:10px}
+.import-summary{border:1px solid var(--border);border-radius:8px;background:var(--card2);overflow:hidden}
+.import-summary-toggle{display:block;width:100%;text-align:left;background:none;border:0;padding:10px 12px;color:inherit;cursor:pointer;font:inherit}
+.import-summary-toggle:hover{background:rgba(255,255,255,.02)}
+.import-summary-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.import-summary-head strong{display:block;font-size:.78rem;color:var(--text)}
+.import-summary-head span{display:block;font-size:.68rem;color:var(--sub);margin-top:2px}
+.import-summary pre{white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;font-size:.68rem;line-height:1.55;color:var(--sub);overflow:auto;margin:0;padding:12px}
+.import-summary-body{border-top:1px solid var(--border)}
+.docu-status-list{display:flex;flex-direction:column;gap:8px;font-size:.74rem;color:var(--sub)}
+.docu-status-list div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.docu-warnings{display:flex;flex-direction:column;gap:6px}
+.docu-warnings .warn-item{font-size:.72rem;color:var(--warn);background:var(--warn-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.docu-warnings .ok-item{font-size:.72rem;color:var(--ok);background:var(--ok-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.print-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.print-option{display:flex;flex-direction:column;gap:10px;min-height:160px}
+.print-option .sub{margin-bottom:0}
+@media print{
+  body{background:#fff;color:#000}
+  .sidebar,.topbar,.toast,.modal-ovl,.ovl,.side-ovl,.drawer{display:none!important}
+  .main{padding:0}
+  .section{display:block}
+  .card{break-inside:avoid;border-color:#ccc}
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1024px){
+  .sidebar{width:210px}
+}
+@media (max-width:768px){
+  .sidebar{
+    position:fixed;left:0;top:0;z-index:50;transform:translateX(-100%);
+    transition:transform .25s ease;width:248px;
+  }
+  .sidebar.open{transform:translateX(0)}
+  .side-ovl.show{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:45}
+  .menu-btn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer}
+  .search{display:none}
+  .kv{grid-template-columns:120px 1fr}
+  .docu-layout{grid-template-columns:1fr}
+}
+@media (min-width:1920px){
+  html{font-size:18px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ================= SIDEBAR ================= -->
+<aside class="sidebar" id="sidebar">
+  <div class="logo">
+    <div class="logo-mark">CC</div>
+    <div class="logo-name">Culver City Surgical<span>Revenue Cycle · Stedi EDI</span></div>
+  </div>
+
+  <div class="nav-group">Workflow</div>
+  <button class="nav-item active" data-sec="overview">⌂&nbsp; Overview</button>
+  <button class="nav-item" data-sec="eligibility">✓&nbsp; Eligibility</button>
+  <button class="nav-item" data-sec="discovery">◎&nbsp; Insurance discovery</button>
+  <button class="nav-item" data-sec="claims">⇪&nbsp; Claims</button>
+  <button class="nav-item" data-sec="status">⟳&nbsp; Claim status</button>
+  <button class="nav-item" data-sec="era">$&nbsp; Remittances (ERA)</button>
+  <button class="nav-item" data-sec="attachments">⎘&nbsp; Attachments</button>
+  <button class="nav-item" data-sec="cob">⊞&nbsp; Coordination of benefits</button>
+  <button class="nav-item" data-sec="appeals">⚖&nbsp; Appeals</button>
+
+  <div class="nav-group">Directory</div>
+  <button class="nav-item" data-sec="providers">⚕&nbsp; Providers</button>
+  <button class="nav-item" data-sec="locations">⌖&nbsp; Locations</button>
+  <button class="nav-item" data-sec="payers">⛨&nbsp; Payers</button>
+  <button class="nav-item" data-sec="enrollments">✎&nbsp; Enrollments</button>
+
+  <div class="nav-group">Operations</div>
+  <button class="nav-item" data-sec="docupipe">⇩&nbsp; DocuPipe intake</button>
+  <button class="nav-item" data-sec="print">▣&nbsp; Print center</button>
+  <button class="nav-item" data-sec="transactions">≣&nbsp; Transactions & events</button>
+
+  <div class="sidebar-foot">Clone · DocuPipe + Stedi<br>localhost:8742</div>
+</aside>
+
+<!-- ================= MAIN ================= -->
+<main class="main">
+  <div class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="Menu">≡</button>
+    <div>
+      <div class="crumb" id="crumb">Dashboard / Overview</div>
+      <h1 id="pageTitle">Overview</h1>
+    </div>
+    <div class="spacer"></div>
+    <input class="search" id="globalSearch" placeholder="🔍 Search patients, claims, payers..." aria-label="Search all records">
+    <div class="theme-toggle" id="themeToggle" role="group" aria-label="Theme">
+      <button id="btnDark" class="on">Dark</button>
+      <button id="btnLight">Light</button>
+    </div>
+    <div class="avatar">KV</div>
+  </div>
+
+  <!-- ========== OVERVIEW ========== -->
+  <section class="section active" id="sec-overview">
+    <div class="grid kpis">
+      <div class="card kpi"><div class="lbl">Charges this month</div><div class="val">$412,380</div><div class="delta up">▲ 8.2% vs May</div></div>
+      <div class="card kpi"><div class="lbl">Collections</div><div class="val">$298,114</div><div class="delta up">▲ 5.1%</div></div>
+      <div class="card kpi"><div class="lbl">Clean claim rate</div><div class="val">96.4%</div><div class="delta up">▲ 1.3 pts</div></div>
+      <div class="card kpi"><div class="lbl">Days in A/R</div><div class="val">31.2</div><div class="delta down">▼ 2.4 days</div></div>
+      <div class="card kpi"><div class="lbl">Denial rate</div><div class="val">4.1%</div><div class="delta up">▼ 0.6 pts</div></div>
+    </div>
+    <div class="grid two-col">
+      <div class="card">
+        <h3>A/R aging by payer</h3>
+        <div class="sub">Outstanding balances across all locations</div>
+        <div class="bar-row"><div class="bl">Anthem BC CA</div><div class="bar-track"><div class="bar-fill" style="width:78%"></div></div><div class="bv">$84.2k</div></div>
+        <div class="bar-row"><div class="bl">UnitedHealthcare</div><div class="bar-track"><div class="bar-fill" style="width:62%"></div></div><div class="bv">$66.9k</div></div>
+        <div class="bar-row"><div class="bl">Aetna</div><div class="bar-track"><div class="bar-fill b" style="width:45%"></div></div><div class="bv">$48.6k</div></div>
+        <div class="bar-row"><div class="bl">Cigna</div><div class="bar-track"><div class="bar-fill b" style="width:33%"></div></div><div class="bv">$35.6k</div></div>
+        <div class="bar-row"><div class="bl">Medicare (Noridian)</div><div class="bar-track"><div class="bar-fill b" style="width:24%"></div></div><div class="bv">$25.9k</div></div>
+      </div>
+      <div class="card">
+        <h3>Today's work queue</h3>
+        <div class="sub">Items needing action before 5:00 PM PT</div>
+        <div class="tbl-wrap"><table>
+          <tr><td>Eligibility re-checks for tomorrow's surgeries</td><td><span class="pill warn">12 pending</span></td></tr>
+          <tr><td>Claims rejected at clearinghouse</td><td><span class="pill bad" id="kpiRejQueue">…</span></td></tr>
+          <tr><td>ERAs to post</td><td><span class="pill info" id="kpiEraQueue">…</span></td></tr>
+          <tr><td>Enrollment tasks awaiting signature</td><td><span class="pill warn">2 open</span></td></tr>
+          <tr><td>Attachments requested by payer (275)</td><td><span class="pill bad" id="kpiAttQueue">…</span></td></tr>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== ELIGIBILITY ========== -->
+  <section class="section" id="sec-eligibility">
+    <div class="grid two-col" style="margin-bottom:16px">
+      <div class="card">
+        <h3>Real-time eligibility check (270/271)</h3>
+        <div class="sub">Verify coverage before scheduling</div>
+        <span class="endpoint"><b>POST</b> /change/medicalnetwork/eligibility/v3</span>
+        <span class="endpoint"><b>POST</b> /change/medicalnetwork/eligibility/v3/raw-x12</span>
+        <div class="form-grid" style="margin-top:14px">
+          <div class="field"><label>Member ID</label><input value="W882441190"></div>
+          <div class="field"><label>Patient DOB</label><input value="03/14/1968"></div>
+          <div class="field"><label>Payer</label><select><option>Anthem Blue Cross CA</option><option>UnitedHealthcare</option><option>Aetna</option></select></div>
+          <div class="field"><label>Service type</label><select><option>Surgical (2)</option><option>Health benefit plan coverage (30)</option></select></div>
+        </div>
+        <button class="btn">Run eligibility check</button>
+      </div>
+      <div class="card">
+        <h3>Batch eligibility: tomorrow's schedule</h3>
+        <div class="sub">38 patients queued for June 12 surgery day</div>
+        <span class="endpoint"><b>POST</b> /eligibility-manager/batch-eligibility</span>
+        <span class="endpoint"><b>GET</b> /eligibility-manager/batch/{batchId}</span>
+        <span class="endpoint"><b>GET</b> /eligibility-manager/batch/{batchId}/items</span>
+        <span class="endpoint"><b>GET</b> /eligibility-manager/polling/batch-eligibility</span>
+        <div style="margin-top:14px" class="bar-row"><div class="bl">Batch #BE-0611</div><div class="bar-track"><div class="bar-fill" style="width:68%"></div></div><div class="bv">26/38</div></div>
+        <div class="empty-note">26 active · 9 pending · 2 inactive coverage · 1 payer timeout</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Eligibility checks</h3>
+      <div class="sub" id="sub-eligibility">Click any row for the full 271 benefit detail</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Patient</th><th>Payer</th><th>Plan</th><th>Coverage</th><th>Copay</th><th>Deductible left</th><th>Checked</th></tr></thead>
+        <tbody id="tb-eligibility"></tbody>
+      </table></div>
+      <div class="pager" id="pgr-eligibility"></div>
+    </div>
+  </section>
+
+  <!-- ========== INSURANCE DISCOVERY ========== -->
+  <section class="section" id="sec-discovery">
+    <div class="card" style="margin-bottom:16px">
+      <h3>Find unknown coverage</h3>
+      <div class="sub">Search payer networks when a patient arrives without insurance information</div>
+      <span class="endpoint"><b>POST</b> /insurance-discovery/check/v1</span>
+      <span class="endpoint"><b>GET</b> /insurance-discovery/check/v1/{discoveryId}</span>
+      <div class="form-grid" style="margin-top:14px">
+        <div class="field"><label>First name</label><input value="James"></div>
+        <div class="field"><label>Last name</label><input value="Holloway"></div>
+        <div class="field"><label>DOB</label><input value="11/02/1979"></div>
+        <div class="field"><label>SSN (last 4)</label><input value="••••"></div>
+      </div>
+      <button class="btn">Start discovery</button>
+    </div>
+    <div class="card">
+      <h3>Discovery results</h3>
+      <div class="sub" id="sub-discovery"></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Discovery ID</th><th>Patient</th><th>Status</th><th>Coverage found</th><th>Payer</th></tr></thead>
+        <tbody id="tb-discovery"></tbody>
+      </table></div>
+      <div class="pager" id="pgr-discovery"></div>
+    </div>
+  </section>
+
+  <!-- ========== CLAIMS ========== -->
+  <section class="section" id="sec-claims">
+    <div class="chip-row">
+      <span class="endpoint"><b>POST</b> /change/medicalnetwork/professionalclaims/v3/submission</span>
+      <span class="endpoint"><b>POST</b> /change/medicalnetwork/professionalclaims/v3/raw-x12-submission</span>
+      <span class="endpoint"><b>POST</b> /change/medicalnetwork/institutionalclaims/v1/submission</span>
+      <span class="endpoint"><b>POST</b> /change/medicalnetwork/institutionalclaims/v1/raw-x12-submission</span>
+      <span class="endpoint"><b>GET</b> /export/{transactionId}/1500/pdf</span>
+    </div>
+    <div class="grid kpis">
+      <div class="card kpi"><div class="lbl">Total claims</div><div class="val" id="kpiClmTotal">…</div><div class="delta">837P · 837I</div></div>
+      <div class="card kpi"><div class="lbl">Accepted / paid</div><div class="val" id="kpiClmOk">…</div><div class="delta up" id="kpiClmOkPct"></div></div>
+      <div class="card kpi"><div class="lbl">Rejected / denied</div><div class="val" id="kpiClmBad">…</div><div class="delta down">needs rework</div></div>
+      <div class="card kpi"><div class="lbl">Pending payer</div><div class="val" id="kpiClmPend">…</div><div class="delta">in adjudication</div></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+        <h3 style="margin:0">Claim queue</h3>
+        <div class="spacer"></div>
+        <button class="btn btn-sm" onclick="openCreate('claims')">+ New professional claim (837P)</button>
+        <button class="btn-ghost btn-sm" onclick="openCreate('claims')">+ Institutional (837I)</button>
+      </div>
+      <div class="sub">Click any row for service lines, diagnoses, and adjudication detail</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Claim</th><th>Patient</th><th>Type</th><th>Provider</th><th>Location</th><th>Payer</th><th>Billed</th><th>Status</th></tr></thead>
+        <tbody id="tb-claims"></tbody>
+      </table></div>
+      <div class="pager" id="pgr-claims"></div>
+    </div>
+  </section>
+
+  <!-- ========== CLAIM STATUS ========== -->
+  <section class="section" id="sec-status">
+    <div class="card" style="margin-bottom:16px">
+      <h3>Real-time claim status (276/277)</h3>
+      <div class="sub">Query payer systems directly for adjudication status</div>
+      <span class="endpoint"><b>POST</b> /change/medicalnetwork/claimstatus/v2</span>
+      <span class="endpoint"><b>POST</b> /change/medicalnetwork/claimstatus/v2/raw-x12</span>
+      <span class="endpoint"><b>GET</b> /change/medicalnetwork/reports/v2/{transactionId}/277</span>
+      <div class="form-grid" style="margin-top:14px">
+        <div class="field"><label>Claim / trace number</label><input value="CLM-20415"></div>
+        <div class="field"><label>Payer</label><select><option>Medicare (Noridian)</option><option>Anthem Blue Cross CA</option></select></div>
+        <div class="field"><label>Date of service</label><input value="06/04/2026"></div>
+      </div>
+      <button class="btn">Check status</button>
+    </div>
+    <div class="card">
+      <h3>Tracked claims</h3>
+      <div class="sub" id="sub-status">Auto-polled every 24h until finalized · click a row for the 277 history</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Claim</th><th>Payer</th><th>Category (277)</th><th>Status</th><th>Last checked</th></tr></thead>
+        <tbody id="tb-status"></tbody>
+      </table></div>
+      <div class="pager" id="pgr-status"></div>
+    </div>
+  </section>
+
+  <!-- ========== ERA / REMITTANCES ========== -->
+  <section class="section" id="sec-era">
+    <div class="chip-row">
+      <span class="endpoint"><b>GET</b> /change/medicalnetwork/reports/v2/{transactionId}/835</span>
+      <span class="endpoint"><b>GET</b> /electronic-remittance-advice/{transactionId}/pdf</span>
+    </div>
+    <div class="grid kpis">
+      <div class="card kpi"><div class="lbl">ERAs received</div><div class="val" id="kpiEraN">…</div><div class="delta">835 transactions</div></div>
+      <div class="card kpi"><div class="lbl">Posted</div><div class="val" id="kpiEraPosted">…</div><div class="delta up" id="kpiEraPostedN"></div></div>
+      <div class="card kpi"><div class="lbl">Unposted</div><div class="val" id="kpiEraUnposted">…</div><div class="delta down" id="kpiEraUnpostedN"></div></div>
+      <div class="card kpi"><div class="lbl">Adjustments</div><div class="val" id="kpiEraAdj">…</div><div class="delta">CO + PR</div></div>
+    </div>
+    <div class="card">
+      <h3>Remittance inbox</h3>
+      <div class="sub">Click any row for claim payments and CAS adjustment detail</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Check / EFT</th><th>Payer</th><th>Claims</th><th>Billed</th><th>Paid</th><th>Patient resp.</th><th>Status</th></tr></thead>
+        <tbody id="tb-era"></tbody>
+      </table></div>
+      <div class="pager" id="pgr-era"></div>
+    </div>
+  </section>
+
+  <!-- ========== ATTACHMENTS ========== -->
+  <section class="section" id="sec-attachments">
+    <div class="card" style="margin-bottom:16px">
+      <h3>Claim attachments (275)</h3>
+      <div class="sub">Send operative reports, imaging, and medical records the payer requested</div>
+      <span class="endpoint"><b>POST</b> /claim-attachments/file</span>
+      <span class="endpoint"><b>POST</b> /claim-attachments/raw-x12-submission</span>
+      <div style="margin-top:14px;border:1px dashed var(--border);border-radius:var(--radius);padding:28px;text-align:center;color:var(--sub);font-size:.8rem">
+        Drop operative report PDF here, or <button class="btn-ghost btn-sm">browse files</button><br>
+        <span style="font-size:.68rem">Generates a pre-signed upload URL, then transmits as X12 275</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Attachment requests</h3>
+      <div class="sub" id="sub-attachments"></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Claim</th><th>Payer</th><th>Requested</th><th>Document</th><th>Due</th><th>Status</th></tr></thead>
+        <tbody id="tb-attachments"></tbody>
+      </table></div>
+      <div class="pager" id="pgr-attachments"></div>
+    </div>
+  </section>
+
+  <!-- ========== COB ========== -->
+  <section class="section" id="sec-cob">
+    <div class="card" style="margin-bottom:16px">
+      <h3>Coordination of benefits</h3>
+      <div class="sub">Determine primary vs. secondary coverage when a patient has multiple plans</div>
+      <span class="endpoint"><b>POST</b> /coordination-of-benefits</span>
+      <div class="form-grid" style="margin-top:14px">
+        <div class="field"><label>Patient</label><input value="Robert Whitfield"></div>
+        <div class="field"><label>Known payer</label><select><option>Medicare (Noridian)</option></select></div>
+        <div class="field"><label>Member ID</label><input value="1EG4-TE5-MK72"></div>
+      </div>
+      <button class="btn">Run COB check</button>
+    </div>
+    <div class="card">
+      <h3>COB findings</h3>
+      <div class="sub" id="sub-cob"></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Patient</th><th>Primary</th><th>Secondary</th><th>Effective</th><th>Rule</th></tr></thead>
+        <tbody id="tb-cob"></tbody>
+      </table></div>
+      <div class="pager" id="pgr-cob"></div>
+    </div>
+  </section>
+
+  <!-- ========== APPEALS ========== -->
+  <section class="section" id="sec-appeals">
+    <div class="chip-row">
+      <span class="endpoint"><b>GET</b> /change/medicalnetwork/reports/v2/{transactionId}/835</span>
+      <span class="endpoint"><b>POST</b> /change/medicalnetwork/professionalclaims/v3/submission</span>
+      <span class="endpoint"><b>POST</b> /change/medicalnetwork/claimstatus/v2</span>
+      <span class="endpoint"><b>POST</b> /claim-attachments/file</span>
+    </div>
+    <div class="grid kpis" id="appealStats"></div>
+    <div class="card" id="newAppealCard" style="display:none;margin-bottom:16px">
+      <h3>New appeal</h3>
+      <div class="sub">Start an appeal from a denied claim</div>
+      <div class="form-grid">
+        <div class="field"><label>Patient name</label><input id="na-patient" value="Brian Castellanos"></div>
+        <div class="field"><label>Patient DOB</label><input id="na-dob" value="07/22/1971"></div>
+        <div class="field"><label>Claim #</label><input id="na-claim" value="CLM-20447"></div>
+        <div class="field"><label>Date of service</label><input id="na-dos" value="05/28/2026"></div>
+        <div class="field"><label>Payer</label><select id="na-payer"><option>Aetna</option><option>UnitedHealth</option><option>Blue Shield</option><option>Cigna</option><option>Humana</option></select></div>
+        <div class="field"><label>CPT codes</label><input id="na-cpt" value="29881, 29827"></div>
+        <div class="field"><label>Diagnosis (ICD-10)</label><input id="na-dx" value="M17.11"></div>
+        <div class="field"><label>Denial code</label><select id="na-denial"><option>CO-97</option><option>CO-4</option><option>PR-1</option><option>CO-50</option><option>CO-22</option></select></div>
+        <div class="field"><label>Denial reason</label><input id="na-reason" value="Benefit included in another billed service"></div>
+        <div class="field"><label>Appeal type</label><select id="na-type"><option>Correctable Resubmission</option><option>Formal Appeal</option><option>Peer-to-Peer</option></select></div>
+        <div class="field"><label>Deadline</label><input id="na-deadline" value="07/15/2026"></div>
+        <div class="field"><label>Assigned to</label><input id="na-assigned" value="K. Vu"></div>
+        <div class="field"><label>Amount billed</label><input id="na-billed" value="12400"></div>
+        <div class="field"><label>Amount denied</label><input id="na-denied" value="4820"></div>
+      </div>
+      <button class="btn-ai" onclick="aiGenerateNewLetter()">✨ Generate Appeal Letter with AI</button>
+      <div class="dsec" style="border:none;padding-top:14px"><h4>Appeal letter draft</h4><div class="letter" id="newLetter">Click the AI button above to draft a letter from these fields.</div></div>
+      <div style="margin-top:14px"><button class="btn" onclick="createAppeal()">Create appeal</button> <button class="btn-ghost" onclick="toggleNewAppeal(false)">Cancel</button></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+        <h3 style="margin:0">Appeals queue</h3>
+        <div class="spacer"></div>
+        <button class="btn btn-sm" onclick="toggleNewAppeal(true)">+ New appeal</button>
+      </div>
+      <div class="sub">Click a column header to sort · click a row for the full record, timeline, and appeal letter</div>
+      <div class="tbl-wrap"><table style="min-width:900px">
+        <thead id="appealsHead"></thead>
+        <tbody id="tb-appeals"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ========== PROVIDERS ========== -->
+  <section class="section" id="sec-providers">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+        <h3 style="margin:0">Rendering & billing providers</h3>
+        <div class="spacer"></div>
+        <button class="btn btn-sm" onclick="openCreate('providers')">+ Add provider</button>
+      </div>
+      <div class="sub" id="sub-providers">Credentialed providers across all facilities. Managed separately from locations.</div>
+      <div class="chip-row">
+        <span class="endpoint"><b>POST</b> /providers</span>
+        <span class="endpoint"><b>GET</b> /providers</span>
+        <span class="endpoint"><b>POST</b> /providers/{providerId}</span>
+        <span class="endpoint"><b>DELETE</b> /providers/{providerId}</span>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Provider</th><th>NPI</th><th>Specialty</th><th>Tax ID</th><th>Enrollment status</th></tr></thead>
+        <tbody id="tb-providers"></tbody>
+      </table></div>
+      <div class="pager" id="pgr-providers"></div>
+    </div>
+  </section>
+
+  <!-- ========== LOCATIONS ========== -->
+  <section class="section" id="sec-locations">
+    <div class="sub" style="margin-bottom:14px;color:var(--sub);font-size:.78rem">Service facility locations (claim loop 2310C). Kept separate from provider records: a provider can render at any location.</div>
+    <div class="grid two-col" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+      <div class="card loc-card">
+        <div class="loc-head"><h3>Culver City ASC</h3><span class="pill ok">Primary</span></div>
+        <div class="loc-meta">9808 Washington Blvd, Suite 200<br>Culver City, CA 90232<br>Facility NPI <span class="mono">1841557020</span> · POS 24 (ASC)</div>
+        <div class="chip-row" style="margin:0"><span class="tag">4 ORs</span><span class="tag" id="locClm1">…</span></div>
+        <button class="btn-ghost btn-sm">Manage</button>
+      </div>
+      <div class="card loc-card">
+        <div class="loc-head"><h3>Marina del Rey Clinic</h3><span class="pill info">Satellite</span></div>
+        <div class="loc-meta">4560 Admiralty Way, Suite 310<br>Marina del Rey, CA 90292<br>Facility NPI <span class="mono">1992304186</span> · POS 11 (Office)</div>
+        <div class="chip-row" style="margin:0"><span class="tag">Pre-op / consults</span><span class="tag" id="locClm2">…</span></div>
+        <button class="btn-ghost btn-sm">Manage</button>
+      </div>
+      <div class="card loc-card">
+        <div class="loc-head"><h3>El Segundo Imaging & Pain</h3><span class="pill info">Satellite</span></div>
+        <div class="loc-meta">2041 Rosecrans Ave, Suite 155<br>El Segundo, CA 90245<br>Facility NPI <span class="mono">1577449863</span> · POS 11 (Office)</div>
+        <div class="chip-row" style="margin:0"><span class="tag">Pain procedures</span><span class="tag" id="locClm3">…</span></div>
+        <button class="btn-ghost btn-sm">Manage</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== PAYERS ========== -->
+  <section class="section" id="sec-payers">
+    <div class="card" style="margin-bottom:16px">
+      <h3>Payer directory</h3>
+      <div class="sub">Search the Stedi payer network for IDs, supported transactions, and enrollment requirements</div>
+      <span class="endpoint"><b>GET</b> /payers/search</span>
+      <span class="endpoint"><b>GET</b> /payers</span>
+      <span class="endpoint"><b>GET</b> /payer/{stediId}</span>
+      <span class="endpoint"><b>GET</b> /payers/csv</span>
+      <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+        <div class="field" style="flex:1;min-width:220px"><input id="payerSearchInput" placeholder="Search by payer name, ID, or alias..."></div>
+        <button class="btn" onclick="filterPayers()">Search</button>
+        <button class="btn-ghost" onclick="openCreate('payers')">+ Add payer</button>
+        <button class="btn-ghost">Export CSV</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Network payers</h3>
+      <div class="sub" id="sub-payers"></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Payer</th><th>Stedi ID</th><th>Eligibility</th><th>Claims</th><th>ERA</th><th>Enrollment required</th></tr></thead>
+        <tbody id="tb-payers"></tbody>
+      </table></div>
+      <div class="pager" id="pgr-payers"></div>
+    </div>
+  </section>
+
+  <!-- ========== ENROLLMENTS ========== -->
+  <section class="section" id="sec-enrollments">
+    <div class="chip-row">
+      <span class="endpoint"><b>POST</b> /enrollments</span>
+      <span class="endpoint"><b>GET</b> /enrollments</span>
+      <span class="endpoint"><b>POST</b> /enrollments/{enrollmentId}</span>
+      <span class="endpoint"><b>DELETE</b> /enrollments/{enrollmentId}</span>
+      <span class="endpoint"><b>POST</b> /enrollments/export</span>
+      <span class="endpoint"><b>POST</b> /enrollments/{enrollmentId}/documents</span>
+      <span class="endpoint"><b>GET</b> /documents/{documentId}/download</span>
+      <span class="endpoint"><b>DELETE</b> /documents/{documentId}</span>
+      <span class="endpoint"><b>POST</b> /tasks/{taskId}</span>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+        <h3 style="margin:0">Payer transaction enrollments</h3>
+        <div class="spacer"></div>
+        <button class="btn btn-sm" onclick="openCreate('enrollments')">+ New enrollment</button>
+        <button class="btn-ghost btn-sm">Export all</button>
+      </div>
+      <div class="sub" id="sub-enrollments"></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Provider</th><th>Payer</th><th>Transaction</th><th>Status</th><th>Open task</th></tr></thead>
+        <tbody id="tb-enrollments"></tbody>
+      </table></div>
+      <div class="pager" id="pgr-enrollments"></div>
+    </div>
+  </section>
+
+  <!-- ========== DOCUPIPE INTAKE ========== -->
+  <section class="section" id="sec-docupipe">
+    <div class="chip-row">
+      <span class="endpoint"><b>POST</b> /api/docupipe/upload</span>
+      <span class="endpoint"><b>POST</b> /api/docupipe/standardize</span>
+      <span class="endpoint"><b>GET</b> /api/docupipe/jobs/{jobId}</span>
+      <span class="endpoint"><b>POST</b> /api/stedi/preview</span>
+      <span class="endpoint"><b>POST</b> /api/stedi/submit</span>
+    </div>
+    <div class="docu-layout">
+      <div class="docu-stack">
+        <div class="card">
+          <h3>Run intake</h3>
+          <div class="sub">Upload, standardize, review, then insert into the dashboard</div>
+          <div class="field" style="margin-bottom:12px">
+            <label>Schema module</label>
+            <select id="docuModuleSelect"></select>
+          </div>
+          <div class="docu-upload">
+            <div class="field">
+              <label>Source file</label>
+              <input type="file" id="docuFile" accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.doc,.docx,.xls,.xlsx,.csv,.txt,.json,.xml,.html">
+            </div>
+            <div class="docu-actions">
+              <button class="btn btn-sm" id="docuUploadBtn">Upload</button>
+              <button class="btn-ghost btn-sm" id="docuStandardizeBtn">Standardize</button>
+              <button class="btn-ghost btn-sm" id="docuPreviewBtn">Preview Stedi</button>
+              <button class="btn btn-sm" id="docuInsertBtn">Input to dashboard</button>
+            </div>
+          </div>
+          <div class="dsec">
+            <h4>Status</h4>
+            <div class="docu-status-list" id="docuStatusList">
+              <div><span>Mode</span><b id="docuMode">mock</b></div>
+              <div><span>Document</span><b id="docuDocumentId">waiting</b></div>
+              <div><span>Job</span><b id="docuJobId">waiting</b></div>
+              <div><span>Standardization</span><b id="docuStandardizationId">waiting</b></div>
+              <div><span>Schema</span><b id="docuSchemaState">draft</b></div>
+              <div><span>Import</span><b id="docuImportState">none</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Module editor</h3>
+          <div class="sub">Edit the selected module schema and mapping</div>
+          <div class="form-grid">
+            <div class="field"><label>Name</label><input id="docuModuleName"></div>
+            <div class="field"><label>Stedi target</label><select id="docuStediTarget">
+              <option value="professionalClaim837P">Professional claim 837P</option>
+              <option value="eligibility270">Eligibility 270</option>
+              <option value="appealsFromEra">ERA or denial appeal</option>
+              <option value="claimAttachment275">Claim attachment 275</option>
+              <option value="providerEnrollment">Provider enrollment</option>
+            </select></div>
+            <div class="field"><label>Dashboard target</label><input id="docuDashboardTarget" readonly aria-readonly="true"></div>
+          </div>
+          <div class="field" style="margin-bottom:12px"><label>Stedi endpoint</label><input id="docuEndpoint"></div>
+          <div class="field" style="margin-bottom:12px"><label>Guidelines</label><textarea class="docu-code small" id="docuGuidelines"></textarea></div>
+          <div class="field" style="margin-bottom:12px"><label>JSON schema</label><textarea class="docu-code" id="docuSchema"></textarea></div>
+          <div class="field" style="margin-bottom:12px"><label>Field mappings</label><textarea class="docu-code small" id="docuMapping"></textarea></div>
+          <details class="docu-advanced" open style="margin-bottom:12px">
+            <summary>Advanced module metadata</summary>
+            <div class="field" style="margin-top:12px"><label>DocuPipe schema ID</label><input id="docuSchemaId"></div>
+          </details>
+          <div class="docu-actions">
+            <button class="btn btn-sm" id="docuSaveModuleBtn">Save module</button>
+            <button class="btn-ghost btn-sm" id="docuNewModuleBtn">Duplicate as new</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="docu-stack">
+        <div class="card">
+          <h3>Review</h3>
+          <div class="sub">Mapped values and review flags</div>
+          <div class="docu-warnings" id="docuWarnings"></div>
+        </div>
+        <div class="card">
+          <h3>Imported record</h3>
+          <div class="sub">All imported data, past and present</div>
+          <div class="docu-json" id="docuImportedOut">No record imported yet.</div>
+          <div style="margin-top:12px">
+            <h4 style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--sub);margin-bottom:8px">Import history</h4>
+            <div id="docuImportHistory"></div>
+          </div>
+          <div style="margin-top:10px" class="docu-actions">
+            <button class="btn-ghost btn-sm" id="docuViewImportedBtn">View all imported data</button>
+          </div>
+        </div>
+        <div class="grid two-col">
+          <div class="card">
+            <h3>DocuPipe JSON</h3>
+            <div class="docu-json" id="docuJsonOut">{}</div>
+          </div>
+          <div class="card">
+            <h3>Stedi payload preview</h3>
+            <div class="docu-json" id="docuStediOut">{}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== PRINT CENTER ========== -->
+  <section class="section" id="sec-print">
+    <div class="chip-row">
+      <span class="endpoint"><b>GET</b> /api/modules</span>
+      <span class="endpoint"><b>PRINT</b> module schemas</span>
+      <span class="endpoint"><b>PRINT</b> extracted records</span>
+      <span class="endpoint"><b>PRINT</b> dashboard records</span>
+    </div>
+    <div class="card">
+      <h3>Print Center</h3>
+      <div class="sub">Generate browser-printable packets from modules and dashboard records</div>
+      <div class="print-grid">
+        <div class="card print-option">
+          <h3>Module catalog</h3>
+          <div class="sub">All schema modules, endpoints, and mapping hints</div>
+          <button class="btn btn-sm" id="printModulesBtn">Print modules</button>
+        </div>
+        <div class="card print-option">
+          <h3>Last extraction</h3>
+          <div class="sub">Most recent DocuPipe standardization JSON</div>
+          <button class="btn btn-sm" id="printExtractionBtn">Print extraction</button>
+        </div>
+        <div class="card print-option">
+          <h3>Stedi preview</h3>
+          <div class="sub">Most recent mapped Stedi request payload</div>
+          <button class="btn btn-sm" id="printPreviewBtn">Print Stedi preview</button>
+        </div>
+        <div class="card print-option">
+          <h3>Appeals packet</h3>
+          <div class="sub">Open appeals, deadlines, and draft letters</div>
+          <button class="btn btn-sm" id="printAppealsBtn">Print appeals</button>
+        </div>
+        <div class="card print-option">
+          <h3>Open drawer</h3>
+          <div class="sub">Currently opened dashboard detail record</div>
+          <button class="btn btn-sm" id="printDrawerBtn">Print open record</button>
+        </div>
+        <div class="card print-option">
+          <h3>Dashboard summary</h3>
+          <div class="sub">Counts across claim, ERA, attachment, and enrollment queues</div>
+          <button class="btn btn-sm" id="printSummaryBtn">Print summary</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TRANSACTIONS & EVENTS ========== -->
+  <section class="section" id="sec-transactions">
+    <div class="chip-row">
+      <span class="endpoint"><b>GET</b> /transactions</span>
+      <span class="endpoint"><b>GET</b> /transactions/{transactionId}</span>
+      <span class="endpoint"><b>GET</b> /transactions/{transactionId}/input</span>
+      <span class="endpoint"><b>GET</b> /transactions/{transactionId}/output</span>
+      <span class="endpoint"><b>GET</b> /polling/transactions</span>
+      <span class="endpoint"><b>GET</b> /executions</span>
+      <span class="endpoint"><b>GET</b> /executions/{executionId}</span>
+      <span class="endpoint"><b>POST</b> /events/{eventId}/retry</span>
+      <span class="endpoint"><b>GET</b> /events</span>
+      <span class="endpoint"><b>GET</b> /events/{eventId}</span>
+    </div>
+    <div class="card">
+      <h3>Raw EDI transaction log</h3>
+      <div class="sub" id="sub-transactions"></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Transaction</th><th>Type</th><th>Direction</th><th>Partner</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
+        <tbody id="tb-transactions"></tbody>
+      </table></div>
+      <div class="pager" id="pgr-transactions"></div>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-ovl" id="createOvl"><div class="modal" id="createModal"></div></div>
+<div class="side-ovl" id="sideOvl"></div>
+<div class="ovl" id="ovl"></div>
+<aside class="drawer" id="drawer" aria-label="Record detail"></aside>
+
+<script>
+/* seeded RNG so dummy data is stable across reloads */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const rnd=mulberry32(20260611);
+const ri=(a,b)=>a+Math.floor(rnd()*(b-a+1));
+const pick=a=>a[Math.floor(rnd()*a.length)];
+const usd=n=>'$'+Math.round(n).toLocaleString('en-US');
+
+/* pools */
+const FIRST=['Marisol','David','Linda','Robert','Aisha','Elena','James','Patricia','Greg','Sofia','Marcus','Hannah','Victor','Naomi','Carlos','Diane','Trevor','Yuki','Omar','Brenda','Felix','Tamara','Ivan','Cecilia','Andre','Monique','Hector','Lauren','Dmitri','Paloma'];
+const LAST=['Gutierrez','Okafor','Tran','Whitfield','Bell','Petrova','Holloway','Nunez','Stanton','Marquez','Delgado','Kim','Rosenthal','Abara','Vance','Ito','Castillo','Brennan','Soto','Lindqvist','Moreau','Achebe','Salazar','Novak','Reyes','Donovan','Park','Whitaker','Mbeki','Calloway','Hartman','Vega'];
+const patient=i=>FIRST[i%FIRST.length]+' '+LAST[(i*7+3)%LAST.length];
+const dob=()=>String(ri(1,12)).padStart(2,'0')+'/'+String(ri(1,28)).padStart(2,'0')+'/'+ri(1948,2002);
+const memberId=()=>pick(['W','A','U','M','C','K'])+String(ri(100000000,999999999));
+const npi=()=>'1'+String(ri(100000000,999999999));
+const dateStr=()=>{const d=new Date(2026,5,11);d.setDate(d.getDate()-ri(0,75));return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})};
+const timeStr=()=>{const h=ri(7,16),m=ri(0,59);return(((h+11)%12)+1)+':'+String(m).padStart(2,'0')+' '+(h<12?'AM':'PM')};
+
+const PAYERS=[
+ ['Anthem Blue Cross CA','ANTHM-CA'],['Blue Shield of CA','BSCA'],['UnitedHealthcare','UHC'],['Aetna','AETNA'],
+ ['Cigna','CIGNA'],['Medicare (Noridian)','CMS-NOR'],['Medi-Cal','MEDICAL-CA'],['Kaiser Foundation HP','KAISER'],
+ ['Humana','HUMANA'],['Health Net CA','HNET-CA'],['Oscar Health','OSCAR'],['Tricare West','TRIWEST']
+];
+const PLANS=['PPO Gold','PPO Silver','HMO Select','EPO Value','Choice Plus','Open Access','Part B','Managed Care','HDHP Bronze','POS Premier'];
+const LOCS=['Culver City ASC','Marina del Rey Clinic','El Segundo Imaging & Pain'];
+const SPECS=[['Orthopedic surgery','207X00000X'],['General surgery','208600000X'],['Pain management','208VP0014X'],['Ophthalmology','207W00000X'],['Gastroenterology','207RG0100X'],['Podiatry','213E00000X'],['Anesthesiology','207L00000X'],['Otolaryngology','207Y00000X']];
+const CPTS=[['29881','Knee arthroscopy w/ meniscectomy',4820],['29827','Arthroscopic rotator cuff repair',7240],['64483','Transforaminal epidural, lumbar',1180],['63030','Lumbar discectomy',9640],['47562','Laparoscopic cholecystectomy',8150],['49505','Inguinal hernia repair',6480],['66984','Cataract extraction w/ IOL',3420],['45380','Colonoscopy with biopsy',1950],['43239','Upper GI endoscopy with biopsy',1720],['28296','Bunionectomy w/ osteotomy',5310],['62323','Interlaminar epidural injection',1240],['27447','Total knee arthroplasty',21800],['23472','Total shoulder arthroplasty',19400],['64635','RF ablation, lumbar facet',2360]];
+const ICDS=['M17.11','M75.101','M54.16','K80.20','K40.90','H25.11','K63.5','M20.11','M48.062','Z12.11','M25.561','G89.29'];
+const DOCS=['Operative report','Implant invoice','Pre-op H&P','Imaging study (MRI)','Anesthesia record','Pathology report'];
+const COB_RULES=['Medicare Secondary Payer: working aged','Birthday rule (dependent child)','Employer plan primary over spouse plan','Medigap follows Medicare','COBRA continuation secondary'];
+
+/* providers (104) */
+const providers=[];
+(function(){const anchors=[['Alejandro Reyes','MD','Orthopedic surgery'],['Sunita Patel','MD','General surgery'],['Michael Chen','MD','Pain management'],['Dana Whitcomb','DO','Anesthesiology']];
+ anchors.forEach(a=>providers.push({name:'Dr. '+a[0]+', '+a[1],last:a[0].split(' ')[1],spec:a[2],tax:SPECS.find(s=>s[0]===a[2])[1],npi:npi(),live:ri(8,12),pend:ri(0,1)}));
+ for(let i=0;i<100;i++){const f=FIRST[(i*3+1)%FIRST.length],l=LAST[(i*5+2)%LAST.length],s=SPECS[i%SPECS.length];providers.push({name:'Dr. '+f+' '+l+', '+pick(['MD','MD','DO']),last:l,spec:s[0],tax:s[1],npi:npi(),live:ri(3,12),pend:ri(0,2)});}})();
+
+/* eligibility (120) */
+const eligibility=[];
+for(let i=0;i<120;i++){const p=PAYERS[i%PAYERS.length];const st=rnd()<.82?'Active':(rnd()<.6?'Inactive':'Payer timeout');const dedT=pick([500,1000,1500,2500,4000,6000]),dedM=ri(0,dedT);const oopT=dedT*ri(2,4),oopM=Math.min(oopT,dedM+ri(0,2000));eligibility.push({patient:patient(i),dob:dob(),member:memberId(),payer:p[0],payerId:p[1],plan:pick(PLANS),status:st,copay:pick([0,150,250,300,500]),coins:pick([0,10,20,30]),dedT,dedM,oopT,oopM,group:'GRP-'+ri(10000,99999),date:dateStr(),time:timeStr(),trn:'TRN-'+ri(1000000,9999999),auth:rnd()<.5,planBegin:'01/01/2026'});}
+
+/* discovery (100) */
+const discovery=[];
+for(let i=0;i<100;i++){const done=rnd()<.85,found=done&&rnd()<.6,p=PAYERS[i%PAYERS.length];discovery.push({id:'disc_'+Math.random().toString(36).slice(2,8),patient:patient(i+40),dob:dob(),status:done?'Complete':'Searching',found,payer:found?p[0]:null,plan:found?pick(PLANS):null,member:found?memberId():null,date:dateStr()});}
+
+/* claims (140) */
+const claims=[];
+for(let i=0;i<140;i++){const pr=providers[i%24],p=PAYERS[(i*3)%PAYERS.length];const nLines=ri(1,4),lines=[];let billed=0;for(let j=0;j<nLines;j++){const c=CPTS[(i+j*5)%CPTS.length];const u=1;const ch=c[2]+ri(-200,400);billed+=ch;lines.push({cpt:c[0],desc:c[1],mod:rnd()<.3?pick(['LT','RT','50','59']):'',units:u,charge:ch});}const r=rnd();const status=r<.45?'Accepted':r<.65?'Paid':r<.78?'Pending payer':r<.88?'Rejected':r<.95?'Denied':'Draft';const paid=status==='Paid'?Math.round(billed*(0.55+rnd()*0.3)):0;claims.push({id:'CLM-'+(20560-i),patient:patient(i+10),type:rnd()<.7?'837P':'837I',provider:'Dr. '+pr.last,providerFull:pr.name,loc:LOCS[i%3],payer:p[0],billed,paid,status,dos:dateStr(),lines,icds:[ICDS[i%ICDS.length],ICDS[(i+5)%ICDS.length]],payerClm:'PC'+ri(100000000,999999999),rejReason:status==='Rejected'?pick(['Subscriber ID not found','Invalid POS code','Missing rendering NPI','Duplicate claim']):null,denCode:status==='Denied'?pick(['CO-197: precert absent','CO-50: not medically necessary','PR-204: not covered by plan']):null});}
+
+/* claim status (120) */
+const CATS=[['A2','Acknowledged: accepted for processing'],['P3','Pending: under review'],['F1','Finalized: payment'],['F2','Finalized: denial'],['P1','Pending: in process']];
+const statusChecks=[];
+for(let i=0;i<120;i++){const c=claims[i%claims.length],cat=CATS[i%CATS.length];statusChecks.push({claim:c.id,patient:c.patient,payer:c.payer,cat:cat[0],catDesc:cat[1],amt:cat[0]==='F1'?usd(c.billed*0.7):null,payerClm:c.payerClm,checked:dateStr()+', '+timeStr(),history:[dateStr()+': 276 sent, '+cat[0]+' returned',dateStr()+': 276 sent, P1 returned',dateStr()+': claim acknowledged (999)']});}
+
+/* ERA (100) */
+const eras=[];
+for(let i=0;i<100;i++){const p=PAYERS[i%PAYERS.length],n=ri(2,8);let billed=0,paid=0,pr=0;const pays=[];for(let j=0;j<n;j++){const b=ri(1200,28000),al=Math.round(b*(0.5+rnd()*0.35)),pp=Math.round(al*(0.75+rnd()*0.25)),prr=al-pp;billed+=b;paid+=pp;pr+=prr;pays.push({claim:'CLM-'+(20560-((i*4+j)%140)),billed:b,allowed:al,paid:pp,pr:prr});}eras.push({id:(rnd()<.7?'EFT-':'CHK-')+ri(1000000,9999999),payer:p[0],n,billed,paid,pr,status:rnd()<.65?'Posted':'New',date:dateStr(),method:rnd()<.7?'ACH':'Paper check',pays});}
+
+/* attachments (100) */
+const attachments=[];
+for(let i=0;i<100;i++){const c=claims[(i*2)%claims.length],r=rnd();attachments.push({claim:c.id,payer:c.payer,doc:DOCS[i%DOCS.length],req:dateStr(),due:dateStr(),status:r<.5?'Sent':r<.75?'Awaiting upload':r<.9?'Accepted':'Overdue',ctrl:'PWK-'+ri(100000,999999),pages:ri(2,40)});}
+
+/* COB (100) */
+const cob=[];
+for(let i=0;i<100;i++){const p1=PAYERS[i%PAYERS.length],p2=PAYERS[(i+5)%PAYERS.length];cob.push({patient:patient(i+20),primary:p1[0],secondary:p2[0],eff:'0'+ri(1,9)+'/01/'+ri(2024,2026),rule:COB_RULES[i%COB_RULES.length],m1:memberId(),m2:memberId()});}
+
+/* payer directory (108) */
+const ORGS=['Anthem Blue Cross','Blue Shield','UnitedHealthcare','Aetna','Cigna','Humana','Kaiser Foundation','Health Net','Oscar Health','Molina Healthcare','Centene','WellCare','Bright Health','Ambetter','Regence','Premera','CareFirst','Highmark','EmblemHealth','Geisinger','Scan Health','Astiva Health','Clever Care','Alignment Health','Inland Empire HP','LA Care','Santa Clara Family HP'];
+const VARIANTS=['of CA','Medicare Advantage','HMO','PPO'];
+const payerDir=[];
+ORGS.forEach((o,i)=>VARIANTS.forEach((v,j)=>{payerDir.push({name:o+' '+v,stedi:o.split(' ').map(w=>w.slice(0,3).toUpperCase()).join('')+'-'+v.split(' ').map(w=>w[0]).join('').toUpperCase()+(i*4+j),elig:rnd()<.95,clm:rnd()<.9,era:rnd()<.85,enroll:pick(['None','ERA only','Claims + ERA','All transactions']),avgMs:ri(800,9000)});}));
+
+/* enrollments (100) */
+const ENR_ST=['Live','Live','Live','Provisioning','Submitted','Rejected','Draft'];
+const enrollments=[];
+for(let i=0;i<100;i++){const pr=providers[i%providers.length],p=PAYERS[(i*2)%PAYERS.length],st=ENR_ST[i%ENR_ST.length];enrollments.push({provider:pr.name,payer:p[0],txn:pick(['835 ERA','837P claims','837I claims','270 eligibility']),status:st,task:st==='Provisioning'?'EDI agreement signature':st==='Submitted'?'Awaiting payer (est. 14 days)':st==='Rejected'?'Resubmit with corrected tax ID':null,submitted:dateStr(),docs:st==='Live'?['EDI agreement.pdf','W-9.pdf']:['W-9.pdf'],id:'enr_'+Math.random().toString(36).slice(2,8)});}
+
+/* transactions (160) */
+const TXT=['837P','837I','835','270','271','276','277','275','999','277CA'];
+const txns=[];
+for(let i=0;i<160;i++){const t=TXT[i%TXT.length],inbound=['835','271','277','999','277CA'].includes(t),p=PAYERS[(i*5)%PAYERS.length];const r=rnd();txns.push({id:'txn_'+Math.random().toString(36).slice(2,9),type:t,dir:inbound?'Inbound':'Outbound',partner:p[0],date:dateStr(),time:timeStr(),status:r<.88?(inbound?'Processed':'Delivered'):r<.95?'Mapping failed':'Delivery retry',isa:String(ri(100000000,999999999)),exec:'exec_'+Math.random().toString(36).slice(2,8),bytes:ri(2,180)+' KB'});}
+
+/* generic paginated tables */
+const PER=12;
+const pillFor=s=>{const ok=['Active','Accepted','Paid','Posted','Live','Sent','Complete','Processed','Delivered'];const bad=['Inactive','Rejected','Denied','Overdue','Mapping failed','F2'];const cls=ok.includes(s)?'ok':bad.includes(s)?'bad':s==='New'?'info':'warn';return '<span class="pill '+cls+'">'+s+'</span>';};
+const T={
+ eligibility:{data:eligibility,row:r=>'<td>'+r.patient+'</td><td>'+r.payer+'</td><td>'+r.plan+'</td><td>'+pillFor(r.status)+'</td><td class="money">'+(r.status==='Active'?usd(r.copay):'-')+'</td><td class="money">'+(r.status==='Active'?usd(r.dedT-r.dedM):'-')+'</td><td>'+r.date+', '+r.time+'</td>'},
+ discovery:{data:discovery,row:r=>'<td class="mono">'+r.id+'</td><td>'+r.patient+'</td><td>'+pillFor(r.status)+'</td><td>'+(r.status!=='Complete'?'-':r.found?'Yes':'No coverage located')+'</td><td>'+(r.payer||'-')+'</td>'},
+ claims:{data:claims,row:r=>'<td class="mono">'+r.id+'</td><td>'+r.patient+'</td><td>'+r.type+'</td><td>'+r.provider+'</td><td>'+r.loc+'</td><td>'+r.payer+'</td><td class="money">'+usd(r.billed)+'</td><td>'+pillFor(r.status)+'</td>'},
+ status:{data:statusChecks,row:r=>'<td class="mono">'+r.claim+'</td><td>'+r.payer+'</td><td>'+r.cat+': '+r.catDesc.split(':')[0]+'</td><td>'+(r.cat==='F1'?pillFor('Paid')+' '+(r.amt||''):r.cat==='F2'?pillFor('Denied'):pillFor('In review'))+'</td><td>'+r.checked+'</td>'},
+ era:{data:eras,row:r=>'<td class="mono">'+r.id+'</td><td>'+r.payer+'</td><td>'+r.n+'</td><td class="money">'+usd(r.billed)+'</td><td class="money">'+usd(r.paid)+'</td><td class="money">'+usd(r.pr)+'</td><td>'+pillFor(r.status)+'</td>'},
+ attachments:{data:attachments,row:r=>'<td class="mono">'+r.claim+'</td><td>'+r.payer+'</td><td>'+r.req+'</td><td>'+r.doc+'</td><td>'+r.due+'</td><td>'+pillFor(r.status)+'</td>'},
+ cob:{data:cob,row:r=>'<td>'+r.patient+'</td><td>'+r.primary+'</td><td>'+r.secondary+'</td><td>'+r.eff+'</td><td style="font-size:.72rem;color:var(--sub)">'+r.rule+'</td>'},
+ providers:{data:providers,row:r=>'<td><b>'+r.name+'</b></td><td class="mono">'+r.npi+'</td><td>'+r.spec+'</td><td class="mono">95-4412087</td><td>'+(r.pend?'<span class="pill warn">'+r.pend+' pending</span> ':'')+'<span class="pill ok">'+r.live+' payers live</span></td>'},
+ payers:{data:payerDir,row:r=>'<td><b>'+r.name+'</b></td><td class="mono">'+r.stedi+'</td><td>'+(r.elig?pillFor('Active').replace('Active','270/271'):'-')+'</td><td>'+(r.clm?pillFor('Active').replace('Active','837'):'-')+'</td><td>'+(r.era?pillFor('Active').replace('Active','835'):'-')+'</td><td>'+r.enroll+'</td>'},
+ enrollments:{data:enrollments,row:r=>'<td>'+r.provider+'</td><td>'+r.payer+'</td><td>'+r.txn+'</td><td>'+pillFor(r.status)+'</td><td>'+(r.task||'-')+'</td>'},
+ transactions:{data:txns,row:r=>'<td class="mono">'+r.id+'</td><td>'+r.type+'</td><td>'+r.dir+'</td><td>'+r.partner+'</td><td>'+r.date+'</td><td>'+r.time+'</td><td>'+pillFor(r.status)+'</td>'}
+};
+Object.values(T).forEach(t=>t.page=0);
+
+function renderTable(key){const t=T[key],src=t._filtered||t.data,tb=document.getElementById('tb-'+key);const maxP=Math.ceil(src.length/PER)-1;t.page=Math.max(0,Math.min(t.page,maxP));const s=t.page*PER;tb.innerHTML=src.slice(s,s+PER).map((r,i)=>'<tr class="row-click" data-key="'+key+'" data-i="'+(s+i)+'">'+t.row(r)+'</tr>').join('');document.getElementById('pgr-'+key).innerHTML='<button class="btn-ghost btn-sm" onclick="pg(\''+key+'\',-1)" '+(t.page===0?'disabled':'')+'>‹ Prev</button><span>'+(s+1)+'–'+Math.min(s+PER,src.length)+' of '+src.length+'</span><button class="btn-ghost btn-sm" onclick="pg(\''+key+'\',1)" '+(t.page===maxP?'disabled':'')+'>Next ›</button>';}
+function pg(key,d){T[key].page+=d;renderTable(key)}
+function searchSection(key,text){const t=T[key];if(!text){delete t._filtered;t.page=0;renderTable(key);return;}const q=text.toLowerCase();t._filtered=t.data.filter(r=>Object.values(r).some(v=>v!=null&&String(v).toLowerCase().includes(q)));t.page=0;renderTable(key);}
+Object.keys(T).forEach(renderTable);
+
+/* record counts in section subtitles */
+const counts={discovery:'discovery searches',attachments:'open and historical requests',cob:'patients with overlapping coverage',payers:'payers in network directory',enrollments:'transaction enrollments',transactions:'X12 files exchanged'};
+Object.entries(counts).forEach(([k,label])=>{const el=document.getElementById('sub-'+k);if(el)el.textContent=T[k].data.length+' '+label+' · click a row for detail';});
+document.getElementById('sub-providers').textContent=providers.length+' credentialed providers across all facilities. Managed separately from locations. Click a row for detail.';
+document.getElementById('sub-status').textContent=statusChecks.length+' tracked claims auto-polled every 24h · click a row for the 277 history';
+document.getElementById('sub-eligibility').textContent=eligibility.length+' checks · click any row for the full 271 benefit detail';
+
+/* derived KPIs */
+function updateClaimKpis(){const okClm=claims.filter(c=>['Accepted','Paid'].includes(c.status)).length;const badClm=claims.filter(c=>['Rejected','Denied'].includes(c.status)).length;document.getElementById('kpiClmTotal').textContent=claims.length;document.getElementById('kpiClmOk').textContent=okClm;document.getElementById('kpiClmOkPct').textContent=Math.round(okClm/claims.length*100)+'%';document.getElementById('kpiClmBad').textContent=badClm;document.getElementById('kpiClmPend').textContent=claims.filter(c=>c.status==='Pending payer').length;}
+updateClaimKpis();
+const posted=eras.filter(e=>e.status==='Posted'),unposted=eras.filter(e=>e.status==='New');
+document.getElementById('kpiEraN').textContent=eras.length;document.getElementById('kpiEraPosted').textContent=usd(posted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraPostedN').textContent=posted.length+' remits';document.getElementById('kpiEraUnposted').textContent=usd(unposted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraUnpostedN').textContent=unposted.length+' remits';document.getElementById('kpiEraAdj').textContent=usd(eras.reduce((a,e)=>a+e.billed-e.paid-e.pr,0)/10);
+document.getElementById('kpiRejQueue').textContent=claims.filter(c=>['Rejected','Denied'].includes(c.status)).length+' to fix';document.getElementById('kpiEraQueue').textContent=unposted.length+' new';document.getElementById('kpiAttQueue').textContent=attachments.filter(a=>a.status==='Overdue').length+' urgent';
+['locClm1','locClm2','locClm3'].forEach((id,i)=>{document.getElementById(id).textContent=claims.filter(c=>c.loc===LOCS[i]).length+' claims'});
+
+/* drawer */
+const drawer=document.getElementById('drawer'),ovl=document.getElementById('ovl');
+const kv=o=>'<dl class="kv">'+Object.entries(o).filter(([,v])=>v!=null).map(([k,v])=>'<dt>'+k+'</dt><dd>'+v+'</dd>').join('')+'</dl>';
+const dhead=(t,s)=>'<div class="d-head"><h2>'+t+'</h2><button class="x" onclick="closeDrawer()" aria-label="Close">✕</button></div><div class="d-sub">'+s+'</div>';
+const dsec=(t,inner)=>'<div class="dsec"><h4>'+t+'</h4>'+inner+'</div>';
+const mini=(heads,rows)=>'<div class="tbl-wrap"><table><thead><tr>'+heads.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+
+const DETAIL={
+ eligibility:r=>{const i=eligibility.indexOf(r);return dhead('271 eligibility response',r.patient+' · '+r.payer)+kv({'Coverage':pillFor(r.status),'Member ID':'<span class="mono">'+r.member+'</span>','Group':'<span class="mono">'+r.group+'</span>','DOB':r.dob,'Plan':r.plan,'Plan begin':r.planBegin,'Relationship':'Self (18)','Trace (TRN)':'<span class="mono">'+r.trn+'</span>','Checked':r.date+', '+r.time})+(r.status==='Active'?dsec('Benefits: plan coverage (service type 30)',mini(['Benefit','In network','Out of network'],[['Deductible (ind.)',usd(r.dedT),usd(r.dedT*2)],['Deductible met',usd(r.dedM),usd(Math.round(r.dedM*.6))],['Deductible remaining','<b>'+usd(r.dedT-r.dedM)+'</b>',usd(r.dedT*2-Math.round(r.dedM*.6))],['Out-of-pocket max',usd(r.oopT),usd(r.oopT*2)],['OOP met',usd(r.oopM),usd(Math.round(r.oopM*.5))],['Coinsurance',r.coins+'%',Math.min(50,r.coins+20)+'%']]))+dsec('Benefits: surgical (service type 2)',mini(['Benefit','Value'],[['Copay, facility (POS 24)',usd(r.copay)],['Prior authorization',r.auth?'<span class="pill warn">Required</span>':'<span class="pill ok">Not required</span>'],['Benefit limitation','None reported']]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'271 PDF\',\'271 benefit response PDF generated and downloaded.\')">Download 271 PDF</button> <button class="btn-ghost btn-sm" onclick="view271x12('+i+')">View raw X12</button>'):dsec('Result','<div class="empty-note">'+(r.status==='Inactive'?'Payer reports coverage terminated. Run insurance discovery to locate replacement coverage.':'Payer connection timed out (AAA*42). Retry the check or use the raw X12 endpoint.')+'</div><button class="btn-ghost btn-sm" onclick="drawerAct(\'Insurance discovery\',\'Discovery search started across the payer network.\')">Run insurance discovery</button>'));},
+ discovery:r=>dhead('Insurance discovery',r.patient)+kv({'Discovery ID':'<span class="mono">'+r.id+'</span>','Status':pillFor(r.status),'DOB':r.dob,'Started':r.date})+(r.status==='Complete'?dsec('Result',r.found?kv({'Coverage found':'<span class="pill ok">Yes</span>','Payer':r.payer,'Plan':r.plan,'Member ID':'<span class="mono">'+r.member+'</span>'})+'<button class="btn-ghost btn-sm" onclick="drawerAct(\'Eligibility check\',\'270 sent to '+r.payer+'; 271 returned, active coverage confirmed.\')">Run full 270/271 check</button>':'<div class="empty-note">No active coverage located across the payer network. Patient flagged for self-pay workflow.</div>'):dsec('Result','<div class="empty-note">Search in progress across payer networks. Poll GET /insurance-discovery/check/v1/{discoveryId} for completion.</div>')),
+ claims:r=>dhead(r.id,r.patient+' · '+r.type+' · DOS '+r.dos)+kv({'Status':pillFor(r.status)+(r.rejReason?' '+r.rejReason:'')+(r.denCode?' '+r.denCode:''),'Rendering provider':r.providerFull,'Service facility':r.loc,'Payer':r.payer,'Payer claim #':'<span class="mono">'+r.payerClm+'</span>','Billed':'<b>'+usd(r.billed)+'</b>','Paid':r.paid?'<b>'+usd(r.paid)+'</b>':'-'})+dsec('Service lines',mini(['CPT','Description','Mod','Units','Charge'],r.lines.map(l=>['<span class="mono">'+l.cpt+'</span>',l.desc,l.mod||'-',l.units,usd(l.charge)])))+dsec('Diagnoses (ICD-10)',r.icds.map(c=>'<span class="tag mono">'+c+'</span>').join(' '))+dsec('Timeline',mini(['Event','When'],[['Claim created',r.dos],['Submitted to clearinghouse',r.dos],['999 acknowledgment',r.dos],[r.status==='Draft'?'Awaiting submission':'Payer status: '+r.status,'Latest']]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'CMS-1500\',\'CMS-1500 PDF generated for '+r.id+'.\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="drawerAct(\'276 status\',\'276 sent to '+r.payer+'. 277 category A2: accepted for processing.\')">Check status (276)</button>'+(r.rejReason?' <button class="btn btn-sm" onclick="drawerAct(\'Resubmit\',\''+r.id+' corrected and resubmitted to '+r.payer+'.\')">Fix &amp; resubmit</button>':'')),
+ status:r=>{const i=statusChecks.indexOf(r);return dhead('277 claim status',r.claim+' · '+r.patient)+kv({'Payer':r.payer,'Payer claim #':'<span class="mono">'+r.payerClm+'</span>','Category':r.cat+': '+r.catDesc,'Payment':r.amt||'-','Last checked':r.checked})+dsec('Check history',mini(['Response'],r.history.map(h=>[h])))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="run276('+i+')">Run 276 now</button> <button class="btn-ghost btn-sm" onclick="view277('+i+')">View 277 report</button><div id="statusOut" style="margin-top:12px"></div>');},
+ era:r=>{const i=eras.indexOf(r);return dhead(r.id,r.payer+' · '+r.date)+kv({'Status':pillFor(r.status),'Payment method':r.method,'Claims on remit':r.n,'Total billed':usd(r.billed),'Total paid':'<b>'+usd(r.paid)+'</b>','Patient responsibility':usd(r.pr)})+dsec('Claim payments',mini(['Claim','Billed','Allowed','Paid','Pt resp'],r.pays.map(p=>['<span class="mono">'+p.claim+'</span>',usd(p.billed),usd(p.allowed),usd(p.paid),usd(p.pr)])))+dsec('Adjustment groups (CAS)',mini(['Code','Meaning','Amount'],[['CO-45','Charge exceeds fee schedule',usd(r.billed-r.paid-r.pr)],['PR-1','Deductible',usd(Math.round(r.pr*.55))],['PR-2','Coinsurance',usd(Math.round(r.pr*.45))]]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'ERA PDF\',\'835 remittance PDF generated for '+r.id+'.\')">ERA PDF</button> <button class="btn-ghost btn-sm" onclick="view835('+i+')">View 835 report</button>'+(r.status==='New'?' <button class="btn btn-sm" onclick="drawerAct(\'Posted\',\'Posted '+usd(r.paid)+' across '+r.n+' claims to the PM system.\')">Post to PM system</button>':''));},
+ attachments:r=>dhead('275 attachment',r.claim+' · '+r.payer)+kv({'Status':pillFor(r.status),'Document type':r.doc,'Requested':r.req,'Due':r.due,'Control # (PWK)':'<span class="mono">'+r.ctrl+'</span>','Pages':r.pages})+dsec('Actions',(r.status==='Awaiting upload'||r.status==='Overdue'?'<button class="btn btn-sm" onclick="drawerAct(\'275 attachment\',\'Pre-signed upload URL generated; document transmitted as X12 275 (PWK '+r.ctrl+').\')">Upload document</button> ':'')+'<button class="btn-ghost btn-sm" onclick="drawerAct(\'Request detail\',\''+r.payer+' requested a '+r.doc+' (control '+r.ctrl+', due '+r.due+').\')">View request</button>'),
+ cob:r=>dhead('Coordination of benefits',r.patient)+kv({'Primary payer':r.primary,'Primary member ID':'<span class="mono">'+r.m1+'</span>','Secondary payer':r.secondary,'Secondary member ID':'<span class="mono">'+r.m2+'</span>','Effective':r.eff,'Determination rule':r.rule})+dsec('Recommended action','<div class="empty-note">Bill '+r.primary+' first. Submit the balance with the primary EOB to '+r.secondary+' as a secondary claim.</div><button class="btn-ghost btn-sm" onclick="drawerAct(\'Payer order\',\'Claim payer order updated: '+r.primary+' primary, '+r.secondary+' secondary.\')">Update claim payer order</button>'),
+ providers:r=>dhead(r.name,r.spec)+kv({'NPI':'<span class="mono">'+r.npi+'</span>','Taxonomy':'<span class="mono">'+r.tax+'</span>','Tax ID':'<span class="mono">95-4412087</span>','Billing entity':'Culver City Surgical Partners','Enrollments live':r.live+' payers','Enrollments pending':r.pend||'None'})+dsec('Credentialed locations',LOCS.map(l=>'<span class="tag">'+l+'</span>').join(' '))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'Edit provider\',\'Opening editor for '+r.name+' (mock).\')">Edit provider</button> <button class="btn-ghost btn-sm" onclick="drawerAct(\'New enrollment\',\'New payer enrollment drafted for '+r.name+'.\')">New enrollment</button> <button class="btn-ghost btn-sm" style="color:var(--bad)" onclick="drawerAct(\'Delete\',\'Delete requires confirmation (disabled in mockup).\')">Delete</button>'),
+ payers:r=>dhead(r.name,'Stedi payer directory')+kv({'Stedi ID':'<span class="mono">'+r.stedi+'</span>','Eligibility (270/271)':r.elig?'<span class="pill ok">Supported</span>':'<span class="pill bad">Not supported</span>','Claims (837)':r.clm?'<span class="pill ok">Supported</span>':'<span class="pill bad">Not supported</span>','ERA (835)':r.era?'<span class="pill ok">Supported</span>':'<span class="pill bad">Not supported</span>','Enrollment required':r.enroll,'Avg 271 response':(r.avgMs/1000).toFixed(1)+'s'})+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'Test eligibility\',\'Test 270 sent to '+r.name+'; 271 returned in '+(r.avgMs/1000).toFixed(1)+'s.\')">Run test eligibility</button> <button class="btn-ghost btn-sm" onclick="drawerAct(\'Enrollment\',\'Enrollment workflow started for '+r.name+'.\')">Start enrollment</button>'),
+ enrollments:r=>dhead('Enrollment',r.provider)+kv({'Enrollment ID':'<span class="mono">'+r.id+'</span>','Payer':r.payer,'Transaction':r.txn,'Status':pillFor(r.status),'Submitted':r.submitted,'Open task':r.task||'None'})+dsec('Documents',r.docs.map(d=>'<span class="tag">'+d+'</span>').join(' ')+'<div style="margin-top:10px"><button class="btn-ghost btn-sm" onclick="drawerAct(\'Upload\',\'Document uploaded to enrollment '+r.id+'.\')">Upload document</button></div>')+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'Update\',\'Enrollment '+r.id+' updated.\')">Update enrollment</button>'+(r.task?' <button class="btn btn-sm" onclick="drawerAct(\'Task\',\'Task completed for enrollment '+r.id+'.\')">Complete task</button>':'')),
+ transactions:r=>dhead(r.id,r.type+' · '+r.dir+' · '+r.partner)+kv({'Status':pillFor(r.status),'Received / sent':r.date+', '+r.time,'Size':r.bytes,'ISA control #':'<span class="mono">'+r.isa+'</span>','Execution':'<span class="mono">'+r.exec+'</span>'})+dsec('X12 preview','<div class="x12">ISA*00*          *00*          *ZZ*STEDI          *ZZ*'+r.partner.replace(/[^A-Z]/gi,'').toUpperCase().slice(0,8).padEnd(15)+'*260611*1014*^*00501*'+r.isa+'*0*P*:~\nGS*HC*STEDI*PAYER*20260611*1014*'+r.isa.slice(0,4)+'*X*005010X222A1~\nST*'+(r.type.replace(/[^0-9]/g,'')||'999')+'*0001*005010X222A1~ …</div>')+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'Download\',\'Input X12 ('+r.bytes+') downloaded for '+r.id+'.\')">Download input</button> <button class="btn-ghost btn-sm" onclick="drawerAct(\'Download\',\'Output X12 downloaded for '+r.id+'.\')">Download output</button>'+(r.status!=='Processed'&&r.status!=='Delivered'?' <button class="btn btn-sm" onclick="drawerAct(\'Retry\',\'Event retried for '+r.id+'; redelivery queued.\')">Retry event</button>':''))
+};
+
+let popHandling=false;
+function openDrawer(key,i){
+ drawer.innerHTML=DETAIL[key](T[key].data[i])+'<div id="drawerOut"></div>';
+ if(!drawer.classList.contains('open')){
+  drawer.classList.add('open');ovl.classList.add('open');
+  history.pushState({ui:'drawer',sec:history.state&&history.state.sec},'');
+ }
+ drawer.scrollTop=0;
+}
+function closeDrawer(){
+ if(!drawer.classList.contains('open'))return;
+ if(!popHandling&&history.state&&history.state.ui==='drawer'){history.back();return;}
+ drawer.classList.remove('open');ovl.classList.remove('open');
+}
+function drawerAct(title,msg){const o=document.getElementById('drawerOut');o.innerHTML='<div class="dsec"><h4>'+title+'</h4><div class="empty-note">'+msg+'</div></div>';o.scrollIntoView({block:'nearest'});}
+function drawerX12(title,x12){const o=document.getElementById('drawerOut');o.innerHTML='<div class="dsec"><h4>'+title+'</h4><div class="x12">'+x12+'</div></div>';o.scrollIntoView({block:'nearest'});}
+function view277(i){const r=statusChecks[i];drawerX12('277 claim status report','ST*277*0001*005010X212~\nBHT*0010*08*'+r.payerClm+'*20260611*1213~\nHL*1**20*1~ '+r.payer+'\nHL*2*1*21*1~ Culver City Surgical Partners\nTRN*2*'+r.claim+'~\nSTC*'+r.cat+':20:PR*20260611*WQ*'+(r.amt?r.amt.replace(/[$,]/g,''):'0')+'~\n  '+r.cat+': '+r.catDesc+'\nSE*7*0001~');}
+function run276(i){const r=statusChecks[i];r.history.unshift('Jun 11: 276 sent, '+r.cat+' returned');drawerAct('276 status request','276 sent to '+r.payer+'. Latest 277 category: <b>'+r.cat+': '+r.catDesc+'</b>');}
+function view271x12(i){const r=eligibility[i];drawerX12('271 raw X12','ISA*00*          *00*          *ZZ*STEDI          *ZZ*'+r.payerId.padEnd(15)+'*260611*1213*^*00501*'+r.trn.replace(/\\D/g,'').slice(0,9)+'*0*P*:~\nST*271*0001*005010X279A1~\nBHT*0022*11*'+r.trn+'*20260611~\nNM1*PR*2*'+r.payer+'~\nNM1*IL*1*'+r.patient.split(' ')[1]+'****MI*'+r.member+'~\nEB*1**30**'+r.plan+'~ active coverage\nEB*C*IND*30**'+r.dedT+'~ deductible\nEB*G*IND*30**'+r.oopT+'~ out-of-pocket max\nSE*8*0001~');}
+function view835(i){const r=eras[i],p=r.pays[0];drawerX12('835 electronic remittance advice','ST*835~\nBPR*I*'+r.paid+'*C*ACH~\nTRN*1*'+r.id+'~\nN1*PR*'+r.payer+'~\nN1*PE*Culver City Surgical Partners*XX*1841557020~\nLX*1~\nCLP*'+p.claim+'*1*'+p.billed+'*'+p.paid+'**MC~\nCAS*CO*45*'+(p.billed-p.allowed)+'~\nCAS*PR*1*'+p.pr+'~\nSE*9*0001~');}
+ovl.addEventListener('click',closeDrawer);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer()});
+document.addEventListener('click',e=>{const tr=e.target.closest('tr.row-click');if(tr&&tr.dataset.key)openDrawer(tr.dataset.key,+tr.dataset.i);});
+
+/* nav / theme / menu */
+const navItems=document.querySelectorAll('.nav-item');
+const sections=document.querySelectorAll('.section');
+const titles={overview:'Overview',eligibility:'Eligibility',discovery:'Insurance discovery',claims:'Claims',status:'Claim status',era:'Remittances (ERA)',attachments:'Attachments',cob:'Coordination of benefits',appeals:'Appeals',providers:'Providers',locations:'Locations',payers:'Payer directory',enrollments:'Enrollments',docupipe:'DocuPipe intake',print:'Print center',transactions:'Transactions & events'};
+function showSection(sec){
+ navItems.forEach(b=>b.classList.toggle('active',b.dataset.sec===sec));
+ sections.forEach(s=>s.classList.toggle('active',s.id==='sec-'+sec));
+ document.getElementById('pageTitle').textContent=titles[sec];
+ document.getElementById('crumb').textContent='Dashboard / '+titles[sec];
+ window.scrollTo({top:0});
+ searchInput.value='';Object.keys(T).forEach(k=>{delete T[k]._filtered;T[k].page=0;});
+ if(T[sec])renderTable(sec);
+}
+navItems.forEach(btn=>{btn.addEventListener('click',()=>{showSection(btn.dataset.sec);history.pushState({sec:btn.dataset.sec},'');});});
+history.replaceState({sec:'overview'},'');
+window.addEventListener('popstate',e=>{
+ popHandling=true;
+ if(drawer.classList.contains('open')){drawer.classList.remove('open');ovl.classList.remove('open');}
+ else if(document.getElementById('sidebar').classList.contains('open')){document.getElementById('sidebar').classList.remove('open');document.getElementById('sideOvl').classList.remove('show');}
+ else if(e.state&&e.state.sec){showSection(e.state.sec);}
+ popHandling=false;
+});
+const btnDark=document.getElementById('btnDark'),btnLight=document.getElementById('btnLight');
+function setTheme(t){document.documentElement.dataset.theme=t;btnDark.classList.toggle('on',t==='dark');btnLight.classList.toggle('on',t==='light');}
+btnDark.onclick=()=>setTheme('dark');
+btnLight.onclick=()=>setTheme('light');
+const sideOvl=document.getElementById('sideOvl');
+function setSidebar(open){
+ const sb=document.getElementById('sidebar');
+ if(open===sb.classList.contains('open'))return;
+ if(open){
+  sb.classList.add('open');sideOvl.classList.add('show');
+  history.pushState({ui:'side',sec:history.state&&history.state.sec},'');
+ }else{
+  if(!popHandling&&history.state&&history.state.ui==='side'){history.back();return;}
+  sb.classList.remove('open');sideOvl.classList.remove('show');
+ }
+}
+document.getElementById('menuBtn').onclick=()=>setSidebar(!document.getElementById('sidebar').classList.contains('open'));
+sideOvl.addEventListener('click',()=>setSidebar(false));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')setSidebar(false)});
+navItems.forEach(b=>b.addEventListener('click',()=>setSidebar(false)));
+
+/* search */
+const searchInput=document.getElementById('globalSearch');
+let searchTimer;
+searchInput.addEventListener('input',()=>{
+ clearTimeout(searchTimer);
+ searchTimer=setTimeout(()=>{
+  const active=document.querySelector('.nav-item.active');
+  if(!active||!T[active.dataset.sec]){return;}
+  searchSection(active.dataset.sec,searchInput.value);
+ },200);
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){searchInput.value='';searchInput.dispatchEvent(new Event('input'));}});
+
+/* payer directory search */
+const payerSearchInput=document.getElementById('payerSearchInput');
+function payerSearch(){searchSection('payers',payerSearchInput.value);}
+if(payerSearchInput)payerSearchInput.addEventListener('keydown',e=>{if(e.key==='Enter')payerSearch();});
+</script>
+<script src="lib/data/appeals.js"></script>
+<script src="lib/ai/generateAppealLetter.js"></script>
+<script src="lib/stedi.js"></script>
+<script>
+/* Appeals module: DenialSummaryStats, AppealsTable, detail drawer, NewAppealForm */
+const APL_COLS=[['claimNumber','Claim #'],['patientName','Patient'],['payer','Payer'],['cptCodes','CPT codes'],['denialCode','Denial code'],['denialReason','Denial reason'],['appealType','Appeal type'],['appealStatus','Status'],['deadlineDate','Deadline'],['amountDenied','Amount denied']];
+let aplSort={key:'deadlineDate',dir:1},aplVariant=0;
+const APL_PILL_CLS={'Not Started':'gray','In Progress':'warn','Submitted':'info','Won':'ok','Lost':'bad','Escalated':'esc'};
+const aplPill=s=>'<span class="pill '+APL_PILL_CLS[s]+'">'+s+'</span>';
+const aplDate=s=>new Date(s);
+
+function renderAppealStats(){
+ const a=APPEALS_DATA;
+ const open=a.filter(x=>!['Won','Lost'].includes(x.appealStatus));
+ const atRisk=open.reduce((s,x)=>s+x.amountDenied,0);
+ const won=a.filter(x=>x.appealStatus==='Won').length,lost=a.filter(x=>x.appealStatus==='Lost').length;
+ const wr=(won+lost)?Math.round(won/(won+lost)*100):0;
+ const now=new Date('2026-06-11');
+ const soon=a.filter(x=>{const d=(aplDate(x.deadlineDate)-now)/864e5;return d>=0&&d<=14&&!['Won','Lost'].includes(x.appealStatus)}).length;
+ document.getElementById('appealStats').innerHTML=[
+  ['Total appeals',a.length,'all statuses'],
+  ['Total $ at risk',usd(atRisk),open.length+' open appeals'],
+  ['Win rate',wr+'%',won+' won · '+lost+' lost'],
+  ['Deadlines within 14 days',soon,'act before forfeit']
+ ].map(c=>'<div class="card kpi"><div class="lbl">'+c[0]+'</div><div class="val">'+c[1]+'</div><div class="delta">'+c[2]+'</div></div>').join('');
+}
+function renderAppealsTable(){
+ const k=aplSort.key,d=aplSort.dir;
+ APPEALS_DATA.sort((x,y)=>{let a=x[k],b=y[k];if(Array.isArray(a))a=a.join();if(Array.isArray(b))b=b.join();if(k==='deadlineDate')return d*(aplDate(a)-aplDate(b));if(typeof a==='number')return d*(a-b);return d*String(a).localeCompare(String(b))});
+ document.getElementById('appealsHead').innerHTML='<tr>'+APL_COLS.map(c=>'<th class="sort" data-k="'+c[0]+'">'+c[1]+(aplSort.key===c[0]?(d>0?' ▲':' ▼'):'')+'</th>').join('')+'<th></th></tr>';
+ document.getElementById('tb-appeals').innerHTML=APPEALS_DATA.map((r,i)=>'<tr class="row-click" data-key="appeals" data-i="'+i+'"><td class="mono">'+r.claimNumber+'</td><td>'+r.patientName+'</td><td>'+r.payer+'</td><td class="mono">'+r.cptCodes.join(', ')+'</td><td class="mono">'+r.denialCode+'</td><td style="font-size:.72rem;color:var(--sub)">'+r.denialReason+'</td><td>'+r.appealType+'</td><td>'+aplPill(r.appealStatus)+'</td><td>'+r.deadlineDate+'</td><td class="money">'+usd(r.amountDenied)+'</td><td><button class="btn-ghost btn-sm">View</button></td></tr>').join('');
+}
+document.getElementById('appealsHead').addEventListener('click',e=>{
+ const th=e.target.closest('th.sort');if(!th)return;
+ const k=th.dataset.k;
+ aplSort=aplSort.key===k?{key:k,dir:-aplSort.dir}:{key:k,dir:1};
+ renderAppealsTable();
+ e.stopPropagation();
+});
+
+T.appeals={data:APPEALS_DATA,page:0,row:()=>''};
+DETAIL.appeals=r=>{
+ const i=APPEALS_DATA.indexOf(r);
+ if(!r.documents)r.documents=['Submitted','Won','Escalated','Lost'].includes(r.appealStatus)?[{name:'appeal-letter.pdf',size:'88 KB',date:r.submittedDate}]:[];
+ return dhead('Appeal '+r.id,r.patientName+' · '+r.payer+' · '+aplPill(r.appealStatus))
+ +kv({'Claim #':'<span class="mono">'+r.claimNumber+'</span>','Patient DOB':r.patientDOB,'Date of service':r.dateOfService,'Submitted':r.submittedDate,'CPT codes':'<span class="mono">'+r.cptCodes.join(', ')+'</span>','Diagnosis (ICD-10)':'<span class="mono">'+r.diagnosisCodes.join(', ')+'</span>','Denial code':'<span class="mono">'+r.denialCode+'</span>','Denial reason':r.denialReason,'Appeal type':r.appealType,'Deadline':r.deadlineDate,'Assigned to':r.assignedTo,'Amount billed':usd(r.amountBilled),'Amount denied':'<b>'+usd(r.amountDenied)+'</b>','Notes':r.notes})
+ +dsec('Appeal letter','<div class="letter" id="aplLetter">'+r.appealLetterDraft+'</div><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" onclick="aplAccept('+i+')">Accept</button><button class="btn-ghost btn-sm" onclick="aplRegen('+i+')">Regenerate</button><button class="btn-ghost btn-sm" onclick="aplEdit()">Edit</button></div>')
+ +dsec('Supporting documents (275)',(r.documents.length?mini(['Document','Size','Attached'],r.documents.map(d=>['<span class="mono">'+d.name+'</span>',d.size,d.date])):'<div class="empty-note">No documents attached yet.</div>')+'<input type="file" id="aplFile" style="display:none" onchange="aplFileChosen('+i+')"><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" onclick="document.getElementById(\'aplFile\').click()">Attach document</button><button class="btn-ghost btn-sm" onclick="aplAddSample('+i+')">Add sample op report</button></div><div class="empty-note" id="aplDocOut"></div>')
+ +dsec('Timeline',mini(['Date','Action','User'],r.timeline.map(t=>[t.date,t.action,t.user])))
+ +dsec('Stedi actions','<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-ghost btn-sm" onclick="aplStedi('+i+',\'resubmit\')">Resubmit claim</button><button class="btn-ghost btn-sm" onclick="aplStedi('+i+',\'status\')">Check status</button><button class="btn-ghost btn-sm" onclick="aplStedi('+i+',\'attach\')">Attach docs</button></div><div class="empty-note" id="aplStediOut"></div>');
+};
+function aplRegen(i){aplVariant=(aplVariant+1)%3;document.getElementById('aplLetter').textContent=generateAppealLetter(APPEALS_DATA[i],aplVariant);}
+function aplEdit(){const el=document.getElementById('aplLetter');el.contentEditable=el.contentEditable==='true'?'false':'true';if(el.contentEditable==='true')el.focus();}
+function aplAccept(i){const r=APPEALS_DATA[i];r.appealLetterDraft=document.getElementById('aplLetter').textContent;r.timeline.push({date:'06/11/2026',action:'Appeal letter accepted',user:'K. Vu'});openDrawer('appeals',i);}
+function aplFileChosen(i){const inp=document.getElementById('aplFile');if(!inp.files||!inp.files.length)return;const f=inp.files[0];aplAttachDoc(i,f.name,f.size<1024?f.size+' B':Math.round(f.size/1024)+' KB');}
+function aplAddSample(i){const r=APPEALS_DATA[i];const names=['operative-report.pdf','imaging-mri.pdf','anesthesia-record.pdf','pathology-report.pdf','medical-records.pdf'];aplAttachDoc(i,names[r.documents.length%names.length],(120+Math.floor(Math.random()*900))+' KB');}
+async function aplAttachDoc(i,name,size){
+ const r=APPEALS_DATA[i];
+ r.documents=r.documents||[];
+ r.documents.push({name,size,date:'06/11/2026'});
+ r.timeline.push({date:'06/11/2026',action:'Document attached: '+name,user:'K. Vu'});
+ const res=await StediMock.submitAttachment(r.claimNumber,name);
+ openDrawer('appeals',i);
+ const out=document.getElementById('aplDocOut');if(out)out.textContent=name+' transmitted as X12 275 via Stedi (mock) · '+JSON.stringify(res);
+}
+async function aplStedi(i,act){
+ const r=APPEALS_DATA[i],out=document.getElementById('aplStediOut');
+ out.textContent='Calling Stedi mock…';
+ let res,label;
+ if(act==='resubmit'){res=await StediMock.resubmitClaim(r.claimNumber);label='Claim resubmitted via Stedi (mock)';}
+ else if(act==='status'){res=await StediMock.checkClaimStatus(r.claimNumber);label='Claim status checked via Stedi (mock)';}
+ else{res=await StediMock.submitAttachment(r.claimNumber,'clinical-docs.pdf');label='Attachment submitted via Stedi 275 (mock)';}
+ r.timeline.push({date:'06/11/2026',action:label,user:'K. Vu'});
+ out.textContent=label+' · '+JSON.stringify(res);
+}
+
+function toggleNewAppeal(show){document.getElementById('newAppealCard').style.display=show?'block':'none';if(show)window.scrollTo({top:0});}
+const naVal=id=>document.getElementById(id).value;
+function naAppealObj(){
+ return{id:'APL-'+(1001+APPEALS_DATA.length),patientName:naVal('na-patient'),patientDOB:naVal('na-dob'),claimNumber:naVal('na-claim'),dateOfService:naVal('na-dos'),submittedDate:'06/11/2026',payer:naVal('na-payer'),cptCodes:naVal('na-cpt').split(',').map(s=>s.trim()).filter(Boolean),diagnosisCodes:naVal('na-dx').split(',').map(s=>s.trim()).filter(Boolean),denialCode:naVal('na-denial'),denialReason:naVal('na-reason'),appealType:naVal('na-type'),appealStatus:'Not Started',deadlineDate:naVal('na-deadline'),assignedTo:naVal('na-assigned'),amountBilled:+naVal('na-billed')||0,amountDenied:+naVal('na-denied')||0,appealLetterDraft:document.getElementById('newLetter').textContent,notes:'Created from dashboard form.',timeline:[{date:'06/11/2026',action:'Appeal created',user:'K. Vu'}]};
+}
+function aiGenerateNewLetter(){document.getElementById('newLetter').textContent=generateAppealLetter(naAppealObj(),Math.floor(Math.random()*3));}
+function createAppeal(){APPEALS_DATA.push(naAppealObj());toggleNewAppeal(false);renderAppealStats();renderAppealsTable();}
+
+renderAppealStats();
+renderAppealsTable();
+
+/* Create forms: Providers, Claims, Enrollments, Payers */
+const CREATE={
+ providers:{title:'Add provider',data:providers,key:'providers',fields:[
+  {k:'name',label:'Provider name',v:'Dr. '},
+  {k:'spec',label:'Specialty',type:'select',opts:SPECS.map(s=>s[0])},
+  {k:'npi',label:'NPI (blank to auto-generate)',v:''}
+ ],build:v=>{const sp=SPECS.find(s=>s[0]===v.spec)||SPECS[0];const last=(v.name.replace(/^Dr\.\s*/,'').split(',')[0].trim().split(' ').slice(-1)[0])||'New';return{name:v.name||'Dr. New Provider',last,spec:v.spec,tax:sp[1],npi:v.npi||npi(),live:0,pend:0};}},
+ claims:{title:'New claim',data:claims,key:'claims',fields:[
+  {k:'patient',label:'Patient name',v:''},
+  {k:'type',label:'Claim type',type:'select',opts:['837P','837I']},
+  {k:'provider',label:'Rendering provider',type:'select',opts:providers.slice(0,12).map(p=>p.name)},
+  {k:'loc',label:'Service facility',type:'select',opts:LOCS},
+  {k:'payer',label:'Payer',type:'select',opts:PAYERS.map(p=>p[0])},
+  {k:'cpt',label:'CPT codes (comma separated)',v:'29881'},
+  {k:'dx',label:'Diagnosis ICD-10 (comma separated)',v:'M17.11'},
+  {k:'billed',label:'Amount billed',v:'8500'}
+ ],build:v=>{const cpts=v.cpt.split(',').map(s=>s.trim()).filter(Boolean);const billed=+v.billed||0;const per=cpts.length?Math.round(billed/cpts.length):billed;return{id:'CLM-'+(20561+claims.length),patient:v.patient||'New Patient',type:v.type,provider:'Dr. '+(v.provider.replace(/^Dr\.\s*/,'').split(',')[0].trim().split(' ').slice(-1)[0]),providerFull:v.provider,loc:v.loc,payer:v.payer,billed,paid:0,status:'Draft',dos:'06/11/2026',lines:cpts.map(c=>{const m=CPTS.find(x=>x[0]===c);return{cpt:c,desc:m?m[1]:'Procedure',mod:'',units:1,charge:per};}),icds:v.dx.split(',').map(s=>s.trim()).filter(Boolean),payerClm:'PC'+ri(100000000,999999999),rejReason:null,denCode:null};}},
+ enrollments:{title:'New enrollment',data:enrollments,key:'enrollments',fields:[
+  {k:'provider',label:'Provider',type:'select',opts:providers.slice(0,12).map(p=>p.name)},
+  {k:'payer',label:'Payer',type:'select',opts:PAYERS.map(p=>p[0])},
+  {k:'txn',label:'Transaction',type:'select',opts:['835 ERA','837P claims','837I claims','270 eligibility']}
+ ],build:v=>({provider:v.provider,payer:v.payer,txn:v.txn,status:'Draft',task:'Complete EDI agreement',submitted:'06/11/2026',docs:['W-9.pdf'],id:'enr_'+Math.random().toString(36).slice(2,8)})},
+ payers:{title:'Add payer',data:payerDir,key:'payers',fields:[
+  {k:'name',label:'Payer name',v:''},
+  {k:'stedi',label:'Stedi ID',v:''},
+  {k:'enroll',label:'Enrollment required',type:'select',opts:['None','ERA only','Claims + ERA','All transactions']}
+ ],build:v=>({name:v.name||'New Payer',stedi:v.stedi||('PAYER-'+ri(100,999)),elig:true,clm:true,era:true,enroll:v.enroll,avgMs:ri(800,4000)})}
+};
+function openCreate(key){
+ const c=CREATE[key];
+ document.getElementById('createModal').innerHTML='<div class="d-head"><h2>'+c.title+'</h2><button class="x" onclick="closeCreate()" aria-label="Close">✕</button></div>'+
+  c.fields.map(f=>'<div class="field" style="margin-bottom:12px"><label>'+f.label+'</label>'+(f.type==='select'?'<select id="cf-'+f.k+'">'+f.opts.map(o=>'<option>'+o+'</option>').join('')+'</select>':'<input id="cf-'+f.k+'" value="'+(f.v||'')+'">')+'</div>').join('')+
+  '<div style="margin-top:16px;display:flex;gap:8px"><button class="btn" onclick="submitCreate(\''+key+'\')">Create</button><button class="btn-ghost" onclick="closeCreate()">Cancel</button></div>';
+ document.getElementById('createOvl').classList.add('open');
+}
+function closeCreate(){document.getElementById('createOvl').classList.remove('open');}
+function submitCreate(key){
+ const c=CREATE[key],v={};
+ c.fields.forEach(f=>{const el=document.getElementById('cf-'+f.k);v[f.k]=el?el.value:'';});
+ c.data.unshift(c.build(v));
+ if(key==='payers')payersMaster=payerDir.slice();
+ T[key].data=key==='payers'?payerDir:c.data;
+ T[key].page=0;renderTable(key);
+ if(key==='claims')updateClaimKpis();
+ closeCreate();openDrawer(key,0);
+}
+document.getElementById('createOvl').addEventListener('click',e=>{if(e.target.id==='createOvl')closeCreate();});
+
+/* Payer search filter */
+let payersMaster=payerDir.slice();
+function filterPayers(){
+ const q=(document.getElementById('payerSearchInput').value||'').toLowerCase().trim();
+ T.payers.data=q?payersMaster.filter(p=>(p.name+' '+p.stedi).toLowerCase().includes(q)):payersMaster;
+ T.payers.page=0;renderTable('payers');
+ const sub=document.getElementById('sub-payers');if(sub)sub.textContent=T.payers.data.length+' payers'+(q?' matching "'+q+'"':' in network directory')+' · click a row for detail';
+}
+document.getElementById('payerSearchInput').addEventListener('input',filterPayers);
+
+/* Toast for section-level buttons (forms, Manage, Search, etc.) that have no dedicated handler */
+let toastTimer;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2600);}
+const TOAST_MSG={
+ 'Run eligibility check':'270 sent. 271 returned: active coverage, $250 copay.',
+ 'Start discovery':'Insurance discovery started across the payer network.',
+ 'Check status':'276 sent. 277 category A2: accepted for processing.',
+ 'Run COB check':'COB checked: Medicare primary, Medigap secondary.',
+ 'Search':'Searching the Stedi payer directory.',
+ 'Export CSV':'Payer directory exported to CSV.',
+ 'browse files':'File picker opened (mock). Drop a PDF to transmit as 275.',
+ 'Manage':'Opening facility settings (mock).',
+ 'Export all':'All enrollments exported.',
+ '+ Add provider':'New provider form (use any row to see detail).',
+ '+ New professional claim (837P)':'New 837P claim draft started.',
+ '+ Institutional (837I)':'New 837I claim draft started.',
+ '+ New enrollment':'New enrollment workflow started.'
+};
+document.addEventListener('click',e=>{
+ const b=e.target.closest('button');
+ if(!b||b.hasAttribute('onclick'))return;
+ if(b.closest('#drawer')||b.closest('#sec-docupipe')||b.closest('#sec-print')||b.classList.contains('nav-item')||b.classList.contains('x')||b.closest('.theme-toggle')||b.closest('.pager')||b.id==='menuBtn'||b.closest('thead'))return;
+ const label=b.textContent.trim();
+ toast(TOAST_MSG[label]||(label+' (mock action)'));
+});
+</script>
+<script src="lib/docupipe.js"></script>
+<script>
+let activeDrawer={key:'',index:-1};
+const EDITABLE_KEYS=new Set(['claims','eligibility','providers','payers','enrollments','attachments','appeals','cob']);
+const EDIT={
+ claims:{title:'Edit claim',fields:[
+  {k:'patient',label:'Patient name',v:''},
+  {k:'type',label:'Claim type',type:'select',opts:['837P','837I']},
+  {k:'providerFull',label:'Rendering provider',v:''},
+  {k:'loc',label:'Service facility',type:'select',opts:LOCS},
+  {k:'payer',label:'Payer',type:'select',opts:PAYERS.map(p=>p[0])},
+  {k:'payerClm',label:'Payer claim #',v:''},
+  {k:'dos',label:'DOS',v:''},
+  {k:'status',label:'Status',type:'select',opts:['Draft','Pending payer','Accepted','Paid','Rejected','Denied']},
+  {k:'billed',label:'Amount billed',v:'0'},
+  {k:'paid',label:'Amount paid',v:'0'},
+  {k:'cpt',label:'CPT codes (comma separated)',v:''},
+  {k:'dx',label:'Diagnosis ICD-10 (comma separated)',v:''}
+ ],render:r=>({patient:r.patient||'',type:r.type||'837P',providerFull:r.providerFull||r.provider||'',loc:r.loc||LOCS[0],payer:r.payer||'',payerClm:r.payerClm||'',dos:r.dos||'',status:r.status||'Draft',billed:r.billed||0,paid:r.paid||0,cpt:(r.lines||[]).map(l=>l.cpt).join(', '),dx:(r.icds||[]).join(', ')}),build:(v,r)=>{const cpts=v.cpt.split(',').map(s=>s.trim()).filter(Boolean);const billed=+v.billed||0;const paid=+v.paid||0;const per=cpts.length?Math.round(billed/cpts.length):billed;return{...r,patient:v.patient||r.patient,type:v.type||r.type,providerFull:v.providerFull||r.providerFull,provider:(v.providerFull||r.providerFull||'').replace(/,.*$/,''),loc:v.loc||r.loc,payer:v.payer||r.payer,payerClm:v.payerClm||r.payerClm,dos:v.dos||r.dos,status:v.status||r.status,billed,paid,lines:cpts.map((c,i)=>{const m=CPTS.find(x=>x[0]===c);const prev=(r.lines||[])[i]||{};return{cpt:c,desc:prev.desc||(m?m[1]:'Procedure'),mod:prev.mod||'',units:prev.units||1,charge:per};}),icds:v.dx.split(',').map(s=>s.trim()).filter(Boolean)};}},
+ eligibility:{title:'Edit eligibility',fields:[
+  {k:'patient',label:'Patient name',v:''},
+  {k:'member',label:'Member ID',v:''},
+  {k:'payer',label:'Payer',type:'select',opts:PAYERS.map(p=>p[0])},
+  {k:'plan',label:'Plan',v:''},
+  {k:'status',label:'Coverage status',type:'select',opts:['Active','Inactive','Pending']},
+  {k:'copay',label:'Copay',v:'0'},
+  {k:'coins',label:'Coinsurance %',v:'0'},
+  {k:'dedT',label:'Deductible total',v:'0'},
+  {k:'dedM',label:'Deductible met',v:'0'},
+  {k:'oopT',label:'OOP max',v:'0'},
+  {k:'oopM',label:'OOP met',v:'0'},
+  {k:'group',label:'Group',v:''},
+  {k:'date',label:'Checked date',v:''}
+ ],render:r=>({...r}),build:(v,r)=>({...r,patient:v.patient||r.patient,member:v.member||r.member,payer:v.payer||r.payer,plan:v.plan||r.plan,status:v.status||r.status,copay:+v.copay||0,coins:+v.coins||0,dedT:+v.dedT||0,dedM:+v.dedM||0,oopT:+v.oopT||0,oopM:+v.oopM||0,group:v.group||r.group,date:v.date||r.date})},
+ providers:{title:'Edit provider',fields:[
+  {k:'name',label:'Provider name',v:''},
+  {k:'spec',label:'Specialty',type:'select',opts:SPECS.map(s=>s[0])},
+  {k:'npi',label:'NPI',v:''},
+  {k:'tax',label:'Taxonomy',v:''},
+  {k:'live',label:'Live enrollments',v:'0'},
+  {k:'pend',label:'Pending enrollments',v:'0'}
+ ],render:r=>({name:r.name||'',spec:r.spec||'',npi:r.npi||'',tax:r.tax||'',live:r.live||0,pend:r.pend||0}),build:(v,r)=>({...r,name:v.name||r.name,spec:v.spec||r.spec,npi:v.npi||r.npi,tax:v.tax||r.tax,last:(v.name||r.name||'').replace(/^Dr\\.\\s*/,'').split(',')[0].trim().split(' ').slice(-1)[0]||r.last,live:+v.live||0,pend:+v.pend||0})},
+ payers:{title:'Edit payer',fields:[
+  {k:'name',label:'Payer name',v:''},
+  {k:'stedi',label:'Stedi ID',v:''},
+  {k:'enroll',label:'Enrollment required',type:'select',opts:['None','ERA only','Claims + ERA','All transactions']},
+  {k:'elig',label:'Eligibility supported',type:'select',opts:['Yes','No']},
+  {k:'clm',label:'Claims supported',type:'select',opts:['Yes','No']},
+  {k:'era',label:'ERA supported',type:'select',opts:['Yes','No']},
+  {k:'avgMs',label:'Avg 271 response ms',v:'1200'}
+ ],render:r=>({name:r.name||'',stedi:r.stedi||'',enroll:r.enroll||'None',elig:r.elig?'Yes':'No',clm:r.clm?'Yes':'No',era:r.era?'Yes':'No',avgMs:r.avgMs||1200}),build:(v,r)=>({...r,name:v.name||r.name,stedi:v.stedi||r.stedi,enroll:v.enroll||r.enroll,elig:v.elig==='Yes',clm:v.clm==='Yes',era:v.era==='Yes',avgMs:+v.avgMs||r.avgMs||1200})},
+ enrollments:{title:'Edit enrollment',fields:[
+  {k:'provider',label:'Provider',v:''},
+  {k:'payer',label:'Payer',type:'select',opts:PAYERS.map(p=>p[0])},
+  {k:'txn',label:'Transaction',type:'select',opts:['835 ERA','837P claims','837I claims','270 eligibility']},
+  {k:'status',label:'Status',type:'select',opts:['Draft','Submitted','Provisioning','Live','Rejected']},
+  {k:'task',label:'Open task',v:''},
+  {k:'submitted',label:'Submitted date',v:''}
+ ],render:r=>({provider:r.provider||'',payer:r.payer||'',txn:r.txn||'',status:r.status||'Draft',task:r.task||'',submitted:r.submitted||''}),build:(v,r)=>({...r,provider:v.provider||r.provider,payer:v.payer||r.payer,txn:v.txn||r.txn,status:v.status||r.status,task:v.task||r.task,submitted:v.submitted||r.submitted})},
+ attachments:{title:'Edit attachment request',fields:[
+  {k:'claim',label:'Claim #',v:''},
+  {k:'payer',label:'Payer',v:''},
+  {k:'doc',label:'Document type',v:''},
+  {k:'req',label:'Requested date',v:''},
+  {k:'due',label:'Due date',v:''},
+  {k:'status',label:'Status',type:'select',opts:['Awaiting upload','Sent','Accepted','Overdue']},
+  {k:'ctrl',label:'Control #',v:''},
+  {k:'pages',label:'Pages',v:'0'}
+ ],render:r=>({claim:r.claim||'',payer:r.payer||'',doc:r.doc||'',req:r.req||'',due:r.due||'',status:r.status||'',ctrl:r.ctrl||'',pages:r.pages||0}),build:(v,r)=>({...r,claim:v.claim||r.claim,payer:v.payer||r.payer,doc:v.doc||r.doc,req:v.req||r.req,due:v.due||r.due,status:v.status||r.status,ctrl:v.ctrl||r.ctrl,pages:+v.pages||0})},
+ appeals:{title:'Edit appeal',fields:[
+  {k:'patientName',label:'Patient',v:''},
+  {k:'payer',label:'Payer',v:''},
+  {k:'claimNumber',label:'Claim #',v:''},
+  {k:'denialCode',label:'Denial code',v:''},
+  {k:'denialReason',label:'Denial reason',v:''},
+  {k:'appealType',label:'Appeal type',v:'Formal Appeal'},
+  {k:'appealStatus',label:'Status',type:'select',opts:['Not Started','In Progress','Submitted','Won','Lost','Escalated']},
+  {k:'deadlineDate',label:'Deadline',v:''},
+  {k:'assignedTo',label:'Assigned to',v:''},
+  {k:'amountBilled',label:'Amount billed',v:'0'},
+  {k:'amountDenied',label:'Amount denied',v:'0'},
+  {k:'notes',label:'Notes',v:''}
+ ],render:r=>({...r}),build:(v,r)=>({...r,patientName:v.patientName||r.patientName,payer:v.payer||r.payer,claimNumber:v.claimNumber||r.claimNumber,denialCode:v.denialCode||r.denialCode,denialReason:v.denialReason||r.denialReason,appealType:v.appealType||r.appealType,appealStatus:v.appealStatus||r.appealStatus,deadlineDate:v.deadlineDate||r.deadlineDate,assignedTo:v.assignedTo||r.assignedTo,amountBilled:+v.amountBilled||0,amountDenied:+v.amountDenied||0,notes:v.notes||r.notes})},
+ cob:{title:'Edit COB',fields:[
+  {k:'patient',label:'Patient',v:''},
+  {k:'primary',label:'Primary payer',v:''},
+  {k:'secondary',label:'Secondary payer',v:''},
+  {k:'m1',label:'Primary member ID',v:''},
+  {k:'m2',label:'Secondary member ID',v:''},
+  {k:'eff',label:'Effective date',v:''},
+  {k:'rule',label:'Determination rule',v:''}
+ ],render:r=>({...r}),build:(v,r)=>({...r,patient:v.patient||r.patient,primary:v.primary||r.primary,secondary:v.secondary||r.secondary,m1:v.m1||r.m1,m2:v.m2||r.m2,eff:v.eff||r.eff,rule:v.rule||r.rule})}
+};
+
+function openEditCurrent(){
+ if(!EDITABLE_KEYS.has(activeDrawer.key)){toast('This record type is read-only right now.');return;}
+ const spec=EDIT[activeDrawer.key];
+ if(!spec){toast('No editor is defined for this record yet.');return;}
+ const record=T[activeDrawer.key]&&T[activeDrawer.key].data[activeDrawer.index];
+ if(!record){toast('Open a record first.');return;}
+ const modal=document.getElementById('createModal');
+ modal.innerHTML='<div class="d-head"><h2>'+spec.title+'</h2><button class="x" onclick="closeCreate()" aria-label="Close">✕</button></div>'+renderEditFields(spec,record)+
+  '<div style="margin-top:16px;display:flex;gap:8px"><button class="btn" id="saveEditBtn">Save changes</button><button class="btn-ghost" onclick="closeCreate()">Cancel</button></div>';
+  setTimeout(()=>{const btn=document.getElementById('saveEditBtn');if(btn)btn.onclick=()=>submitEdit(activeDrawer.key,activeDrawer.index);},0);
+ document.getElementById('createOvl').classList.add('open');
+}
+
+function renderEditFields(spec,record){
+ const values=spec.render?spec.render(record):record;
+ const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+ return spec.fields.map(f=>'<div class="field" style="margin-bottom:12px"><label>'+f.label+'</label>'+(f.type==='select'?'<select id="ef-'+f.k+'">'+f.opts.map(o=>'<option'+(String(values[f.k]||'')===String(o)?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>':'<input id="ef-'+f.k+'" value="'+esc(values[f.k]??f.v??'')+'">')+'</div>').join('');
+}
+
+function submitEdit(key,index){
+ const spec=EDIT[key],record=T[key].data[index],v={};
+ spec.fields.forEach(f=>{const el=document.getElementById('ef-'+f.k);v[f.k]=el?el.value:'';});
+ T[key].data[index]=spec.build(v,record);
+ if(key==='claims')updateClaimKpis();
+ if(key==='eligibility'){const sub=document.getElementById('sub-eligibility');if(sub)sub.textContent=eligibility.length+' checks · click any row for the full 271 benefit detail';}
+ if(key==='attachments'){const sub=document.getElementById('sub-attachments');if(sub)sub.textContent=attachments.length+' open and historical requests · click a row for detail';}
+ if(key==='providers'){const sub=document.getElementById('sub-providers');if(sub)sub.textContent=providers.length+' credentialed providers across all facilities. Managed separately from locations. Click a row for detail.';}
+ renderTable(key);
+ closeCreate();
+ openDrawer(key,index);
+ toast('Record updated.');
+}
+
+const __baseOpenDrawer=window.openDrawer;
+window.openDrawer=function(key,i){
+ activeDrawer={key,index:i};
+ __baseOpenDrawer(key,i);
+ if(EDITABLE_KEYS.has(key)){
+  const head=drawer.querySelector('.d-head');
+  const closeBtn=head&&head.querySelector('.x');
+  if(head&&closeBtn&&!head.querySelector('.edit-btn')) closeBtn.insertAdjacentHTML('beforebegin','<button class="btn-ghost btn-sm edit-btn" onclick="openEditCurrent()">Edit</button>');
+ }
+};
+</script>
+</body>
+</html>

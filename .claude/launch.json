@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ccs-dashboard-docupipe",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/kv8n11/culver-city-surgical-dashboard-docupipe/server.js"],
+      "port": 8742
+    }
+  ]
+}
