@@ -745,7 +745,11 @@ th.sort:hover{color:var(--text)}
           <div class="field" style="margin-bottom:12px"><label>Field mappings</label><textarea class="docu-code small" id="docuMapping"></textarea></div>
           <details class="docu-advanced" open style="margin-bottom:12px">
             <summary>Advanced module metadata</summary>
-            <div class="field" style="margin-top:12px"><label>DocuPipe schema ID</label><input id="docuSchemaId"></div>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:12px;color:var(--sub);font-size:.82rem">
+              <input type="checkbox" id="docuForceSchemaId">
+              Force DocuPipe schema ID for this run
+            </label>
+            <div class="field" style="margin-top:12px"><label>DocuPipe schema ID</label><input id="docuSchemaId" placeholder="Optional override, otherwise DocuPipe auto-selects"></div>
           </details>
           <div class="docu-actions">
             <button class="btn btn-sm" id="docuSaveModuleBtn">Save module</button>
