@@ -44,6 +44,10 @@ If the latest record lives in a separate panel from the history list, bind the s
 
 If the actual schema is created and managed on DocuPipe's site, do not ship a local "Create schema" action that implies otherwise. Keep the schema ID only in advanced metadata when operators need to inspect or override it.
 
+## DocuPipe V3 schema IDs
+
+DocuPipe V3 standardization requires a `schemaId`. Do not assume V3 can infer a schema from the document. If a schema works in DocuPipe's website but the API returns 404, check that the server API key belongs to the same DocuPipe account as the schema.
+
 ## Hidden advanced inputs
 
 If a field is still required for save/load correctness, do not hide it behind a closed `<details>` by default. Advanced metadata can stay advanced, but the first render should still let the operator reach it without a dead-end click path.

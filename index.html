@@ -745,8 +745,13 @@ th.sort:hover{color:var(--text)}
           <div class="field" style="margin-bottom:12px"><label>Field mappings</label><textarea class="docu-code small" id="docuMapping"></textarea></div>
           <details class="docu-advanced" open style="margin-bottom:12px">
             <summary>Advanced module metadata</summary>
+            <div class="field" style="margin-top:12px"><label>Available DocuPipe schemas</label><select id="docuSchemaSelect"><option value="">Refresh schemas to load</option></select></div>
             <div class="field" style="margin-top:12px"><label>DocuPipe schema ID</label><input id="docuSchemaId"></div>
-            <button class="btn-ghost btn-sm" id="docuValidateSchemaBtn" style="margin-top:8px">Validate schema</button>
+            <div class="docu-actions" style="margin-top:8px">
+              <button class="btn-ghost btn-sm" id="docuRefreshSchemasBtn">Refresh schemas</button>
+              <button class="btn btn-sm" id="docuSaveSchemaBtn">Save schema ID</button>
+              <button class="btn-ghost btn-sm" id="docuValidateSchemaBtn">Validate schema</button>
+            </div>
           </details>
           <div class="docu-actions">
             <button class="btn btn-sm" id="docuSaveModuleBtn">Save module</button>

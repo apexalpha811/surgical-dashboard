@@ -3,7 +3,7 @@
     "id": "claim-intake-837p",
     "name": "Professional Claim Intake",
     "enabled": true,
-    "docupipeSchemaId": "3CNrau0Z",
+    "docupipeSchemaId": "kEMrIoXe",
     "stediTarget": "professionalClaim837P",
     "dashboardTarget": "claims",
     "stediEndpoint": "/change/medicalnetwork/professionalclaims/v3/submission",

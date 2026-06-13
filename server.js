@@ -247,6 +247,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/api/docupipe/schemas") {
+    const result = await listDocupipeSchemas(url.searchParams);
+    sendJson(res, 200, result);
+    return;
+  }
+
   const schemaMatch = url.pathname.match(/^\/api\/docupipe\/schemas\/([^/]+)$/);
   if (schemaMatch && req.method === "GET") {
     const schemaId = decodeURIComponent(schemaMatch[1]);
@@ -552,6 +558,38 @@ async function getDocupipeSchema(schemaId) {
       method: "GET",
       headers: { "Accept": "application/json", "X-API-Key": config.docupipeApiKey }
     }))
+  };
+}
+
+async function listDocupipeSchemas(searchParams) {
+  const limit = Math.min(Math.max(Number(searchParams.get("limit") || 1000), 1), 1000);
+  const offset = Math.max(Number(searchParams.get("offset") || 0), 0);
+  if (!isLive() || !config.docupipeApiKey) {
+    const modules = readModules().filter(module => module.docupipeSchemaId).map(module => ({
+      schemaId: module.docupipeSchemaId,
+      schemaName: `${module.name} schema`,
+      origin: "module"
+    }));
+    return { mode: "mock", schemas: modules, total: modules.length, limit, offset };
+  }
+  const upstream = await callJson(`${config.docupipeBaseUrl}/schemas?limit=${limit}&offset=${offset}&exclude_payload=true`, {
+    method: "GET",
+    headers: { "Accept": "application/json", "X-API-Key": config.docupipeApiKey }
+  });
+  const rawSchemas = Array.isArray(upstream) ? upstream : Array.isArray(upstream.schemas) ? upstream.schemas : Array.isArray(upstream.items) ? upstream.items : Array.isArray(upstream.data) ? upstream.data : [];
+  const schemas = rawSchemas.map(schema => ({
+    schemaId: schema.schemaId || schema.id || schema._id || "",
+    schemaName: schema.schemaName || schema.name || schema.title || "Untitled schema",
+    description: schema.description || "",
+    origin: schema.origin || schema.workspaceName || "",
+    timestamp: schema.timestamp || schema.createdAt || schema.updatedAt || ""
+  })).filter(schema => schema.schemaId);
+  return {
+    mode: "live",
+    schemas,
+    total: upstream.total || upstream.count || schemas.length,
+    limit,
+    offset
   };
 }
 

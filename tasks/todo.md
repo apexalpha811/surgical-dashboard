@@ -129,7 +129,7 @@
 
 ## DocuPipe module routing audit (2026-06-12)
 - Removed five stale draft modules from active `data/docupipe-modules.json`; the clone now exposes only the five canonical modules.
-- Kept claim intake pinned to DocuPipe schema `3CNrau0Z`; eligibility, ERA or denial, claim attachment, and provider enrollment are set to DocuPipe auto schema selection.
+- Updated claim intake to DocuPipe schema `kEMrIoXe` for the new DocuPipe API key; eligibility, ERA or denial, claim attachment, and provider enrollment keep their configured schemas or blank IDs as module metadata requires.
 - Changed live standardization payloads so `schemaId` is sent only when present instead of blocking auto selection.
 - Verified `/api/modules` returns exactly five modules and all dashboard targets, Stedi targets, and endpoints align.
 - Verified `/api/stedi/preview` for claims, eligibility, appeals, attachments, and providers returns dashboard-shaped records with the expected values.
