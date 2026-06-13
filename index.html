@@ -1051,22 +1051,26 @@ document.addEventListener('click',e=>{const tr=e.target.closest('tr.row-click');
 const navItems=document.querySelectorAll('.nav-item');
 const sections=document.querySelectorAll('.section');
 const titles={overview:'Overview',eligibility:'Eligibility',discovery:'Insurance discovery',claims:'Claims',status:'Claim status',era:'Remittances (ERA)',attachments:'Attachments',cob:'Coordination of benefits',appeals:'Appeals',providers:'Providers',locations:'Locations',payers:'Payer directory',enrollments:'Enrollments',docupipe:'DocuPipe intake',print:'Print center',transactions:'Transactions & events'};
+const ACTIVE_SECTION_KEY='ccs-active-section';
+function validSection(sec){return Boolean(sec&&titles[sec]&&document.getElementById('sec-'+sec));}
+function rememberedSection(){const hash=(location.hash||'').replace(/^#/,'');const stored=localStorage.getItem(ACTIVE_SECTION_KEY);return validSection(hash)?hash:validSection(stored)?stored:'overview';}
 function showSection(sec){
+ if(!validSection(sec))sec='overview';
  navItems.forEach(b=>b.classList.toggle('active',b.dataset.sec===sec));
  sections.forEach(s=>s.classList.toggle('active',s.id==='sec-'+sec));
  document.getElementById('pageTitle').textContent=titles[sec];
  document.getElementById('crumb').textContent='Dashboard / '+titles[sec];
+ localStorage.setItem(ACTIVE_SECTION_KEY,sec);
  window.scrollTo({top:0});
  searchInput.value='';Object.keys(T).forEach(k=>{delete T[k]._filtered;T[k].page=0;});
  if(T[sec])renderTable(sec);
 }
-navItems.forEach(btn=>{btn.addEventListener('click',()=>{showSection(btn.dataset.sec);history.pushState({sec:btn.dataset.sec},'');});});
-history.replaceState({sec:'overview'},'');
+navItems.forEach(btn=>{btn.addEventListener('click',()=>{showSection(btn.dataset.sec);history.pushState({sec:btn.dataset.sec},'','#'+btn.dataset.sec);});});
 window.addEventListener('popstate',e=>{
  popHandling=true;
  if(drawer.classList.contains('open')){drawer.classList.remove('open');ovl.classList.remove('open');}
  else if(document.getElementById('sidebar').classList.contains('open')){document.getElementById('sidebar').classList.remove('open');document.getElementById('sideOvl').classList.remove('show');}
- else if(e.state&&e.state.sec){showSection(e.state.sec);}
+ else {showSection(e.state&&e.state.sec?e.state.sec:rememberedSection());}
  popHandling=false;
 });
 const btnDark=document.getElementById('btnDark'),btnLight=document.getElementById('btnLight');
@@ -1107,6 +1111,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){searchInput.value='
 const payerSearchInput=document.getElementById('payerSearchInput');
 function payerSearch(){searchSection('payers',payerSearchInput.value);}
 if(payerSearchInput)payerSearchInput.addEventListener('keydown',e=>{if(e.key==='Enter')payerSearch();});
+const initialSection=rememberedSection();
+showSection(initialSection);
+history.replaceState({sec:initialSection},'','#'+initialSection);
 </script>
 <script src="lib/data/appeals.js"></script>
 <script src="lib/ai/generateAppealLetter.js"></script>
