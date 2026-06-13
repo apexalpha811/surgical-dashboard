@@ -79,3 +79,7 @@ When DocuPipe returns claim financials, map both billed and paid amounts into th
 ## Active DocuPipe module list
 
 Keep only production-ready DocuPipe modules in `data/docupipe-modules.json`. Draft or duplicate schema records should not stay selectable after schema creation is removed, because they can point the same document type to stale schema IDs or targets and make parsing look broken.
+
+## Special-section navigation
+
+When a sidebar section has custom renderers instead of a `pgr-*` table pager, handle it explicitly in `showSection`. Do not let `T[sec]` route it through the generic table renderer, or the tab can appear to open while throwing before the hash and active state finish updating.

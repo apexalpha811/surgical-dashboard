@@ -1063,7 +1063,8 @@ function showSection(sec){
  localStorage.setItem(ACTIVE_SECTION_KEY,sec);
  window.scrollTo({top:0});
  searchInput.value='';Object.keys(T).forEach(k=>{delete T[k]._filtered;T[k].page=0;});
- if(T[sec])renderTable(sec);
+ if(sec==='appeals'){if(typeof renderAppealStats==='function')renderAppealStats();if(typeof renderAppealsTable==='function')renderAppealsTable();}
+ else if(T[sec])renderTable(sec);
 }
 navItems.forEach(btn=>{btn.addEventListener('click',()=>{showSection(btn.dataset.sec);history.pushState({sec:btn.dataset.sec},'','#'+btn.dataset.sec);});});
 window.addEventListener('popstate',e=>{
