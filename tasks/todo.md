@@ -151,3 +151,4 @@
 - Added `/api/dashboard-records` backed by the existing `docupipe_imports` table so manual dashboard creates and edits can persist without another Supabase table.
 - Wired create/edit actions for claims, eligibility, providers, payers, enrollments, attachments, appeals, and COB to save dashboard records.
 - On page load, saved dashboard records are re-applied to the in-memory tables and rendered into the dashboard.
+- Added delete support for editable dashboard sections. Deletes prompt for confirmation, remove the local row, and write a deletion tombstone to Supabase so refreshes do not bring the row back.

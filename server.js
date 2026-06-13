@@ -137,6 +137,32 @@ async function saveImportRecord(body) {
 async function readDashboardRecords() {
   if (!hasSupabase()) return [];
   const rows = await supabaseRequest("/docupipe_imports?select=id,target,status,dashboard_record_json,created_at&order=created_at.asc&limit=1000");
+  const latest = new Map();
+  for (const row of (Array.isArray(rows) ? rows : [])) {
+    if (!row || !row.dashboard_record_json || typeof row.dashboard_record_json !== "object") continue;
+    const target = dashboardSectionForStoredTarget(row.target);
+    const record = row.dashboard_record_json;
+    const key = storedDashboardRecordKey(target, record);
+    if (!target || !key) continue;
+    if (row.status === "deleted") {
+      latest.delete(`${target}:${key}`);
+      continue;
+    }
+    latest.set(`${target}:${key}`, {
+      id: row.id,
+      target,
+      sourceTarget: row.target,
+      status: row.status,
+      record,
+      createdAt: row.created_at
+    });
+  }
+  return Array.from(latest.values());
+}
+
+async function readDashboardRecordsRaw() {
+  if (!hasSupabase()) return [];
+  const rows = await supabaseRequest("/docupipe_imports?select=id,target,status,dashboard_record_json,created_at&order=created_at.asc&limit=1000");
   return (Array.isArray(rows) ? rows : [])
     .filter(row => row && row.dashboard_record_json && typeof row.dashboard_record_json === "object")
     .map(row => ({
@@ -168,7 +194,7 @@ async function saveDashboardRecord(body) {
     status: String(body.status || "dashboard"),
     extracted_json: { source: "dashboard", recordKey: String(body.recordKey || "") },
     stedi_preview_json: {},
-    dashboard_record_json: record,
+    dashboard_record_json: { ...record, recordKey: String(body.recordKey || storedDashboardRecordKey(target, record)) },
     warnings: []
   };
   const rows = await supabaseRequest("/docupipe_imports", {
@@ -179,6 +205,35 @@ async function saveDashboardRecord(body) {
   return { mode: "supabase", saved: true, target, import: Array.isArray(rows) ? rows[0] : rows };
 }
 
+async function deleteDashboardRecord(body) {
+  const target = dashboardSectionForStoredTarget(body.target || body.key);
+  if (!target) {
+    sendConfigError("Unknown dashboard record target.");
+  }
+  const recordKey = String(body.recordKey || "");
+  if (!recordKey) {
+    sendConfigError("Missing dashboard record key.");
+  }
+  if (!hasSupabase()) return { mode: "fileless", deleted: false, target, recordKey };
+  const row = {
+    module_id: `dashboard:${target}`,
+    document_id: "",
+    standardization_id: "",
+    target,
+    status: "deleted",
+    extracted_json: { source: "dashboard", recordKey },
+    stedi_preview_json: {},
+    dashboard_record_json: { recordKey },
+    warnings: []
+  };
+  const rows = await supabaseRequest("/docupipe_imports", {
+    method: "POST",
+    headers: { "Prefer": "return=representation" },
+    body: JSON.stringify(row)
+  });
+  return { mode: "supabase", deleted: true, target, recordKey, import: Array.isArray(rows) ? rows[0] : rows };
+}
+
 function dashboardSectionForStoredTarget(target) {
   const value = String(target || "");
   if (value === "professionalClaim837P") return "claims";
@@ -187,6 +242,19 @@ function dashboardSectionForStoredTarget(target) {
   if (value === "claimAttachment275") return "attachments";
   if (value === "providerEnrollment") return "providers";
   if (["claims", "eligibility", "providers", "payers", "enrollments", "attachments", "appeals", "cob"].includes(value)) return value;
+  return "";
+}
+
+function storedDashboardRecordKey(target, record) {
+  if (record.recordKey) return String(record.recordKey);
+  if (target === "claims") return String(record.id || record.payerClm || record.patient || "");
+  if (target === "eligibility") return String(record.trn || [record.patient, record.member, record.payer].filter(Boolean).join("|"));
+  if (target === "providers") return String(record.npi || record.name || "");
+  if (target === "payers") return String(record.stedi || record.name || "");
+  if (target === "enrollments") return String(record.id || [record.provider, record.payer, record.txn].filter(Boolean).join("|"));
+  if (target === "attachments") return String(record.ctrl || [record.claim, record.doc, record.payer].filter(Boolean).join("|"));
+  if (target === "appeals") return String(record.id || record.claimNumber || [record.patientName, record.payer].filter(Boolean).join("|"));
+  if (target === "cob") return String([record.patient, record.primary, record.secondary].filter(Boolean).join("|"));
   return "";
 }
 
@@ -504,6 +572,13 @@ async function handleApi(req, res, url) {
     const body = await readJsonBody(req);
     const result = await saveDashboardRecord(body);
     sendJson(res, 201, result);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/dashboard-records/delete") {
+    const body = await readJsonBody(req);
+    const result = await deleteDashboardRecord(body);
+    sendJson(res, 200, result);
     return;
   }
 

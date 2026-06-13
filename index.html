@@ -994,6 +994,8 @@ function refreshLiveSection(key){if(key==='appeals'){if(typeof renderAppealStats
 function applyLiveRecord(key,record){if(!LIVE_KEYS.has(key)||!T[key]||!record)return;const data=key==='payers'?payerDir:T[key].data;const id=dashboardRecordKey(key,record);const index=data.findIndex(item=>dashboardRecordKey(key,item)===id);if(index>=0)data[index]=record;else data.unshift(record);T[key].data=data;refreshLiveSection(key);}
 async function dashboardApi(path,options){const response=await fetch(path,{headers:{'Content-Type':'application/json','Accept':'application/json'},...(options||{})});const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.error||payload.message||('Request failed with '+response.status));return payload;}
 async function persistDashboardRecord(key,record,status){if(!LIVE_KEYS.has(key)||!record)return;try{await dashboardApi('/api/dashboard-records',{method:'POST',body:JSON.stringify({key,target:key,record,recordKey:dashboardRecordKey(key,record),status:status||'dashboard'})});}catch(error){console.warn(error);toast('Saved locally. Supabase save failed.');}}
+async function persistDashboardDelete(key,record){if(!LIVE_KEYS.has(key)||!record)return;try{await dashboardApi('/api/dashboard-records/delete',{method:'POST',body:JSON.stringify({key,target:key,recordKey:dashboardRecordKey(key,record)})});}catch(error){console.warn(error);toast('Deleted locally. Supabase delete failed.');}}
+function removeLiveRecord(key,index){if(!LIVE_KEYS.has(key)||!T[key])return null;const data=key==='payers'?payerDir:T[key].data;if(index<0||index>=data.length)return null;const removed=data.splice(index,1)[0];if(key==='appeals'){const appealIndex=APPEALS_DATA.indexOf(removed);if(appealIndex>=0)APPEALS_DATA.splice(appealIndex,1);}T[key].data=data;refreshLiveSection(key);return removed;}
 async function loadDashboardRecords(){try{const result=await dashboardApi('/api/dashboard-records');(result.records||[]).forEach(item=>applyLiveRecord(item.target,item.record));if((result.records||[]).length)toast('Loaded saved dashboard data.');}catch(error){console.warn(error);}}
 const posted=eras.filter(e=>e.status==='Posted'),unposted=eras.filter(e=>e.status==='New');
 document.getElementById('kpiEraN').textContent=eras.length;document.getElementById('kpiEraPosted').textContent=usd(posted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraPostedN').textContent=posted.length+' remits';document.getElementById('kpiEraUnposted').textContent=usd(unposted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraUnpostedN').textContent=unposted.length+' remits';document.getElementById('kpiEraAdj').textContent=usd(eras.reduce((a,e)=>a+e.billed-e.paid-e.pr,0)/10);
@@ -1407,6 +1409,20 @@ function submitEdit(key,index){
  toast('Record updated.');
 }
 
+async function deleteCurrentRecord(){
+ if(!EDITABLE_KEYS.has(activeDrawer.key)){toast('This record type is read-only right now.');return;}
+ const key=activeDrawer.key,index=activeDrawer.index;
+ const record=T[key]&&T[key].data[index];
+ if(!record){toast('Open a record first.');return;}
+ const label=dashboardRecordKey(key,record)||'this record';
+ if(!confirm('Are you sure you want to delete '+key+' record '+label+'?'))return;
+ const removed=removeLiveRecord(key,index);
+ if(!removed){toast('Record could not be deleted.');return;}
+ await persistDashboardDelete(key,removed);
+ closeDrawer();
+ toast('Record deleted.');
+}
+
 const __baseOpenDrawer=window.openDrawer;
 window.openDrawer=function(key,i){
  activeDrawer={key,index:i};
@@ -1414,7 +1430,7 @@ window.openDrawer=function(key,i){
  if(EDITABLE_KEYS.has(key)){
   const head=drawer.querySelector('.d-head');
   const closeBtn=head&&head.querySelector('.x');
-  if(head&&closeBtn&&!head.querySelector('.edit-btn')) closeBtn.insertAdjacentHTML('beforebegin','<button class="btn-ghost btn-sm edit-btn" onclick="openEditCurrent()">Edit</button>');
+  if(head&&closeBtn&&!head.querySelector('.edit-btn')) closeBtn.insertAdjacentHTML('beforebegin','<button class="btn-ghost btn-sm edit-btn" onclick="openEditCurrent()">Edit</button><button class="btn-ghost btn-sm delete-btn" style="color:var(--bad)" onclick="deleteCurrentRecord()">Delete</button>');
  }
 };
 setTimeout(loadDashboardRecords,300);
