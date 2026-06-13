@@ -56,7 +56,9 @@ body{
   padding:24px 16px;display:flex;flex-direction:column;gap:4px;
   position:sticky;top:0;height:100vh;overflow-y:auto;
 }
-.logo{display:flex;align-items:center;gap:10px;padding:0 10px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.logo{display:flex;align-items:center;gap:10px;padding:0 10px 20px;border:0;border-bottom:1px solid var(--border);margin-bottom:16px;background:none;color:inherit;font-family:inherit;width:100%;text-align:left;cursor:pointer}
+.logo:hover .logo-name{color:var(--text)}
+.logo:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
 .logo-mark{width:36px;height:36px;border-radius:9px;background:var(--lime);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.95rem;color:#0A0A0F;flex-shrink:0}
 .logo-name{font-weight:700;font-size:.92rem;line-height:1.2}
 .logo-name span{display:block;font-size:.68rem;font-weight:500;color:var(--sub)}
@@ -90,6 +92,22 @@ body{
 }
 .theme-toggle button.on{background:var(--lime);color:#0A0A0F}
 .avatar{width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700}
+.workflow-ribbon{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:-14px 0 24px;
+}
+.queue-chip{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;
+  background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;
+  color:var(--text);font-family:inherit;cursor:pointer;text-align:left;transition:border-color .15s,transform .15s,background .15s;
+}
+.queue-chip:hover,.queue-chip:focus-visible{border-color:var(--lime);transform:translateY(-1px);outline:none}
+.queue-chip.primary{background:var(--lime-soft);border-color:rgba(182,200,0,.45)}
+.queue-chip span{font-size:.74rem;font-weight:700;color:var(--sub);line-height:1.15}
+.queue-chip b{
+  display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;border-radius:999px;
+  background:var(--card2);color:var(--text);font-size:.82rem;font-weight:800;padding:0 8px;
+}
+.queue-chip.primary b{background:var(--lime);color:#0A0A0F}
 
 .btn{
   display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:999px;border:none;
@@ -261,10 +279,10 @@ th.sort:hover{color:var(--text)}
 
 <!-- ================= SIDEBAR ================= -->
 <aside class="sidebar" id="sidebar">
-  <div class="logo">
+  <button class="logo" id="homeLogo" type="button" aria-label="Go to dashboard overview">
     <div class="logo-mark">CC</div>
     <div class="logo-name">Culver City Surgical<span>Revenue Cycle · Stedi EDI</span></div>
-  </div>
+  </button>
 
   <div class="nav-group">Workflow</div>
   <button class="nav-item active" data-sec="overview">⌂&nbsp; Overview</button>
@@ -306,6 +324,16 @@ th.sort:hover{color:var(--text)}
       <button id="btnLight">Light</button>
     </div>
     <div class="avatar">KV</div>
+  </div>
+
+  <div class="workflow-ribbon" aria-label="Workflow shortcuts">
+    <button class="queue-chip" data-jump="eligibility"><span>Eligibility work</span><b id="ribbonElig">0</b></button>
+    <button class="queue-chip" data-jump="claims"><span>Claim rework</span><b id="ribbonClaims">0</b></button>
+    <button class="queue-chip" data-jump="era"><span>ERA posting</span><b id="ribbonEra">0</b></button>
+    <button class="queue-chip" data-jump="attachments"><span>Attachments</span><b id="ribbonAttach">0</b></button>
+    <button class="queue-chip" data-jump="enrollments"><span>Enrollments</span><b id="ribbonEnroll">0</b></button>
+    <button class="queue-chip primary" data-jump="docupipe"><span>DocuPipe intake</span><b>+</b></button>
+    <button class="queue-chip" id="recentRecordsBtn"><span>Recent records</span><b id="recentCount">0</b></button>
   </div>
 
   <!-- ========== OVERVIEW ========== -->
@@ -990,7 +1018,7 @@ function updateClaimKpis(){const okClm=claims.filter(c=>['Accepted','Paid'].incl
 updateClaimKpis();
 const LIVE_KEYS=new Set(['claims','eligibility','providers','payers','enrollments','attachments','appeals','cob']);
 function dashboardRecordKey(key,record){if(!record)return'';if(key==='claims')return record.id||record.payerClm||record.patient;if(key==='eligibility')return record.trn||[record.patient,record.member,record.payer].join('|');if(key==='providers')return record.npi||record.name;if(key==='payers')return record.stedi||record.name;if(key==='enrollments')return record.id||[record.provider,record.payer,record.txn].join('|');if(key==='attachments')return record.ctrl||[record.claim,record.doc,record.payer].join('|');if(key==='appeals')return record.id||record.claimNumber||[record.patientName,record.payer].join('|');if(key==='cob')return[record.patient,record.primary,record.secondary].join('|');return JSON.stringify(record);}
-function refreshLiveSection(key){if(key==='appeals'){if(typeof renderAppealStats==='function')renderAppealStats();if(typeof renderAppealsTable==='function')renderAppealsTable();return;}if(key==='payers')payersMaster=payerDir.slice();if(key==='claims')updateClaimKpis();if(T[key]){T[key].data=key==='payers'?payerDir:T[key].data;T[key].page=0;renderTable(key);}const sub=document.getElementById('sub-'+key);if(sub&&T[key])sub.textContent=T[key].data.length+' saved records · click a row for detail';}
+function refreshLiveSection(key){if(key==='appeals'){if(typeof renderAppealStats==='function')renderAppealStats();if(typeof renderAppealsTable==='function')renderAppealsTable();updateRibbonCounts();return;}if(key==='payers')payersMaster=payerDir.slice();if(key==='claims')updateClaimKpis();if(T[key]){T[key].data=key==='payers'?payerDir:T[key].data;T[key].page=0;renderTable(key);}const sub=document.getElementById('sub-'+key);if(sub&&T[key])sub.textContent=T[key].data.length+' saved records · click a row for detail';updateRibbonCounts();}
 function applyLiveRecord(key,record){if(!LIVE_KEYS.has(key)||!T[key]||!record)return;const data=key==='payers'?payerDir:T[key].data;const id=dashboardRecordKey(key,record);const index=data.findIndex(item=>dashboardRecordKey(key,item)===id);if(index>=0)data[index]=record;else data.unshift(record);T[key].data=data;refreshLiveSection(key);}
 async function dashboardApi(path,options){const response=await fetch(path,{headers:{'Content-Type':'application/json','Accept':'application/json'},...(options||{})});const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.error||payload.message||('Request failed with '+response.status));return payload;}
 async function persistDashboardRecord(key,record,status){if(!LIVE_KEYS.has(key)||!record)return;try{await dashboardApi('/api/dashboard-records',{method:'POST',body:JSON.stringify({key,target:key,record,recordKey:dashboardRecordKey(key,record),status:status||'dashboard'})});}catch(error){console.warn(error);toast('Saved locally. Supabase save failed.');}}
@@ -1027,6 +1055,7 @@ let popHandling=false;
 function openDrawer(key,i){
  drawer.innerHTML=DETAIL[key](T[key].data[i])+'<div id="drawerOut"></div>';
  localStorage.setItem(ACTIVE_DRAWER_KEY,JSON.stringify({key,index:i,recordKey:dashboardRecordKey(key,T[key].data[i])}));
+ rememberRecentRecord(key,i);
  if(!drawer.classList.contains('open')){
   drawer.classList.add('open');ovl.classList.add('open');
   history.pushState({ui:'drawer',sec:history.state&&history.state.sec},'');
@@ -1077,6 +1106,67 @@ function csvValue(value){return '"'+String(value==null?'':value).replace(/"/g,'"
 function downloadCsv(name,rows){downloadTextFile(name,rows.map(row=>row.map(csvValue).join(',')).join('\n'),'text/csv;charset=utf-8');}
 function findBy(arr,key,value){return arr.find(item=>String(item&&item[key])===String(value));}
 function focusRecord(key,index){showSection(key);history.pushState({sec:key},'','#'+key);openDrawer(key,index);}
+function recentRecords(){
+ try{return JSON.parse(localStorage.getItem(RECENT_RECORDS_KEY)||'[]');}catch{return[];}
+}
+function recordLabel(key,record){
+ if(!record)return titles[key]||key;
+ if(key==='claims')return (record.id||'Claim')+' · '+(record.patient||'Unknown patient')+' · '+(record.payer||'Unknown payer');
+ if(key==='eligibility')return (record.patient||'Eligibility')+' · '+(record.payer||'Unknown payer')+' · '+(record.status||'');
+ if(key==='status')return (record.claim||'Status')+' · '+(record.payer||'Unknown payer');
+ if(key==='era')return (record.id||'ERA')+' · '+(record.payer||'Unknown payer');
+ if(key==='attachments')return (record.claim||'Attachment')+' · '+(record.doc||'Document');
+ if(key==='appeals')return (record.claimNumber||record.id||'Appeal')+' · '+(record.patientName||'Unknown patient');
+ if(key==='providers')return (record.name||'Provider')+' · '+(record.npi||'No NPI');
+ if(key==='payers')return (record.name||'Payer')+' · '+(record.stedi||'No Stedi ID');
+ if(key==='enrollments')return (record.provider||'Enrollment')+' · '+(record.payer||'Unknown payer');
+ if(key==='transactions')return (record.id||'Transaction')+' · '+(record.type||'X12');
+ if(key==='cob')return (record.patient||'COB')+' · '+(record.primary||'Primary payer');
+ return titles[key]||key;
+}
+function rememberRecentRecord(key,index){
+ if(!T[key]||!T[key].data[index])return;
+ const record=T[key].data[index],recordKey=dashboardRecordKey(key,record);
+ const item={key,recordKey,label:recordLabel(key,record),title:titles[key]||key,at:new Date().toLocaleString()};
+ const next=[item,...recentRecords().filter(r=>!(r.key===key&&r.recordKey===recordKey))].slice(0,8);
+ localStorage.setItem(RECENT_RECORDS_KEY,JSON.stringify(next));
+ renderRecentCount();
+}
+function renderRecentCount(){const el=document.getElementById('recentCount');if(el)el.textContent=recentRecords().length;}
+function openRecentRecord(key,recordKey){
+ if(!validSection(key)||!T[key])return;
+ const index=T[key].data.findIndex(r=>dashboardRecordKey(key,r)===recordKey);
+ if(index<0){panel('Recent record','That record is no longer in the current dashboard data.');renderRecentCount();return;}
+ focusRecord(key,index);
+}
+function openRecentRecords(){
+ const items=recentRecords();
+ const rows=items.length?items.map(r=>'<button class="queue-chip" style="width:100%;margin-bottom:8px" onclick="closeCreate();openRecentRecord(\''+safeText(r.key)+'\',\''+safeText(r.recordKey)+'\')"><span>'+safeText(r.title)+'<br><small>'+safeText(r.label)+'</small></span><b>'+safeText(r.at.split(',')[0])+'</b></button>').join(''):'<div class="empty-note">Open any dashboard record and it will appear here.</div>';
+ panel('Recent records',rows);
+}
+function queueIndex(key,predicate){return T[key]&&T[key].data.findIndex(predicate);}
+function jumpToWorkQueue(sec){
+ if(sec==='docupipe'){showSection('docupipe');history.pushState({sec:'docupipe'},'','#docupipe');return;}
+ const pick={
+  eligibility:queueIndex('eligibility',r=>r.status!=='Active'),
+  claims:queueIndex('claims',r=>['Rejected','Denied','Draft','Pending payer'].includes(r.status)),
+  era:queueIndex('era',r=>r.status==='New'),
+  attachments:queueIndex('attachments',r=>['Awaiting upload','Overdue'].includes(r.status)),
+  enrollments:queueIndex('enrollments',r=>r.status!=='Live'||Boolean(r.task))
+ };
+ showSection(sec);
+ history.pushState({sec},'','#'+sec);
+ if(Number.isInteger(pick[sec])&&pick[sec]>=0)openDrawer(sec,pick[sec]);
+}
+function updateRibbonCounts(){
+ const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+ set('ribbonElig',eligibility.filter(r=>r.status!=='Active').length);
+ set('ribbonClaims',claims.filter(r=>['Rejected','Denied','Draft','Pending payer'].includes(r.status)).length);
+ set('ribbonEra',eras.filter(r=>r.status==='New').length);
+ set('ribbonAttach',attachments.filter(r=>['Awaiting upload','Overdue'].includes(r.status)).length);
+ set('ribbonEnroll',enrollments.filter(r=>r.status!=='Live'||Boolean(r.task)).length);
+ renderRecentCount();
+}
 function panel(title,html){
  const body=html.indexOf('<')>=0?html:'<div class="empty-note">'+html+'</div>';
  const o=document.getElementById('drawerOut');
@@ -1202,6 +1292,7 @@ const titles={overview:'Overview',eligibility:'Eligibility',discovery:'Insurance
 const ACTIVE_SECTION_KEY='ccs-active-section';
 const ACTIVE_THEME_KEY='ccs-active-theme';
 const ACTIVE_DRAWER_KEY='ccs-active-drawer';
+const RECENT_RECORDS_KEY='ccs-recent-records';
 function validSection(sec){return Boolean(sec&&titles[sec]&&document.getElementById('sec-'+sec));}
 function rememberedSection(){const hash=(location.hash||'').replace(/^#/,'');const stored=localStorage.getItem(ACTIVE_SECTION_KEY);return validSection(hash)?hash:validSection(stored)?stored:'overview';}
 function showSection(sec){
@@ -1217,6 +1308,11 @@ function showSection(sec){
  else if(T[sec])renderTable(sec);
 }
 navItems.forEach(btn=>{btn.addEventListener('click',()=>{showSection(btn.dataset.sec);history.pushState({sec:btn.dataset.sec},'','#'+btn.dataset.sec);});});
+const homeLogo=document.getElementById('homeLogo');
+if(homeLogo)homeLogo.addEventListener('click',()=>{showSection('overview');history.pushState({sec:'overview'},'','#overview');setSidebar(false);});
+document.querySelectorAll('.queue-chip[data-jump]').forEach(btn=>btn.addEventListener('click',()=>jumpToWorkQueue(btn.dataset.jump)));
+const recentRecordsBtn=document.getElementById('recentRecordsBtn');
+if(recentRecordsBtn)recentRecordsBtn.addEventListener('click',openRecentRecords);
 window.addEventListener('popstate',e=>{
  popHandling=true;
  if(drawer.classList.contains('open')){drawer.classList.remove('open');ovl.classList.remove('open');localStorage.removeItem(ACTIVE_DRAWER_KEY);}
@@ -1256,7 +1352,10 @@ searchInput.addEventListener('input',()=>{
   searchSection(active.dataset.sec,searchInput.value);
  },200);
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){searchInput.value='';searchInput.dispatchEvent(new Event('input'));}});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'){searchInput.value='';searchInput.dispatchEvent(new Event('input'));}
+ if(e.key==='/'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement&&document.activeElement.tagName||'')){e.preventDefault();searchInput.focus();}
+});
 
 /* payer directory search */
 const payerSearchInput=document.getElementById('payerSearchInput');
@@ -1266,6 +1365,7 @@ const initialSection=rememberedSection();
 setTheme(localStorage.getItem(ACTIVE_THEME_KEY)==='light'?'light':'dark');
 showSection(initialSection);
 history.replaceState({sec:initialSection},'','#'+initialSection);
+updateRibbonCounts();
 </script>
 <script src="lib/data/appeals.js"></script>
 <script src="lib/ai/generateAppealLetter.js"></script>
@@ -1366,7 +1466,7 @@ function naAppealObj(){
  return{id:'APL-'+(1001+APPEALS_DATA.length),patientName:naVal('na-patient'),patientDOB:naVal('na-dob'),claimNumber:naVal('na-claim'),dateOfService:naVal('na-dos'),submittedDate:'06/11/2026',payer:naVal('na-payer'),cptCodes:naVal('na-cpt').split(',').map(s=>s.trim()).filter(Boolean),diagnosisCodes:naVal('na-dx').split(',').map(s=>s.trim()).filter(Boolean),denialCode:naVal('na-denial'),denialReason:naVal('na-reason'),appealType:naVal('na-type'),appealStatus:'Not Started',deadlineDate:naVal('na-deadline'),assignedTo:naVal('na-assigned'),amountBilled:+naVal('na-billed')||0,amountDenied:+naVal('na-denied')||0,appealLetterDraft:document.getElementById('newLetter').textContent,notes:'Created from dashboard form.',timeline:[{date:'06/11/2026',action:'Appeal created',user:'K. Vu'}]};
 }
 function aiGenerateNewLetter(){document.getElementById('newLetter').textContent=generateAppealLetter(naAppealObj(),Math.floor(Math.random()*3));}
-function createAppeal(){const record=naAppealObj();APPEALS_DATA.push(record);persistDashboardRecord('appeals',record,'created');toggleNewAppeal(false);renderAppealStats();renderAppealsTable();}
+function createAppeal(){const record=naAppealObj();APPEALS_DATA.push(record);persistDashboardRecord('appeals',record,'created');toggleNewAppeal(false);renderAppealStats();renderAppealsTable();updateRibbonCounts();}
 
 renderAppealStats();
 renderAppealsTable();
@@ -1417,6 +1517,7 @@ function submitCreate(key){
  T[key].data=key==='payers'?payerDir:c.data;
  T[key].page=0;renderTable(key);
  if(key==='claims')updateClaimKpis();
+ updateRibbonCounts();
  closeCreate();openDrawer(key,0);
 }
 document.getElementById('createOvl').addEventListener('click',e=>{if(e.target.id==='createOvl')closeCreate();});
@@ -1452,7 +1553,7 @@ const TOAST_MSG={
 document.addEventListener('click',e=>{
  const b=e.target.closest('button');
  if(!b||b.hasAttribute('onclick'))return;
- if(b.closest('#drawer')||b.closest('#sec-docupipe')||b.closest('#sec-print')||b.closest('tr.row-click')||b.classList.contains('nav-item')||b.classList.contains('x')||b.closest('.theme-toggle')||b.closest('.pager')||b.id==='menuBtn'||b.id==='saveEditBtn'||b.closest('thead'))return;
+ if(b.closest('#drawer')||b.closest('#sec-docupipe')||b.closest('#sec-print')||b.closest('.workflow-ribbon')||b.closest('tr.row-click')||b.classList.contains('nav-item')||b.classList.contains('x')||b.classList.contains('logo')||b.closest('.theme-toggle')||b.closest('.pager')||b.id==='menuBtn'||b.id==='saveEditBtn'||b.closest('thead'))return;
  const label=b.textContent.trim();
  panel(label,TOAST_MSG[label]||(label+' completed.'));
 });
@@ -1580,6 +1681,7 @@ function submitEdit(key,index){
  if(key==='attachments'){const sub=document.getElementById('sub-attachments');if(sub)sub.textContent=attachments.length+' open and historical requests · click a row for detail';}
  if(key==='providers'){const sub=document.getElementById('sub-providers');if(sub)sub.textContent=providers.length+' credentialed providers across all facilities. Managed separately from locations. Click a row for detail.';}
  renderTable(key);
+ updateRibbonCounts();
  closeCreate();
  openDrawer(key,index);
  toast('Record updated.');

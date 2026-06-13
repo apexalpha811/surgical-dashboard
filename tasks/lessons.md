@@ -107,3 +107,7 @@ When printing a medical billing packet for a claim, include the full endpoint tr
 ## Browser PDF lock limits
 
 Browser-generated PDFs cannot be truly encrypted or permission-locked without a real PDF engine. For no-dependency packet printing, make the packet read-only in the print window and add packet ID, timestamp, watermark, and SHA-256 integrity hash so stored packets are tamper-evident.
+
+## Dashboard brand navigation
+
+In a dashboard shell, the sidebar brand/logo should behave as a home control. Wire it to the overview route and current app hash instead of leaving it decorative.

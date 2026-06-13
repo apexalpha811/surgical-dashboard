@@ -179,3 +179,11 @@
 - Added a tamper-evident read-only block to claim packet PDFs with packet ID, generated timestamp, claim ID, SHA-256 integrity method, full hash, edit status, and READ ONLY watermark.
 - The print window body is marked `contenteditable="false"` and `data-readonly="true"` with design mode off.
 - Verified in Chrome automation: packet popup opened, read-only label appeared, packet ID appeared, 64-character SHA-256 hash appeared, edit status appeared, body was non-editable, and there were zero console errors, page errors, or failed network responses.
+
+## Efficiency audit pass (2026-06-13)
+- Added a compact workflow ribbon for Eligibility, Claim rework, ERA posting, Attachments, Enrollments, DocuPipe intake, and Recent records.
+- Queue shortcuts now jump directly to the first actionable record and open the drawer when there is work to do.
+- Recent records persist in localStorage and reopen the selected record from the dashboard.
+- The sidebar brand/logo now returns to the Overview route at `#overview`.
+- Added `/` keyboard focus for global search.
+- Verified with `npm run check`, inline script syntax checks, and Chrome automation: counts render, claim and ERA queue jumps open records, Recent records reopens the claim, `/` focuses search, DocuPipe shortcut opens `#docupipe`, logo returns to `#overview`, refresh preserves context, and there are zero console errors, page errors, or failed network responses.
