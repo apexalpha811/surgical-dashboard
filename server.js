@@ -15,6 +15,8 @@ const config = {
   appMode: process.env.APP_MODE || "mock",
   docupipeApiKey: process.env.DOCUPIPE_API_KEY || "",
   stediApiKey: process.env.STEDI_API_KEY || "",
+  supabaseUrl: trimSlash(process.env.SUPABASE_URL || ""),
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
   docupipeBaseUrl: trimSlash(process.env.DOCUPIPE_BASE_URL || "https://app.docupipe.ai"),
   stediHealthcareBaseUrl: trimSlash(process.env.STEDI_HEALTHCARE_BASE_URL || "https://healthcare.us.stedi.com/2024-04-01"),
   stediClaimsBaseUrl: trimSlash(process.env.STEDI_CLAIMS_BASE_URL || "https://claims.us.stedi.com/2025-03-07"),
@@ -43,12 +45,153 @@ function isLive() {
   return config.appMode === "live";
 }
 
-function readModules() {
+function hasSupabase() {
+  return Boolean(config.supabaseUrl && config.supabaseServiceRoleKey);
+}
+
+function readFileModules() {
   return JSON.parse(fs.readFileSync(MODULES_FILE, "utf8")).map(normalizeModule);
 }
 
-function writeModules(modules) {
+function writeFileModules(modules) {
   fs.writeFileSync(MODULES_FILE, `${JSON.stringify(modules, null, 2)}\n`);
+}
+
+async function readModules() {
+  if (!hasSupabase()) return readFileModules();
+  const rows = await supabaseRequest("/docupipe_modules?select=*&order=id.asc");
+  if (Array.isArray(rows) && rows.length) return rows.map(moduleFromRow).map(normalizeModule);
+  const seed = readFileModules();
+  if (seed.length) await upsertModules(seed);
+  return seed;
+}
+
+async function createModule(module) {
+  if (!hasSupabase()) {
+    const modules = readFileModules();
+    modules.push(module);
+    writeFileModules(modules);
+    return module;
+  }
+  const rows = await supabaseRequest("/docupipe_modules", {
+    method: "POST",
+    headers: { "Prefer": "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify([moduleToRow(module)])
+  });
+  return moduleFromRow(Array.isArray(rows) ? rows[0] : rows);
+}
+
+async function updateModule(moduleId, module) {
+  if (!hasSupabase()) {
+    const modules = readFileModules();
+    const index = modules.findIndex(item => item.id === moduleId);
+    if (index < 0) return null;
+    modules[index] = normalizeModule({ ...modules[index], ...module, id: moduleId });
+    writeFileModules(modules);
+    return modules[index];
+  }
+  const next = normalizeModule({ ...module, id: moduleId });
+  const rows = await supabaseRequest(`/docupipe_modules?id=eq.${encodeURIComponent(moduleId)}`, {
+    method: "PATCH",
+    headers: { "Prefer": "return=representation" },
+    body: JSON.stringify(moduleToRow(next))
+  });
+  return Array.isArray(rows) && rows[0] ? moduleFromRow(rows[0]) : null;
+}
+
+async function upsertModules(modules) {
+  if (!hasSupabase()) {
+    writeFileModules(modules);
+    return modules;
+  }
+  const rows = await supabaseRequest("/docupipe_modules", {
+    method: "POST",
+    headers: { "Prefer": "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify(modules.map(moduleToRow))
+  });
+  return Array.isArray(rows) ? rows.map(moduleFromRow) : [];
+}
+
+async function saveImportRecord(body) {
+  if (!hasSupabase()) return { mode: "fileless", saved: false };
+  const preview = body.preview || {};
+  const row = {
+    module_id: String(body.moduleId || preview.module && preview.module.id || ""),
+    document_id: String(body.documentId || body.standardization && body.standardization.documentId || ""),
+    standardization_id: String(body.standardizationId || body.standardization && body.standardization.standardizationId || ""),
+    target: String(body.target || preview.target || ""),
+    status: String(body.status || "imported"),
+    extracted_json: body.extracted || body.standardization || {},
+    stedi_preview_json: preview,
+    dashboard_record_json: body.record || preview.dashboardRecord || {},
+    warnings: Array.isArray(body.warnings) ? body.warnings : Array.isArray(preview.warnings) ? preview.warnings : []
+  };
+  const rows = await supabaseRequest("/docupipe_imports", {
+    method: "POST",
+    headers: { "Prefer": "return=representation" },
+    body: JSON.stringify(row)
+  });
+  return { mode: "supabase", saved: true, import: Array.isArray(rows) ? rows[0] : rows };
+}
+
+async function supabaseRequest(pathname, options = {}) {
+  const response = await fetch(`${config.supabaseUrl}/rest/v1${pathname}`, {
+    method: options.method || "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "apikey": config.supabaseServiceRoleKey,
+      "Authorization": `Bearer ${config.supabaseServiceRoleKey}`,
+      ...(options.headers || {})
+    },
+    body: options.body
+  });
+  const text = await response.text();
+  let body;
+  try {
+    body = text ? JSON.parse(text) : {};
+  } catch {
+    body = { raw: text };
+  }
+  if (!response.ok) {
+    const error = new Error(body.message || `Supabase request failed with ${response.status}`);
+    error.statusCode = response.status;
+    error.details = body;
+    throw error;
+  }
+  return body;
+}
+
+function moduleToRow(module) {
+  const normalized = normalizeModule(module);
+  return {
+    id: normalized.id,
+    name: normalized.name,
+    enabled: normalized.enabled,
+    docupipe_schema_id: normalized.docupipeSchemaId,
+    stedi_target: normalized.stediTarget,
+    dashboard_target: normalized.dashboardTarget,
+    stedi_endpoint: normalized.stediEndpoint,
+    guidelines: normalized.guidelines,
+    json_schema: normalized.jsonSchema,
+    field_mappings: normalized.fieldMappings,
+    updated_at: new Date().toISOString()
+  };
+}
+
+function moduleFromRow(row) {
+  return normalizeModule({
+    id: row.id,
+    name: row.name,
+    enabled: row.enabled,
+    docupipeSchemaId: row.docupipe_schema_id,
+    stediTarget: row.stedi_target,
+    dashboardTarget: row.dashboard_target,
+    stediEndpoint: row.stedi_endpoint,
+    guidelines: row.guidelines,
+    jsonSchema: row.json_schema,
+    fieldMappings: row.field_mappings
+  });
 }
 
 function sendJson(res, statusCode, payload) {
@@ -108,8 +251,8 @@ async function readJsonBody(req) {
   }
 }
 
-function findModule(moduleId) {
-  const modules = readModules();
+async function findModule(moduleId) {
+  const modules = await readModules();
   const module = modules.find(item => item.id === moduleId);
   if (!module) {
     const error = new Error(`Unknown module: ${moduleId}`);
@@ -182,21 +325,20 @@ function stediHeaders() {
 
 async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/modules") {
-    sendJson(res, 200, { modules: readModules() });
+    sendJson(res, 200, { modules: await readModules(), storage: hasSupabase() ? "supabase" : "file" });
     return;
   }
 
   if (req.method === "POST" && url.pathname === "/api/modules") {
     const body = await readJsonBody(req);
-    const modules = readModules();
+    const modules = await readModules();
     const id = safeModuleId(body.id || body.name || "module");
     if (modules.some(item => item.id === id)) {
       sendJson(res, 409, { error: `Module already exists: ${id}` });
       return;
     }
     const next = normalizeModule({ ...body, id, enabled: body.enabled !== false });
-    modules.push(next);
-    writeModules(modules);
+    await createModule(next);
     sendJson(res, 201, { module: next });
     return;
   }
@@ -205,35 +347,32 @@ async function handleApi(req, res, url) {
   if (moduleMatch && req.method === "PUT") {
     const moduleId = decodeURIComponent(moduleMatch[1]);
     const body = await readJsonBody(req);
-    const modules = readModules();
-    const index = modules.findIndex(item => item.id === moduleId);
-    if (index < 0) {
+    const next = await updateModule(moduleId, body);
+    if (!next) {
       sendJson(res, 404, { error: `Unknown module: ${moduleId}` });
       return;
     }
-    modules[index] = normalizeModule({ ...modules[index], ...body, id: moduleId });
-    writeModules(modules);
-    sendJson(res, 200, { module: modules[index] });
+    sendJson(res, 200, { module: next });
     return;
   }
 
   if (moduleMatch && req.method === "DELETE") {
     const moduleId = decodeURIComponent(moduleMatch[1]);
-    const modules = readModules();
+    const modules = await readModules();
     const module = modules.find(item => item.id === moduleId);
     if (!module) {
       sendJson(res, 404, { error: `Unknown module: ${moduleId}` });
       return;
     }
     module.enabled = false;
-    writeModules(modules);
-    sendJson(res, 200, { module });
+    const next = await updateModule(moduleId, module);
+    sendJson(res, 200, { module: next || module });
     return;
   }
 
   if (req.method === "POST" && url.pathname === "/api/docupipe/upload") {
     const body = await readJsonBody(req);
-    const module = findModule(body.moduleId);
+    const module = await findModule(body.moduleId);
     const result = await uploadToDocupipe(module, body);
     sendJson(res, 200, result);
     return;
@@ -241,7 +380,7 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/docupipe/standardize") {
     const body = await readJsonBody(req);
-    const module = findModule(body.moduleId);
+    const module = await findModule(body.moduleId);
     const result = await standardizeWithDocupipe(module, body);
     sendJson(res, 200, result);
     return;
@@ -287,14 +426,21 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/stedi/preview") {
     const body = await readJsonBody(req);
-    const module = findModule(body.moduleId);
+    const module = await findModule(body.moduleId);
     sendJson(res, 200, buildStediPreview(module, body.standardization || body.data || {}, { target: body.target }));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/imports") {
+    const body = await readJsonBody(req);
+    const result = await saveImportRecord(body);
+    sendJson(res, 201, result);
     return;
   }
 
   if (req.method === "POST" && url.pathname === "/api/stedi/submit") {
     const body = await readJsonBody(req);
-    const module = findModule(body.moduleId);
+    const module = await findModule(body.moduleId);
     const preview = body.preview || buildStediPreview(module, body.standardization || body.data || {}, { target: body.target });
     const result = await submitToStedi(module, preview, body);
     sendJson(res, 200, result);
@@ -565,7 +711,7 @@ async function listDocupipeSchemas(searchParams) {
   const limit = Math.min(Math.max(Number(searchParams.get("limit") || 1000), 1), 1000);
   const offset = Math.max(Number(searchParams.get("offset") || 0), 0);
   if (!isLive() || !config.docupipeApiKey) {
-    const modules = readModules().filter(module => module.docupipeSchemaId).map(module => ({
+    const modules = (await readModules()).filter(module => module.docupipeSchemaId).map(module => ({
       schemaId: module.docupipeSchemaId,
       schemaName: `${module.name} schema`,
       origin: "module"

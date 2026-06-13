@@ -141,3 +141,10 @@
 - Added `render.yaml` for a Node web service with `npm install`, `npm start`, `/healthz`, and secret environment variables marked `sync: false`.
 - Added `/healthz` to `server.js`.
 - Verified `npm run check`, `package.json` parsing, Render YAML smoke check, `/healthz`, `/api/modules`, and `/` locally.
+
+## Supabase persistence (2026-06-13)
+- Added server-side Supabase REST storage using `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+- `/api/modules` now reads from Supabase when configured and seeds from `data/docupipe-modules.json` if the table is empty.
+- Module create/update/delete routes write to Supabase when configured, with file fallback for local runs.
+- Added `/api/imports` to persist imported DocuPipe records into `docupipe_imports`.
+- The browser import flow posts reviewed imports to `/api/imports` after adding them to the dashboard.
