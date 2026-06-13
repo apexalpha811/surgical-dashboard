@@ -168,3 +168,9 @@
 - Rechecked endpoint-labeled workflows against Stedi transaction families: 270/271, 276/277, 837, 835, 275, payer directory, transaction logs, and enrollment APIs.
 - Fixed remaining cross-module actions so endpoint results navigate to and open the operational record: claim 276 opens Claim Status, claim resubmission opens Transactions, payer test eligibility opens Eligibility, payer/provider enrollment opens Enrollments, appeal status opens Claim Status, appeal attachments open Attachments, appeal resubmission opens Transactions, ERA posting reopens ERA, and transaction retry reopens the delivered transaction.
 - Verified with Chrome automation across 61 endpoint labels and 14 endpoint sections: no unhandled non-row buttons, no console errors, no page errors, and no failed network responses.
+
+## Persistent context and claim packet printing (2026-06-13)
+- Theme choice now persists in localStorage. If the operator chooses Light and refreshes, the dashboard stays Light.
+- The active section and last-open record drawer now restore after refresh, so a claim page refresh returns to the same claim drawer instead of dropping context.
+- Added `Claim packet PDF` to claim drawers. It opens a printable packet for manual storage with claim summary, CMS-1500 preview, service lines, diagnoses, discovery, 270/271 eligibility, 276/277 claim status, 835 ERA/payment, 275 attachments, appeals/denials, COB, transaction ledger, and generated X12 evidence.
+- Verified in Chrome automation: light theme persisted through reload, Claims plus open `CLM-20560` drawer restored after reload, packet popup opened, and packet text included Packet index, CMS-1500, Eligibility 270/271, Claim status 276/277, ERA/payment 835, Attachments 275, and Stedi endpoint paths. Zero console errors, page errors, or failed network responses.

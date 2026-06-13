@@ -1012,7 +1012,7 @@ const mini=(heads,rows)=>'<div class="tbl-wrap"><table><thead><tr>'+heads.map(h=
 const DETAIL={
  eligibility:r=>{const i=eligibility.indexOf(r);return dhead('271 eligibility response',r.patient+' · '+r.payer)+kv({'Coverage':pillFor(r.status),'Member ID':'<span class="mono">'+r.member+'</span>','Group':'<span class="mono">'+r.group+'</span>','DOB':r.dob,'Plan':r.plan,'Plan begin':r.planBegin,'Relationship':'Self (18)','Trace (TRN)':'<span class="mono">'+r.trn+'</span>','Checked':r.date+', '+r.time})+(r.status==='Active'?dsec('Benefits: plan coverage (service type 30)',mini(['Benefit','In network','Out of network'],[['Deductible (ind.)',usd(r.dedT),usd(r.dedT*2)],['Deductible met',usd(r.dedM),usd(Math.round(r.dedM*.6))],['Deductible remaining','<b>'+usd(r.dedT-r.dedM)+'</b>',usd(r.dedT*2-Math.round(r.dedM*.6))],['Out-of-pocket max',usd(r.oopT),usd(r.oopT*2)],['OOP met',usd(r.oopM),usd(Math.round(r.oopM*.5))],['Coinsurance',r.coins+'%',Math.min(50,r.coins+20)+'%']]))+dsec('Benefits: surgical (service type 2)',mini(['Benefit','Value'],[['Copay, facility (POS 24)',usd(r.copay)],['Prior authorization',r.auth?'<span class="pill warn">Required</span>':'<span class="pill ok">Not required</span>'],['Benefit limitation','None reported']]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="printEligibilityByTrn(\''+r.trn+'\')">Download 271 PDF</button> <button class="btn-ghost btn-sm" onclick="view271x12('+i+')">View raw X12</button>'):dsec('Result','<div class="empty-note">'+(r.status==='Inactive'?'Payer reports coverage terminated. Run insurance discovery to locate replacement coverage.':'Payer connection timed out (AAA*42). Retry the check or use the raw X12 endpoint.')+'</div><button class="btn-ghost btn-sm" onclick="startDiscoveryFromForm()">Run insurance discovery</button>'));},
  discovery:r=>dhead('Insurance discovery',r.patient)+kv({'Discovery ID':'<span class="mono">'+r.id+'</span>','Status':pillFor(r.status),'DOB':r.dob,'Started':r.date})+(r.status==='Complete'?dsec('Result',r.found?kv({'Coverage found':'<span class="pill ok">Yes</span>','Payer':r.payer,'Plan':r.plan,'Member ID':'<span class="mono">'+r.member+'</span>'})+'<button class="btn-ghost btn-sm" onclick="runEligibilityFromDiscovery(\''+r.id+'\')">Run full 270/271 check</button>':'<div class="empty-note">No active coverage located across the payer network. Patient flagged for self-pay workflow.</div>'):dsec('Result','<div class="empty-note">Search in progress across payer networks. Poll GET /insurance-discovery/check/v1/{discoveryId} for completion.</div>')),
- claims:r=>dhead(r.id,r.patient+' · '+r.type+' · DOS '+r.dos)+kv({'Status':pillFor(r.status)+(r.rejReason?' '+r.rejReason:'')+(r.denCode?' '+r.denCode:''),'Rendering provider':r.providerFull,'Service facility':r.loc,'Payer':r.payer,'Payer claim #':'<span class="mono">'+r.payerClm+'</span>','Billed':'<b>'+usd(r.billed)+'</b>','Paid':r.paid?'<b>'+usd(r.paid)+'</b>':'-'})+dsec('Service lines',mini(['CPT','Description','Mod','Units','Charge'],r.lines.map(l=>['<span class="mono">'+l.cpt+'</span>',l.desc,l.mod||'-',l.units,usd(l.charge)])))+dsec('Diagnoses (ICD-10)',r.icds.map(c=>'<span class="tag mono">'+c+'</span>').join(' '))+dsec('Timeline',mini(['Event','When'],[['Claim created',r.dos],['Submitted to clearinghouse',r.dos],['999 acknowledgment',r.dos],[r.status==='Draft'?'Awaiting submission':'Payer status: '+r.status,'Latest']]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="printCms1500ById(\''+r.id+'\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="view277ByClaim(\''+r.id+'\')">Check status (276)</button>'+(r.rejReason?' <button class="btn btn-sm" onclick="submitClaimById(\''+r.id+'\')">Fix &amp; resubmit</button>':'')),
+ claims:r=>dhead(r.id,r.patient+' · '+r.type+' · DOS '+r.dos)+kv({'Status':pillFor(r.status)+(r.rejReason?' '+r.rejReason:'')+(r.denCode?' '+r.denCode:''),'Rendering provider':r.providerFull,'Service facility':r.loc,'Payer':r.payer,'Payer claim #':'<span class="mono">'+r.payerClm+'</span>','Billed':'<b>'+usd(r.billed)+'</b>','Paid':r.paid?'<b>'+usd(r.paid)+'</b>':'-'})+dsec('Service lines',mini(['CPT','Description','Mod','Units','Charge'],r.lines.map(l=>['<span class="mono">'+l.cpt+'</span>',l.desc,l.mod||'-',l.units,usd(l.charge)])))+dsec('Diagnoses (ICD-10)',r.icds.map(c=>'<span class="tag mono">'+c+'</span>').join(' '))+dsec('Timeline',mini(['Event','When'],[['Claim created',r.dos],['Submitted to clearinghouse',r.dos],['999 acknowledgment',r.dos],[r.status==='Draft'?'Awaiting submission':'Payer status: '+r.status,'Latest']]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="printClaimPacketById(\''+r.id+'\')">Claim packet PDF</button> <button class="btn-ghost btn-sm" onclick="printCms1500ById(\''+r.id+'\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="view277ByClaim(\''+r.id+'\')">Check status (276)</button>'+(r.rejReason?' <button class="btn btn-sm" onclick="submitClaimById(\''+r.id+'\')">Fix &amp; resubmit</button>':'')),
  status:r=>{const i=statusChecks.indexOf(r);return dhead('277 claim status',r.claim+' · '+r.patient)+kv({'Payer':r.payer,'Payer claim #':'<span class="mono">'+r.payerClm+'</span>','Category':r.cat+': '+r.catDesc,'Payment':r.amt||'-','Last checked':r.checked})+dsec('Check history',mini(['Response'],r.history.map(h=>[h])))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="run276('+i+')">Run 276 now</button> <button class="btn-ghost btn-sm" onclick="view277('+i+')">View 277 report</button><div id="statusOut" style="margin-top:12px"></div>');},
  era:r=>{const i=eras.indexOf(r);return dhead(r.id,r.payer+' · '+r.date)+kv({'Status':pillFor(r.status),'Payment method':r.method,'Claims on remit':r.n,'Total billed':usd(r.billed),'Total paid':'<b>'+usd(r.paid)+'</b>','Patient responsibility':usd(r.pr)})+dsec('Claim payments',mini(['Claim','Billed','Allowed','Paid','Pt resp'],r.pays.map(p=>['<span class="mono">'+p.claim+'</span>',usd(p.billed),usd(p.allowed),usd(p.paid),usd(p.pr)])))+dsec('Adjustment groups (CAS)',mini(['Code','Meaning','Amount'],[['CO-45','Charge exceeds fee schedule',usd(r.billed-r.paid-r.pr)],['PR-1','Deductible',usd(Math.round(r.pr*.55))],['PR-2','Coinsurance',usd(Math.round(r.pr*.45))]]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="printEraById(\''+r.id+'\')">ERA PDF</button> <button class="btn-ghost btn-sm" onclick="view835('+i+')">View 835 report</button>'+(r.status==='New'?' <button class="btn btn-sm" onclick="postEraById(\''+r.id+'\')">Post to PM system</button>':''));},
  attachments:r=>dhead('275 attachment',r.claim+' · '+r.payer)+kv({'Status':pillFor(r.status),'Document type':r.doc,'Requested':r.req,'Due':r.due,'Control # (PWK)':'<span class="mono">'+r.ctrl+'</span>','Pages':r.pages})+dsec('Actions',(r.status==='Awaiting upload'||r.status==='Overdue'?'<button class="btn btn-sm" onclick="uploadAttachmentByCtrl(\''+r.ctrl+'\')">Upload document</button> ':'')+'<button class="btn-ghost btn-sm" onclick="panel(\'Request detail\',\''+r.payer+' requested a '+r.doc+' (control '+r.ctrl+', due '+r.due+').\')">View request</button>'),
@@ -1026,6 +1026,7 @@ const DETAIL={
 let popHandling=false;
 function openDrawer(key,i){
  drawer.innerHTML=DETAIL[key](T[key].data[i])+'<div id="drawerOut"></div>';
+ localStorage.setItem(ACTIVE_DRAWER_KEY,JSON.stringify({key,index:i,recordKey:dashboardRecordKey(key,T[key].data[i])}));
  if(!drawer.classList.contains('open')){
   drawer.classList.add('open');ovl.classList.add('open');
   history.pushState({ui:'drawer',sec:history.state&&history.state.sec},'');
@@ -1036,6 +1037,19 @@ function closeDrawer(){
  if(!drawer.classList.contains('open'))return;
  if(!popHandling&&history.state&&history.state.ui==='drawer'){history.back();return;}
  drawer.classList.remove('open');ovl.classList.remove('open');
+ localStorage.removeItem(ACTIVE_DRAWER_KEY);
+}
+function restoreOpenDrawer(){
+ let saved=null;
+ try{saved=JSON.parse(localStorage.getItem(ACTIVE_DRAWER_KEY)||'null');}catch{}
+ if(!saved||!validSection(saved.key)||!T[saved.key]||!T[saved.key].data.length)return;
+ const data=T[saved.key].data;
+ const byKey=saved.recordKey?data.findIndex(r=>dashboardRecordKey(saved.key,r)===saved.recordKey):-1;
+ const index=byKey>=0?byKey:(Number.isInteger(saved.index)&&saved.index>=0&&saved.index<data.length?saved.index:-1);
+ if(index<0)return;
+ showSection(saved.key);
+ history.replaceState({sec:saved.key},'','#'+saved.key);
+ openDrawer(saved.key,index);
 }
 const safeText=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 function printablePacket(title,html){
@@ -1078,6 +1092,51 @@ function cms1500Html(r){
  +'<div class="grid">'+fieldBox('28. Total charge',usd(r.billed||0))+fieldBox('29. Amount paid',usd(r.paid||0))+'</div>';
 }
 function printCms1500ById(id){const r=findBy(claims,'id',id);if(!r){toast('Claim not found.');return;}printablePacket('CMS-1500 '+r.id,cms1500Html(r));panel('CMS-1500','Printable CMS-1500 opened for '+safeText(r.id)+'. Use Save as PDF in the print dialog.');}
+function claimPacketHtml(r){
+ const relatedEligibility=eligibility.filter(e=>e.patient===r.patient||e.payer===r.payer).slice(0,4);
+ const relatedStatus=statusChecks.filter(s=>s.claim===r.id||s.payerClm===r.payerClm);
+ const relatedEras=eras.filter(e=>(e.pays||[]).some(p=>p.claim===r.id));
+ const relatedAttachments=attachments.filter(a=>a.claim===r.id);
+ const relatedAppeals=(typeof APPEALS_DATA!=='undefined'?APPEALS_DATA:[]).filter(a=>a.claimNumber===r.id);
+ const relatedTxns=txns.filter(t=>t.sourceClaim===r.id||t.partner===r.payer||t.type===r.type).slice(0,8);
+ const relatedCob=cob.filter(c=>c.patient===r.patient).slice(0,3);
+ const relatedDiscovery=discovery.filter(d=>d.patient===r.patient||d.payer===r.payer).slice(0,4);
+ const endpointRows=[
+  ['Insurance discovery','POST /insurance-discovery/check/v1',relatedDiscovery.length?'Coverage discovery record present':'No discovery record linked'],
+  ['Eligibility','POST /change/medicalnetwork/eligibility/v3',relatedEligibility.length?'271 eligibility evidence attached':'No 271 linked'],
+  ['Claim submission','POST /change/medicalnetwork/'+(r.type==='837I'?'institutionalclaims/v1/submission':'professionalclaims/v3/submission'),r.status||'Draft'],
+  ['CMS-1500','GET /export/{transactionId}/1500/pdf','Included in packet'],
+  ['Claim status','POST /change/medicalnetwork/claimstatus/v2',relatedStatus.length?'277 status evidence attached':'No 277 linked'],
+  ['ERA/payment','GET /change/medicalnetwork/reports/v2/{transactionId}/835',relatedEras.length?'835 ERA evidence attached':'No ERA linked'],
+  ['Attachments','POST /claim-attachments/file',relatedAttachments.length?'275 attachment evidence attached':'No 275 linked'],
+  ['COB','POST /coordination-of-benefits',relatedCob.length?'COB record attached':'No COB record linked'],
+  ['Transactions','GET /transactions/{transactionId}',relatedTxns.length+' transaction record(s) listed']
+ ];
+ const eligibilityRows=relatedEligibility.map(e=>[e.patient,e.payer,e.member,e.status,e.plan,usd(e.copay||0),usd((e.dedT||0)-(e.dedM||0)),e.trn]);
+ const statusRows=relatedStatus.map(s=>[s.claim,s.payer,s.payerClm,s.cat+': '+s.catDesc,s.checked]);
+ const eraRows=relatedEras.flatMap(e=>(e.pays||[]).filter(p=>p.claim===r.id).map(p=>[e.id,e.payer,usd(p.billed),usd(p.allowed),usd(p.paid),usd(p.pr),e.status]));
+ const attachmentRows=relatedAttachments.map(a=>[a.ctrl,a.doc,a.payer,a.status,a.req,a.due,a.pages]);
+ const appealRows=relatedAppeals.map(a=>[a.id,a.denialCode,a.denialReason,a.appealStatus,a.deadlineDate,usd(a.amountDenied)]);
+ const txnRows=relatedTxns.map(t=>[t.id,t.type,t.dir,t.partner,t.status,t.date+' '+t.time,t.bytes]);
+ const cobRows=relatedCob.map(c=>[c.primary,c.secondary,c.eff,c.rule]);
+ const discoveryRows=relatedDiscovery.map(d=>[d.id,d.status,d.found?'Yes':'No',d.payer||'',d.member||'',d.date]);
+ return '<div class="box"><strong>Medical billing claim packet</strong><div class="meta">Complete manual storage packet for claim '+safeText(r.id)+'. Generated from dashboard records and Stedi endpoint workflow evidence.</div></div>'
+ +'<h2>Packet index</h2>'+mini(['Workflow','Endpoint','Packet status'],endpointRows.map(row=>row.map(safeText)))
+ +'<h2>Claim summary</h2><div class="box">'+kv({'Claim':safeText(r.id),'Type':safeText(r.type),'Patient':safeText(r.patient),'DOS':safeText(r.dos),'Payer':safeText(r.payer),'Payer claim #':safeText(r.payerClm),'Rendering provider':safeText(r.providerFull),'Facility':safeText(r.loc),'Status':safeText(r.status),'Billed':usd(r.billed||0),'Paid':usd(r.paid||0)})+'</div>'
+ +'<h2>CMS-1500 claim form preview</h2>'+cms1500Html(r)
+ +'<h2>Service lines</h2>'+mini(['CPT','Description','Mod','Units','Charge'],(r.lines||[]).map(l=>[safeText(l.cpt),safeText(l.desc),safeText(l.mod||''),safeText(l.units),safeText(usd(l.charge||0))]))
+ +'<h2>Diagnoses</h2><pre>'+safeText((r.icds||[]).join(', '))+'</pre>'
+ +'<h2>Insurance discovery</h2>'+(discoveryRows.length?mini(['Discovery ID','Status','Found','Payer','Member','Date'],discoveryRows):'<p>No discovery record linked.</p>')
+ +'<h2>Eligibility 270/271</h2>'+(eligibilityRows.length?mini(['Patient','Payer','Member','Coverage','Plan','Copay','Deductible remaining','TRN'],eligibilityRows):'<p>No eligibility record linked.</p>')
+ +'<h2>Claim status 276/277</h2>'+(statusRows.length?mini(['Claim','Payer','Payer claim #','Category','Checked'],statusRows):'<p>No claim status record linked.</p>')
+ +'<h2>ERA/payment 835</h2>'+(eraRows.length?mini(['ERA','Payer','Billed','Allowed','Paid','Patient resp.','Status'],eraRows):'<p>No ERA linked.</p>')
+ +'<h2>Attachments 275</h2>'+(attachmentRows.length?mini(['Control #','Document','Payer','Status','Requested','Due','Pages'],attachmentRows):'<p>No attachment linked.</p>')
+ +'<h2>Appeals and denials</h2>'+(appealRows.length?mini(['Appeal','Denial code','Reason','Status','Deadline','Amount denied'],appealRows):'<p>No appeal linked.</p>')
+ +'<h2>Coordination of benefits</h2>'+(cobRows.length?mini(['Primary','Secondary','Effective','Rule'],cobRows):'<p>No COB record linked.</p>')
+ +'<h2>Transaction ledger</h2>'+(txnRows.length?mini(['Transaction','Type','Direction','Partner','Status','When','Size'],txnRows):'<p>No transaction linked.</p>')
+ +'<h2>Generated X12 evidence</h2><pre>'+safeText(transactionPayload(relatedTxns[0]||{id:r.id,type:r.type||'837P',partner:r.payer,isa:r.payerClm||'000000001'},'claim-packet'))+'</pre>';
+}
+function printClaimPacketById(id){const r=findBy(claims,'id',id);if(!r){panel('Claim packet','Claim not found.');return;}printablePacket('Claim packet '+r.id,claimPacketHtml(r));panel('Claim packet','Printable medical billing packet opened for '+safeText(r.id)+'. Use Save as PDF in the print dialog and store the packet manually.');}
 function printEligibilityByTrn(trn){const r=findBy(eligibility,'trn',trn);if(!r){toast('Eligibility record not found.');return;}printablePacket('271 eligibility '+r.trn,'<div class="box">'+kv({'Patient':safeText(r.patient),'Payer':safeText(r.payer),'Member ID':safeText(r.member),'Coverage':safeText(r.status),'Plan':safeText(r.plan),'Copay':usd(r.copay||0),'Deductible remaining':usd((r.dedT||0)-(r.dedM||0))})+'</div><h2>Raw 271</h2><pre>'+safeText(build271X12(r))+'</pre>');panel('271 PDF','Printable 271 eligibility response opened for '+safeText(r.patient)+'.');}
 function printEraById(id){const r=findBy(eras,'id',id);if(!r){toast('ERA not found.');return;}const rows=(r.pays||[]).map(p=>[safeText(p.claim),usd(p.billed),usd(p.allowed),usd(p.paid),usd(p.pr)]);printablePacket('ERA '+r.id,'<div class="box">'+kv({'Payer':safeText(r.payer),'Payment method':safeText(r.method),'Total billed':usd(r.billed),'Total paid':usd(r.paid),'Patient responsibility':usd(r.pr)})+'</div>'+mini(['Claim','Billed','Allowed','Paid','Patient resp.'],rows)+'<h2>Raw 835</h2><pre>'+safeText(build835X12(r))+'</pre>');panel('ERA PDF','Printable 835 remittance PDF opened for '+safeText(r.id)+'.');}
 function postEraById(id){const r=findBy(eras,'id',id);if(!r)return;r.status='Posted';refreshLiveSection('era');focusRecord('era',eras.indexOf(r));}
@@ -1121,6 +1180,8 @@ const navItems=document.querySelectorAll('.nav-item');
 const sections=document.querySelectorAll('.section');
 const titles={overview:'Overview',eligibility:'Eligibility',discovery:'Insurance discovery',claims:'Claims',status:'Claim status',era:'Remittances (ERA)',attachments:'Attachments',cob:'Coordination of benefits',appeals:'Appeals',providers:'Providers',locations:'Locations',payers:'Payer directory',enrollments:'Enrollments',docupipe:'DocuPipe intake',print:'Print center',transactions:'Transactions & events'};
 const ACTIVE_SECTION_KEY='ccs-active-section';
+const ACTIVE_THEME_KEY='ccs-active-theme';
+const ACTIVE_DRAWER_KEY='ccs-active-drawer';
 function validSection(sec){return Boolean(sec&&titles[sec]&&document.getElementById('sec-'+sec));}
 function rememberedSection(){const hash=(location.hash||'').replace(/^#/,'');const stored=localStorage.getItem(ACTIVE_SECTION_KEY);return validSection(hash)?hash:validSection(stored)?stored:'overview';}
 function showSection(sec){
@@ -1138,13 +1199,13 @@ function showSection(sec){
 navItems.forEach(btn=>{btn.addEventListener('click',()=>{showSection(btn.dataset.sec);history.pushState({sec:btn.dataset.sec},'','#'+btn.dataset.sec);});});
 window.addEventListener('popstate',e=>{
  popHandling=true;
- if(drawer.classList.contains('open')){drawer.classList.remove('open');ovl.classList.remove('open');}
+ if(drawer.classList.contains('open')){drawer.classList.remove('open');ovl.classList.remove('open');localStorage.removeItem(ACTIVE_DRAWER_KEY);}
  else if(document.getElementById('sidebar').classList.contains('open')){document.getElementById('sidebar').classList.remove('open');document.getElementById('sideOvl').classList.remove('show');}
  else {showSection(e.state&&e.state.sec?e.state.sec:rememberedSection());}
  popHandling=false;
 });
 const btnDark=document.getElementById('btnDark'),btnLight=document.getElementById('btnLight');
-function setTheme(t){document.documentElement.dataset.theme=t;btnDark.classList.toggle('on',t==='dark');btnLight.classList.toggle('on',t==='light');}
+function setTheme(t){document.documentElement.dataset.theme=t;btnDark.classList.toggle('on',t==='dark');btnLight.classList.toggle('on',t==='light');localStorage.setItem(ACTIVE_THEME_KEY,t);}
 btnDark.onclick=()=>setTheme('dark');
 btnLight.onclick=()=>setTheme('light');
 const sideOvl=document.getElementById('sideOvl');
@@ -1182,6 +1243,7 @@ const payerSearchInput=document.getElementById('payerSearchInput');
 function payerSearch(){searchSection('payers',payerSearchInput.value);}
 if(payerSearchInput)payerSearchInput.addEventListener('keydown',e=>{if(e.key==='Enter')payerSearch();});
 const initialSection=rememberedSection();
+setTheme(localStorage.getItem(ACTIVE_THEME_KEY)==='light'?'light':'dark');
 showSection(initialSection);
 history.replaceState({sec:initialSection},'','#'+initialSection);
 </script>
@@ -1528,6 +1590,7 @@ window.openDrawer=function(key,i){
  }
 };
 setTimeout(loadDashboardRecords,300);
+setTimeout(restoreOpenDrawer,650);
 </script>
 </body>
 </html>

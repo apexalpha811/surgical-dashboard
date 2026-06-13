@@ -95,3 +95,11 @@ When an endpoint action creates a record in another dashboard module, navigate t
 ## Stedi workflow landings
 
 For Stedi-style workflows, match the landing module to the transaction family: 270/271 opens Eligibility, 276/277 opens Claim status, 837 submissions open Transactions, 835 posting reopens ERA, 275 submissions open Attachments, and payer/provider enrollment actions open Enrollments.
+
+## Durable operator context
+
+A dashboard should remember operator context across refresh: theme, active section, and open record drawer. If the user refreshes mid-work, restore the same visual mode and record, not just the default overview.
+
+## Claim packet printing
+
+When printing a medical billing packet for a claim, include the full endpoint trail: discovery, 270/271 eligibility, 837 claim, CMS-1500, 276/277 status, 835 ERA/payment, 275 attachments, appeals or denials, COB, and transaction ledger evidence.
