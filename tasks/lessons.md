@@ -103,3 +103,7 @@ A dashboard should remember operator context across refresh: theme, active secti
 ## Claim packet printing
 
 When printing a medical billing packet for a claim, include the full endpoint trail: discovery, 270/271 eligibility, 837 claim, CMS-1500, 276/277 status, 835 ERA/payment, 275 attachments, appeals or denials, COB, and transaction ledger evidence.
+
+## Browser PDF lock limits
+
+Browser-generated PDFs cannot be truly encrypted or permission-locked without a real PDF engine. For no-dependency packet printing, make the packet read-only in the print window and add packet ID, timestamp, watermark, and SHA-256 integrity hash so stored packets are tamper-evident.

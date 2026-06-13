@@ -1055,12 +1055,18 @@ const safeText=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;'
 function printablePacket(title,html){
  const win=window.open('','_blank');
  if(!win){panel('Popup blocked','Allow popups for PDF and print output, then run this action again.');return;}
- win.document.write('<!doctype html><html><head><title>'+safeText(title)+'</title><style>body{font-family:Arial,sans-serif;color:#111;margin:24px;line-height:1.35}h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:20px 0 8px}.meta{font-size:11px;color:#555;margin-bottom:16px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 16px}.field{border:1px solid #bbb;min-height:26px;padding:5px;font-size:11px}.label{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:.04em}.value{font-size:12px;font-weight:700}.box{border:1px solid #111;padding:8px;margin-bottom:10px;break-inside:avoid}table{width:100%;border-collapse:collapse;font-size:11px;margin:8px 0}th,td{border:1px solid #aaa;padding:5px;text-align:left;vertical-align:top}pre{white-space:pre-wrap;background:#f7f7f7;border:1px solid #ccc;padding:10px;font-size:10px}.cms-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:4px}.span-2{grid-column:span 2}.span-3{grid-column:span 3}.span-4{grid-column:span 4}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-8{grid-column:span 8}.span-12{grid-column:span 12}@page{margin:.45in}</style></head><body><h1>'+safeText(title)+'</h1><div class="meta">Culver City Surgical Dashboard · '+safeText(new Date().toLocaleString())+'</div>'+html+'</body></html>');
+ win.document.write('<!doctype html><html><head><title>'+safeText(title)+'</title><style>body{font-family:Arial,sans-serif;color:#111;margin:24px;line-height:1.35;-webkit-user-modify:read-only;user-select:text}h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:20px 0 8px}.meta{font-size:11px;color:#555;margin-bottom:16px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 16px}.field{border:1px solid #bbb;min-height:26px;padding:5px;font-size:11px}.label{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:.04em}.value{font-size:12px;font-weight:700}.box{border:1px solid #111;padding:8px;margin-bottom:10px;break-inside:avoid}table{width:100%;border-collapse:collapse;font-size:11px;margin:8px 0}th,td{border:1px solid #aaa;padding:5px;text-align:left;vertical-align:top}pre{white-space:pre-wrap;background:#f7f7f7;border:1px solid #ccc;padding:10px;font-size:10px}.cms-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:4px}.span-2{grid-column:span 2}.span-3{grid-column:span 3}.span-4{grid-column:span 4}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-8{grid-column:span 8}.span-12{grid-column:span 12}@page{margin:.45in}</style></head><body contenteditable="false" spellcheck="false" data-readonly="true"><h1>'+safeText(title)+'</h1><div class="meta">Culver City Surgical Dashboard · '+safeText(new Date().toLocaleString())+'</div>'+html+'</body></html>');
  win.document.close();
+ win.document.designMode='off';
  win.focus();
  setTimeout(()=>win.print(),250);
 }
 function fieldBox(label,value,cls){return '<div class="field '+(cls||'')+'"><div class="label">'+safeText(label)+'</div><div class="value">'+safeText(value||'')+'</div></div>';}
+async function sha256Hex(value){
+ const bytes=new TextEncoder().encode(value);
+ const hash=await crypto.subtle.digest('SHA-256',bytes);
+ return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 function downloadTextFile(name,content,type){
  const blob=new Blob([content],{type:type||'text/plain;charset=utf-8'});
  const url=URL.createObjectURL(blob);
@@ -1092,7 +1098,7 @@ function cms1500Html(r){
  +'<div class="grid">'+fieldBox('28. Total charge',usd(r.billed||0))+fieldBox('29. Amount paid',usd(r.paid||0))+'</div>';
 }
 function printCms1500ById(id){const r=findBy(claims,'id',id);if(!r){toast('Claim not found.');return;}printablePacket('CMS-1500 '+r.id,cms1500Html(r));panel('CMS-1500','Printable CMS-1500 opened for '+safeText(r.id)+'. Use Save as PDF in the print dialog.');}
-function claimPacketHtml(r){
+function claimPacketData(r){
  const relatedEligibility=eligibility.filter(e=>e.patient===r.patient||e.payer===r.payer).slice(0,4);
  const relatedStatus=statusChecks.filter(s=>s.claim===r.id||s.payerClm===r.payerClm);
  const relatedEras=eras.filter(e=>(e.pays||[]).some(p=>p.claim===r.id));
@@ -1101,6 +1107,17 @@ function claimPacketHtml(r){
  const relatedTxns=txns.filter(t=>t.sourceClaim===r.id||t.partner===r.payer||t.type===r.type).slice(0,8);
  const relatedCob=cob.filter(c=>c.patient===r.patient).slice(0,3);
  const relatedDiscovery=discovery.filter(d=>d.patient===r.patient||d.payer===r.payer).slice(0,4);
+ return {r,relatedEligibility,relatedStatus,relatedEras,relatedAttachments,relatedAppeals,relatedTxns,relatedCob,relatedDiscovery};
+}
+function claimPacketCanonical(data){
+ return JSON.stringify(data,(_,value)=>typeof value==='function'?undefined:value);
+}
+function lockBox(meta){
+ return '<div class="box" style="border:2px solid #111;background:#f2f2f2"><strong>READ-ONLY TAMPER-EVIDENT PACKET</strong><div class="meta">This packet is intended for manual storage as a final billing snapshot. Verify the integrity hash before relying on a reprinted or shared copy.</div>'+kv({'Packet ID':safeText(meta.id),'Generated':safeText(meta.generatedAt),'Claim':safeText(meta.claimId),'Integrity method':'SHA-256 over packet source data','Integrity hash':'<span style="font-family:monospace;font-size:10px;word-break:break-all">'+safeText(meta.hash)+'</span>','Edit status':'Locked for review. Reprint from dashboard to regenerate.'})+'</div>';
+}
+function claimPacketHtml(data,meta){
+ const r=data.r;
+ const relatedEligibility=data.relatedEligibility,relatedStatus=data.relatedStatus,relatedEras=data.relatedEras,relatedAttachments=data.relatedAttachments,relatedAppeals=data.relatedAppeals,relatedTxns=data.relatedTxns,relatedCob=data.relatedCob,relatedDiscovery=data.relatedDiscovery;
  const endpointRows=[
   ['Insurance discovery','POST /insurance-discovery/check/v1',relatedDiscovery.length?'Coverage discovery record present':'No discovery record linked'],
   ['Eligibility','POST /change/medicalnetwork/eligibility/v3',relatedEligibility.length?'271 eligibility evidence attached':'No 271 linked'],
@@ -1120,7 +1137,9 @@ function claimPacketHtml(r){
  const txnRows=relatedTxns.map(t=>[t.id,t.type,t.dir,t.partner,t.status,t.date+' '+t.time,t.bytes]);
  const cobRows=relatedCob.map(c=>[c.primary,c.secondary,c.eff,c.rule]);
  const discoveryRows=relatedDiscovery.map(d=>[d.id,d.status,d.found?'Yes':'No',d.payer||'',d.member||'',d.date]);
- return '<div class="box"><strong>Medical billing claim packet</strong><div class="meta">Complete manual storage packet for claim '+safeText(r.id)+'. Generated from dashboard records and Stedi endpoint workflow evidence.</div></div>'
+ return '<style>.packet-watermark{position:fixed;top:42%;left:8%;right:8%;text-align:center;font-size:54px;color:rgba(0,0,0,.06);font-weight:900;transform:rotate(-18deg);z-index:-1;letter-spacing:.08em}.no-edit-note{font-size:11px;color:#333;border:1px solid #999;padding:6px;margin:6px 0;background:#fafafa}</style><div class="packet-watermark">READ ONLY</div>'
+ +lockBox(meta)
+ +'<div class="box"><strong>Medical billing claim packet</strong><div class="meta">Complete manual storage packet for claim '+safeText(r.id)+'. Generated from dashboard records and Stedi endpoint workflow evidence.</div><div class="no-edit-note">This packet contains static text only. It is not an editable form. Any manual alteration changes the stored copy and should be compared against the integrity hash above.</div></div>'
  +'<h2>Packet index</h2>'+mini(['Workflow','Endpoint','Packet status'],endpointRows.map(row=>row.map(safeText)))
  +'<h2>Claim summary</h2><div class="box">'+kv({'Claim':safeText(r.id),'Type':safeText(r.type),'Patient':safeText(r.patient),'DOS':safeText(r.dos),'Payer':safeText(r.payer),'Payer claim #':safeText(r.payerClm),'Rendering provider':safeText(r.providerFull),'Facility':safeText(r.loc),'Status':safeText(r.status),'Billed':usd(r.billed||0),'Paid':usd(r.paid||0)})+'</div>'
  +'<h2>CMS-1500 claim form preview</h2>'+cms1500Html(r)
@@ -1134,9 +1153,10 @@ function claimPacketHtml(r){
  +'<h2>Appeals and denials</h2>'+(appealRows.length?mini(['Appeal','Denial code','Reason','Status','Deadline','Amount denied'],appealRows):'<p>No appeal linked.</p>')
  +'<h2>Coordination of benefits</h2>'+(cobRows.length?mini(['Primary','Secondary','Effective','Rule'],cobRows):'<p>No COB record linked.</p>')
  +'<h2>Transaction ledger</h2>'+(txnRows.length?mini(['Transaction','Type','Direction','Partner','Status','When','Size'],txnRows):'<p>No transaction linked.</p>')
- +'<h2>Generated X12 evidence</h2><pre>'+safeText(transactionPayload(relatedTxns[0]||{id:r.id,type:r.type||'837P',partner:r.payer,isa:r.payerClm||'000000001'},'claim-packet'))+'</pre>';
+ +'<h2>Generated X12 evidence</h2><pre>'+safeText(transactionPayload(relatedTxns[0]||{id:r.id,type:r.type||'837P',partner:r.payer,isa:r.payerClm||'000000001'},'claim-packet'))+'</pre>'
+ +'<h2>Packet verification</h2>'+lockBox(meta);
 }
-function printClaimPacketById(id){const r=findBy(claims,'id',id);if(!r){panel('Claim packet','Claim not found.');return;}printablePacket('Claim packet '+r.id,claimPacketHtml(r));panel('Claim packet','Printable medical billing packet opened for '+safeText(r.id)+'. Use Save as PDF in the print dialog and store the packet manually.');}
+async function printClaimPacketById(id){const r=findBy(claims,'id',id);if(!r){panel('Claim packet','Claim not found.');return;}const data=claimPacketData(r);const hash=await sha256Hex(claimPacketCanonical(data));const meta={id:'PKT-'+r.id+'-'+Date.now().toString(36).toUpperCase(),claimId:r.id,generatedAt:new Date().toLocaleString(),hash};printablePacket('Claim packet '+r.id,claimPacketHtml(data,meta));panel('Claim packet','Read-only, tamper-evident packet opened for '+safeText(r.id)+'. Save as PDF and store it with packet ID '+safeText(meta.id)+'.');}
 function printEligibilityByTrn(trn){const r=findBy(eligibility,'trn',trn);if(!r){toast('Eligibility record not found.');return;}printablePacket('271 eligibility '+r.trn,'<div class="box">'+kv({'Patient':safeText(r.patient),'Payer':safeText(r.payer),'Member ID':safeText(r.member),'Coverage':safeText(r.status),'Plan':safeText(r.plan),'Copay':usd(r.copay||0),'Deductible remaining':usd((r.dedT||0)-(r.dedM||0))})+'</div><h2>Raw 271</h2><pre>'+safeText(build271X12(r))+'</pre>');panel('271 PDF','Printable 271 eligibility response opened for '+safeText(r.patient)+'.');}
 function printEraById(id){const r=findBy(eras,'id',id);if(!r){toast('ERA not found.');return;}const rows=(r.pays||[]).map(p=>[safeText(p.claim),usd(p.billed),usd(p.allowed),usd(p.paid),usd(p.pr)]);printablePacket('ERA '+r.id,'<div class="box">'+kv({'Payer':safeText(r.payer),'Payment method':safeText(r.method),'Total billed':usd(r.billed),'Total paid':usd(r.paid),'Patient responsibility':usd(r.pr)})+'</div>'+mini(['Claim','Billed','Allowed','Paid','Patient resp.'],rows)+'<h2>Raw 835</h2><pre>'+safeText(build835X12(r))+'</pre>');panel('ERA PDF','Printable 835 remittance PDF opened for '+safeText(r.id)+'.');}
 function postEraById(id){const r=findBy(eras,'id',id);if(!r)return;r.status='Posted';refreshLiveSection('era');focusRecord('era',eras.indexOf(r));}

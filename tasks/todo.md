@@ -174,3 +174,8 @@
 - The active section and last-open record drawer now restore after refresh, so a claim page refresh returns to the same claim drawer instead of dropping context.
 - Added `Claim packet PDF` to claim drawers. It opens a printable packet for manual storage with claim summary, CMS-1500 preview, service lines, diagnoses, discovery, 270/271 eligibility, 276/277 claim status, 835 ERA/payment, 275 attachments, appeals/denials, COB, transaction ledger, and generated X12 evidence.
 - Verified in Chrome automation: light theme persisted through reload, Claims plus open `CLM-20560` drawer restored after reload, packet popup opened, and packet text included Packet index, CMS-1500, Eligibility 270/271, Claim status 276/277, ERA/payment 835, Attachments 275, and Stedi endpoint paths. Zero console errors, page errors, or failed network responses.
+
+## Claim packet read-only mechanism (2026-06-13)
+- Added a tamper-evident read-only block to claim packet PDFs with packet ID, generated timestamp, claim ID, SHA-256 integrity method, full hash, edit status, and READ ONLY watermark.
+- The print window body is marked `contenteditable="false"` and `data-readonly="true"` with design mode off.
+- Verified in Chrome automation: packet popup opened, read-only label appeared, packet ID appeared, 64-character SHA-256 hash appeared, edit status appeared, body was non-editable, and there were zero console errors, page errors, or failed network responses.
