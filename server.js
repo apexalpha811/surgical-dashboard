@@ -134,6 +134,62 @@ async function saveImportRecord(body) {
   return { mode: "supabase", saved: true, import: Array.isArray(rows) ? rows[0] : rows };
 }
 
+async function readDashboardRecords() {
+  if (!hasSupabase()) return [];
+  const rows = await supabaseRequest("/docupipe_imports?select=id,target,status,dashboard_record_json,created_at&order=created_at.asc&limit=1000");
+  return (Array.isArray(rows) ? rows : [])
+    .filter(row => row && row.dashboard_record_json && typeof row.dashboard_record_json === "object")
+    .map(row => ({
+      id: row.id,
+      target: dashboardSectionForStoredTarget(row.target),
+      sourceTarget: row.target,
+      status: row.status,
+      record: row.dashboard_record_json,
+      createdAt: row.created_at
+    }))
+    .filter(item => item.target && item.record);
+}
+
+async function saveDashboardRecord(body) {
+  const target = dashboardSectionForStoredTarget(body.target || body.key);
+  if (!target) {
+    sendConfigError("Unknown dashboard record target.");
+  }
+  const record = body.record && typeof body.record === "object" ? body.record : null;
+  if (!record) {
+    sendConfigError("Missing dashboard record payload.");
+  }
+  if (!hasSupabase()) return { mode: "fileless", saved: false, target, record };
+  const row = {
+    module_id: `dashboard:${target}`,
+    document_id: "",
+    standardization_id: "",
+    target,
+    status: String(body.status || "dashboard"),
+    extracted_json: { source: "dashboard", recordKey: String(body.recordKey || "") },
+    stedi_preview_json: {},
+    dashboard_record_json: record,
+    warnings: []
+  };
+  const rows = await supabaseRequest("/docupipe_imports", {
+    method: "POST",
+    headers: { "Prefer": "return=representation" },
+    body: JSON.stringify(row)
+  });
+  return { mode: "supabase", saved: true, target, import: Array.isArray(rows) ? rows[0] : rows };
+}
+
+function dashboardSectionForStoredTarget(target) {
+  const value = String(target || "");
+  if (value === "professionalClaim837P") return "claims";
+  if (value === "eligibility270") return "eligibility";
+  if (value === "appealsFromEra") return "appeals";
+  if (value === "claimAttachment275") return "attachments";
+  if (value === "providerEnrollment") return "providers";
+  if (["claims", "eligibility", "providers", "payers", "enrollments", "attachments", "appeals", "cob"].includes(value)) return value;
+  return "";
+}
+
 async function supabaseRequest(pathname, options = {}) {
   const response = await fetch(`${config.supabaseUrl}/rest/v1${pathname}`, {
     method: options.method || "GET",
@@ -434,6 +490,19 @@ async function handleApi(req, res, url) {
   if (req.method === "POST" && url.pathname === "/api/imports") {
     const body = await readJsonBody(req);
     const result = await saveImportRecord(body);
+    sendJson(res, 201, result);
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/dashboard-records") {
+    const records = await readDashboardRecords();
+    sendJson(res, 200, { records, storage: hasSupabase() ? "supabase" : "fileless" });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/dashboard-records") {
+    const body = await readJsonBody(req);
+    const result = await saveDashboardRecord(body);
     sendJson(res, 201, result);
     return;
   }

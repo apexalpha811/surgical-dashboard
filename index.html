@@ -988,6 +988,13 @@ document.getElementById('sub-eligibility').textContent=eligibility.length+' chec
 /* derived KPIs */
 function updateClaimKpis(){const okClm=claims.filter(c=>['Accepted','Paid'].includes(c.status)).length;const badClm=claims.filter(c=>['Rejected','Denied'].includes(c.status)).length;document.getElementById('kpiClmTotal').textContent=claims.length;document.getElementById('kpiClmOk').textContent=okClm;document.getElementById('kpiClmOkPct').textContent=Math.round(okClm/claims.length*100)+'%';document.getElementById('kpiClmBad').textContent=badClm;document.getElementById('kpiClmPend').textContent=claims.filter(c=>c.status==='Pending payer').length;}
 updateClaimKpis();
+const LIVE_KEYS=new Set(['claims','eligibility','providers','payers','enrollments','attachments','appeals','cob']);
+function dashboardRecordKey(key,record){if(!record)return'';if(key==='claims')return record.id||record.payerClm||record.patient;if(key==='eligibility')return record.trn||[record.patient,record.member,record.payer].join('|');if(key==='providers')return record.npi||record.name;if(key==='payers')return record.stedi||record.name;if(key==='enrollments')return record.id||[record.provider,record.payer,record.txn].join('|');if(key==='attachments')return record.ctrl||[record.claim,record.doc,record.payer].join('|');if(key==='appeals')return record.id||record.claimNumber||[record.patientName,record.payer].join('|');if(key==='cob')return[record.patient,record.primary,record.secondary].join('|');return JSON.stringify(record);}
+function refreshLiveSection(key){if(key==='appeals'){if(typeof renderAppealStats==='function')renderAppealStats();if(typeof renderAppealsTable==='function')renderAppealsTable();return;}if(key==='payers')payersMaster=payerDir.slice();if(key==='claims')updateClaimKpis();if(T[key]){T[key].data=key==='payers'?payerDir:T[key].data;T[key].page=0;renderTable(key);}const sub=document.getElementById('sub-'+key);if(sub&&T[key])sub.textContent=T[key].data.length+' saved records · click a row for detail';}
+function applyLiveRecord(key,record){if(!LIVE_KEYS.has(key)||!T[key]||!record)return;const data=key==='payers'?payerDir:T[key].data;const id=dashboardRecordKey(key,record);const index=data.findIndex(item=>dashboardRecordKey(key,item)===id);if(index>=0)data[index]=record;else data.unshift(record);T[key].data=data;refreshLiveSection(key);}
+async function dashboardApi(path,options){const response=await fetch(path,{headers:{'Content-Type':'application/json','Accept':'application/json'},...(options||{})});const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.error||payload.message||('Request failed with '+response.status));return payload;}
+async function persistDashboardRecord(key,record,status){if(!LIVE_KEYS.has(key)||!record)return;try{await dashboardApi('/api/dashboard-records',{method:'POST',body:JSON.stringify({key,target:key,record,recordKey:dashboardRecordKey(key,record),status:status||'dashboard'})});}catch(error){console.warn(error);toast('Saved locally. Supabase save failed.');}}
+async function loadDashboardRecords(){try{const result=await dashboardApi('/api/dashboard-records');(result.records||[]).forEach(item=>applyLiveRecord(item.target,item.record));if((result.records||[]).length)toast('Loaded saved dashboard data.');}catch(error){console.warn(error);}}
 const posted=eras.filter(e=>e.status==='Posted'),unposted=eras.filter(e=>e.status==='New');
 document.getElementById('kpiEraN').textContent=eras.length;document.getElementById('kpiEraPosted').textContent=usd(posted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraPostedN').textContent=posted.length+' remits';document.getElementById('kpiEraUnposted').textContent=usd(unposted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraUnpostedN').textContent=unposted.length+' remits';document.getElementById('kpiEraAdj').textContent=usd(eras.reduce((a,e)=>a+e.billed-e.paid-e.pr,0)/10);
 document.getElementById('kpiRejQueue').textContent=claims.filter(c=>['Rejected','Denied'].includes(c.status)).length+' to fix';document.getElementById('kpiEraQueue').textContent=unposted.length+' new';document.getElementById('kpiAttQueue').textContent=attachments.filter(a=>a.status==='Overdue').length+' urgent';
@@ -1181,7 +1188,7 @@ function naAppealObj(){
  return{id:'APL-'+(1001+APPEALS_DATA.length),patientName:naVal('na-patient'),patientDOB:naVal('na-dob'),claimNumber:naVal('na-claim'),dateOfService:naVal('na-dos'),submittedDate:'06/11/2026',payer:naVal('na-payer'),cptCodes:naVal('na-cpt').split(',').map(s=>s.trim()).filter(Boolean),diagnosisCodes:naVal('na-dx').split(',').map(s=>s.trim()).filter(Boolean),denialCode:naVal('na-denial'),denialReason:naVal('na-reason'),appealType:naVal('na-type'),appealStatus:'Not Started',deadlineDate:naVal('na-deadline'),assignedTo:naVal('na-assigned'),amountBilled:+naVal('na-billed')||0,amountDenied:+naVal('na-denied')||0,appealLetterDraft:document.getElementById('newLetter').textContent,notes:'Created from dashboard form.',timeline:[{date:'06/11/2026',action:'Appeal created',user:'K. Vu'}]};
 }
 function aiGenerateNewLetter(){document.getElementById('newLetter').textContent=generateAppealLetter(naAppealObj(),Math.floor(Math.random()*3));}
-function createAppeal(){APPEALS_DATA.push(naAppealObj());toggleNewAppeal(false);renderAppealStats();renderAppealsTable();}
+function createAppeal(){const record=naAppealObj();APPEALS_DATA.push(record);persistDashboardRecord('appeals',record,'created');toggleNewAppeal(false);renderAppealStats();renderAppealsTable();}
 
 renderAppealStats();
 renderAppealsTable();
@@ -1225,7 +1232,9 @@ function closeCreate(){document.getElementById('createOvl').classList.remove('op
 function submitCreate(key){
  const c=CREATE[key],v={};
  c.fields.forEach(f=>{const el=document.getElementById('cf-'+f.k);v[f.k]=el?el.value:'';});
- c.data.unshift(c.build(v));
+ const record=c.build(v);
+ c.data.unshift(record);
+ persistDashboardRecord(key,record,'created');
  if(key==='payers')payersMaster=payerDir.slice();
  T[key].data=key==='payers'?payerDir:c.data;
  T[key].page=0;renderTable(key);
@@ -1265,7 +1274,7 @@ const TOAST_MSG={
 document.addEventListener('click',e=>{
  const b=e.target.closest('button');
  if(!b||b.hasAttribute('onclick'))return;
- if(b.closest('#drawer')||b.closest('#sec-docupipe')||b.closest('#sec-print')||b.classList.contains('nav-item')||b.classList.contains('x')||b.closest('.theme-toggle')||b.closest('.pager')||b.id==='menuBtn'||b.closest('thead'))return;
+ if(b.closest('#drawer')||b.closest('#sec-docupipe')||b.closest('#sec-print')||b.classList.contains('nav-item')||b.classList.contains('x')||b.closest('.theme-toggle')||b.closest('.pager')||b.id==='menuBtn'||b.id==='saveEditBtn'||b.closest('thead'))return;
  const label=b.textContent.trim();
  toast(TOAST_MSG[label]||(label+' (mock action)'));
 });
@@ -1387,6 +1396,7 @@ function submitEdit(key,index){
  const spec=EDIT[key],record=T[key].data[index],v={};
  spec.fields.forEach(f=>{const el=document.getElementById('ef-'+f.k);v[f.k]=el?el.value:'';});
  T[key].data[index]=spec.build(v,record);
+ persistDashboardRecord(key,T[key].data[index],'edited');
  if(key==='claims')updateClaimKpis();
  if(key==='eligibility'){const sub=document.getElementById('sub-eligibility');if(sub)sub.textContent=eligibility.length+' checks · click any row for the full 271 benefit detail';}
  if(key==='attachments'){const sub=document.getElementById('sub-attachments');if(sub)sub.textContent=attachments.length+' open and historical requests · click a row for detail';}
@@ -1407,6 +1417,7 @@ window.openDrawer=function(key,i){
   if(head&&closeBtn&&!head.querySelector('.edit-btn')) closeBtn.insertAdjacentHTML('beforebegin','<button class="btn-ghost btn-sm edit-btn" onclick="openEditCurrent()">Edit</button>');
  }
 };
+setTimeout(loadDashboardRecords,300);
 </script>
 </body>
 </html>
