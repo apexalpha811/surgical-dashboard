@@ -87,3 +87,7 @@ When a sidebar section has custom renderers instead of a `pgr-*` table pager, ha
 ## Endpoint labels need endpoint outcomes
 
 If a UI shows a Stedi endpoint label, the matching button must produce the endpoint-shaped outcome: a PDF print view, X12/report panel, CSV/X12 download, persisted record, or status update. Do not leave endpoint-labeled actions as toast-only confirmations.
+
+## Cross-module endpoint actions
+
+When an endpoint action creates a record in another dashboard module, navigate to that module and open the created record. Creating data in the background plus showing a status panel is not enough for operator workflows like Discovery to Eligibility.
