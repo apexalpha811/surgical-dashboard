@@ -152,3 +152,9 @@
 - Wired create/edit actions for claims, eligibility, providers, payers, enrollments, attachments, appeals, and COB to save dashboard records.
 - On page load, saved dashboard records are re-applied to the in-memory tables and rendered into the dashboard.
 - Added delete support for editable dashboard sections. Deletes prompt for confirmation, remove the local row, and write a deletion tombstone to Supabase so refreshes do not bring the row back.
+
+## Clickable tab audit (2026-06-13)
+- Playwright checked all 16 sidebar tabs: overview, eligibility, discovery, claims, status, ERA, attachments, COB, appeals, providers, locations, payers, enrollments, DocuPipe, Print Center, and transactions.
+- Found and fixed the Appeals tab bug. It now calls its custom appeal stats and table renderers instead of the generic table renderer.
+- Verified every tab updates hash, active button, active section, title, and breadcrumb with zero console errors, page errors, or failed network responses.
+- `npm run check` passes.
