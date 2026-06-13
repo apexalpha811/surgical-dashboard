@@ -48,6 +48,10 @@ If the actual schema is created and managed on DocuPipe's site, do not ship a lo
 
 DocuPipe V3 standardization requires a `schemaId`. Do not assume V3 can infer a schema from the document. If a schema works in DocuPipe's website but the API returns 404, check that the server API key belongs to the same DocuPipe account as the schema.
 
+## Render free storage
+
+Render free web services should be treated as ephemeral for runtime file edits. If operators save module settings from the browser, mirror critical overrides such as DocuPipe schema IDs in browser localStorage or move module storage to a durable database before relying on refresh/restart persistence.
+
 ## Hidden advanced inputs
 
 If a field is still required for save/load correctness, do not hide it behind a closed `<details>` by default. Advanced metadata can stay advanced, but the first render should still let the operator reach it without a dead-end click path.
