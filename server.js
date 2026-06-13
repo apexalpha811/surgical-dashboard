@@ -148,13 +148,16 @@ async function callJson(url, options) {
     const billingMessage = response.status === 402
       ? "DocuPipe returned 402 Payment Required. Upload/parse can succeed while standardization fails when the DocuPipe account has no available standardization credits or billing access. Add DocuPipe credits, or set APP_MODE=mock on Render for a free demo."
       : null;
-    const error = new Error(billingMessage || body.message || `Request failed with ${response.status}`);
+    const notFoundMessage = response.status === 404
+      ? `DocuPipe returned 404 Not Found for ${new URL(url).pathname}. For V3 standardization, confirm the document ID exists and the schema ID belongs to the same DocuPipe account as this API key.`
+      : null;
+    const error = new Error(billingMessage || notFoundMessage || body.message || `Request failed with ${response.status}`);
     error.statusCode = response.status;
     error.details = {
       ...body,
       upstreamStatus: response.status,
       upstreamUrl: url,
-      hint: billingMessage || undefined
+      hint: billingMessage || notFoundMessage || undefined
     };
     throw error;
   }
@@ -240,6 +243,14 @@ async function handleApi(req, res, url) {
     const body = await readJsonBody(req);
     const module = findModule(body.moduleId);
     const result = await standardizeWithDocupipe(module, body);
+    sendJson(res, 200, result);
+    return;
+  }
+
+  const schemaMatch = url.pathname.match(/^\/api\/docupipe\/schemas\/([^/]+)$/);
+  if (schemaMatch && req.method === "GET") {
+    const schemaId = decodeURIComponent(schemaMatch[1]);
+    const result = await getDocupipeSchema(schemaId);
     sendJson(res, 200, result);
     return;
   }
@@ -412,10 +423,15 @@ async function standardizeWithDocupipe(module, body) {
   }
 
   const schemaId = String(body.schemaId || module.docupipeSchemaId || "").trim();
+  if (!schemaId) {
+    sendConfigError("DocuPipe V3 requires a schema ID. Enter the DocuPipe schema ID in Advanced module metadata and save the module.");
+  }
 
   if (body.documentId) {
     await waitForDocupipeDocument(body.documentId);
   }
+
+  await verifyDocupipeSchema(schemaId);
 
   const payload = {
     documentId: body.documentId,
@@ -435,6 +451,19 @@ async function standardizeWithDocupipe(module, body) {
       body: JSON.stringify(payload)
     }))
   };
+}
+
+async function verifyDocupipeSchema(schemaId) {
+  if (!isLive() || !config.docupipeApiKey) return null;
+  try {
+    return await getDocupipeSchema(schemaId);
+  } catch (error) {
+    const status = Number(error.statusCode);
+    if (status === 404 || status === 422) {
+      sendConfigError(`DocuPipe schema ${schemaId} was not found or is not accessible with the API key configured on this server. Confirm the schema ID in DocuPipe and make sure Render is using the API key for the same DocuPipe account.`);
+    }
+    throw error;
+  }
 }
 
 async function waitForDocupipeDocument(documentId) {
@@ -506,6 +535,20 @@ async function getStandardization(standardizationId) {
   return {
     mode: "live",
     ...(await callJson(`${config.docupipeBaseUrl}/standardization/${encodeURIComponent(standardizationId)}`, {
+      method: "GET",
+      headers: { "Accept": "application/json", "X-API-Key": config.docupipeApiKey }
+    }))
+  };
+}
+
+async function getDocupipeSchema(schemaId) {
+  if (!schemaId) sendConfigError("Missing DocuPipe schema ID.");
+  if (!isLive() || !config.docupipeApiKey) {
+    return { mode: "mock", schemaId, status: "mock_valid" };
+  }
+  return {
+    mode: "live",
+    ...(await callJson(`${config.docupipeBaseUrl}/schema/${encodeURIComponent(schemaId)}`, {
       method: "GET",
       headers: { "Accept": "application/json", "X-API-Key": config.docupipeApiKey }
     }))
