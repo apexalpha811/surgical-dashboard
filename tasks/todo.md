@@ -158,3 +158,8 @@
 - Found and fixed the Appeals tab bug. It now calls its custom appeal stats and table renderers instead of the generic table renderer.
 - Verified every tab updates hash, active button, active section, title, and breadcrumb with zero console errors, page errors, or failed network responses.
 - `npm run check` passes.
+
+## Endpoint-backed action pass (2026-06-13)
+- Replaced toast-only endpoint actions with working local outputs: CMS-1500 print view, 271 print view, 835 print view, 277 and raw X12 panels, payer/enrollment CSV downloads, transaction X12 downloads, 275 attachment state changes, COB updates, enrollment workflow updates, and drawer-opening section actions.
+- Closed-page actions now open visible result modals instead of writing to a hidden drawer.
+- Verified with Chrome automation: no unhandled non-row buttons, CMS-1500 popup opens, location Manage opens a modal, CSV/X12 downloads work, section actions open created records, and there are zero console errors, page errors, or failed network responses.

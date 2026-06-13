@@ -83,3 +83,7 @@ Keep only production-ready DocuPipe modules in `data/docupipe-modules.json`. Dra
 ## Special-section navigation
 
 When a sidebar section has custom renderers instead of a `pgr-*` table pager, handle it explicitly in `showSection`. Do not let `T[sec]` route it through the generic table renderer, or the tab can appear to open while throwing before the hash and active state finish updating.
+
+## Endpoint labels need endpoint outcomes
+
+If a UI shows a Stedi endpoint label, the matching button must produce the endpoint-shaped outcome: a PDF print view, X12/report panel, CSV/X12 download, persisted record, or status update. Do not leave endpoint-labeled actions as toast-only confirmations.

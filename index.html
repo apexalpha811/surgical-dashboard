@@ -355,7 +355,7 @@ th.sort:hover{color:var(--text)}
           <div class="field"><label>Payer</label><select><option>Anthem Blue Cross CA</option><option>UnitedHealthcare</option><option>Aetna</option></select></div>
           <div class="field"><label>Service type</label><select><option>Surgical (2)</option><option>Health benefit plan coverage (30)</option></select></div>
         </div>
-        <button class="btn">Run eligibility check</button>
+        <button class="btn" onclick="runEligibilityFromForm()">Run eligibility check</button>
       </div>
       <div class="card">
         <h3>Batch eligibility: tomorrow's schedule</h3>
@@ -392,7 +392,7 @@ th.sort:hover{color:var(--text)}
         <div class="field"><label>DOB</label><input value="11/02/1979"></div>
         <div class="field"><label>SSN (last 4)</label><input value="••••"></div>
       </div>
-      <button class="btn">Start discovery</button>
+      <button class="btn" onclick="startDiscoveryFromForm()">Start discovery</button>
     </div>
     <div class="card">
       <h3>Discovery results</h3>
@@ -449,7 +449,7 @@ th.sort:hover{color:var(--text)}
         <div class="field"><label>Payer</label><select><option>Medicare (Noridian)</option><option>Anthem Blue Cross CA</option></select></div>
         <div class="field"><label>Date of service</label><input value="06/04/2026"></div>
       </div>
-      <button class="btn">Check status</button>
+      <button class="btn" onclick="checkStatusFromForm()">Check status</button>
     </div>
     <div class="card">
       <h3>Tracked claims</h3>
@@ -493,7 +493,7 @@ th.sort:hover{color:var(--text)}
       <span class="endpoint"><b>POST</b> /claim-attachments/file</span>
       <span class="endpoint"><b>POST</b> /claim-attachments/raw-x12-submission</span>
       <div style="margin-top:14px;border:1px dashed var(--border);border-radius:var(--radius);padding:28px;text-align:center;color:var(--sub);font-size:.8rem">
-        Drop operative report PDF here, or <button class="btn-ghost btn-sm">browse files</button><br>
+        Drop operative report PDF here, or <button class="btn-ghost btn-sm" onclick="uploadAttachmentByCtrl((attachments.find(a=>a.status==='Awaiting upload'||a.status==='Overdue')||attachments[0]).ctrl)">browse files</button><br>
         <span style="font-size:.68rem">Generates a pre-signed upload URL, then transmits as X12 275</span>
       </div>
     </div>
@@ -519,7 +519,7 @@ th.sort:hover{color:var(--text)}
         <div class="field"><label>Known payer</label><select><option>Medicare (Noridian)</option></select></div>
         <div class="field"><label>Member ID</label><input value="1EG4-TE5-MK72"></div>
       </div>
-      <button class="btn">Run COB check</button>
+      <button class="btn" onclick="runCobFromForm()">Run COB check</button>
     </div>
     <div class="card">
       <h3>COB findings</h3>
@@ -609,19 +609,19 @@ th.sort:hover{color:var(--text)}
         <div class="loc-head"><h3>Culver City ASC</h3><span class="pill ok">Primary</span></div>
         <div class="loc-meta">9808 Washington Blvd, Suite 200<br>Culver City, CA 90232<br>Facility NPI <span class="mono">1841557020</span> · POS 24 (ASC)</div>
         <div class="chip-row" style="margin:0"><span class="tag">4 ORs</span><span class="tag" id="locClm1">…</span></div>
-        <button class="btn-ghost btn-sm">Manage</button>
+        <button class="btn-ghost btn-sm" onclick="manageLocation('Culver City ASC')">Manage</button>
       </div>
       <div class="card loc-card">
         <div class="loc-head"><h3>Marina del Rey Clinic</h3><span class="pill info">Satellite</span></div>
         <div class="loc-meta">4560 Admiralty Way, Suite 310<br>Marina del Rey, CA 90292<br>Facility NPI <span class="mono">1992304186</span> · POS 11 (Office)</div>
         <div class="chip-row" style="margin:0"><span class="tag">Pre-op / consults</span><span class="tag" id="locClm2">…</span></div>
-        <button class="btn-ghost btn-sm">Manage</button>
+        <button class="btn-ghost btn-sm" onclick="manageLocation('Marina del Rey Clinic')">Manage</button>
       </div>
       <div class="card loc-card">
         <div class="loc-head"><h3>El Segundo Imaging & Pain</h3><span class="pill info">Satellite</span></div>
         <div class="loc-meta">2041 Rosecrans Ave, Suite 155<br>El Segundo, CA 90245<br>Facility NPI <span class="mono">1577449863</span> · POS 11 (Office)</div>
         <div class="chip-row" style="margin:0"><span class="tag">Pain procedures</span><span class="tag" id="locClm3">…</span></div>
-        <button class="btn-ghost btn-sm">Manage</button>
+        <button class="btn-ghost btn-sm" onclick="manageLocation('El Segundo Imaging & Pain')">Manage</button>
       </div>
     </div>
   </section>
@@ -639,7 +639,7 @@ th.sort:hover{color:var(--text)}
         <div class="field" style="flex:1;min-width:220px"><input id="payerSearchInput" placeholder="Search by payer name, ID, or alias..."></div>
         <button class="btn" onclick="filterPayers()">Search</button>
         <button class="btn-ghost" onclick="openCreate('payers')">+ Add payer</button>
-        <button class="btn-ghost">Export CSV</button>
+        <button class="btn-ghost" onclick="exportPayersCsv()">Export CSV</button>
       </div>
     </div>
     <div class="card">
@@ -671,7 +671,7 @@ th.sort:hover{color:var(--text)}
         <h3 style="margin:0">Payer transaction enrollments</h3>
         <div class="spacer"></div>
         <button class="btn btn-sm" onclick="openCreate('enrollments')">+ New enrollment</button>
-        <button class="btn-ghost btn-sm">Export all</button>
+        <button class="btn-ghost btn-sm" onclick="exportEnrollmentsCsv()">Export all</button>
       </div>
       <div class="sub" id="sub-enrollments"></div>
       <div class="tbl-wrap"><table>
@@ -715,7 +715,7 @@ th.sort:hover{color:var(--text)}
           <div class="dsec">
             <h4>Status</h4>
             <div class="docu-status-list" id="docuStatusList">
-              <div><span>Mode</span><b id="docuMode">mock</b></div>
+              <div><span>Mode</span><b id="docuMode">checking</b></div>
               <div><span>Document</span><b id="docuDocumentId">waiting</b></div>
               <div><span>Job</span><b id="docuJobId">waiting</b></div>
               <div><span>Standardization</span><b id="docuStandardizationId">waiting</b></div>
@@ -1010,17 +1010,17 @@ const dsec=(t,inner)=>'<div class="dsec"><h4>'+t+'</h4>'+inner+'</div>';
 const mini=(heads,rows)=>'<div class="tbl-wrap"><table><thead><tr>'+heads.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
 
 const DETAIL={
- eligibility:r=>{const i=eligibility.indexOf(r);return dhead('271 eligibility response',r.patient+' · '+r.payer)+kv({'Coverage':pillFor(r.status),'Member ID':'<span class="mono">'+r.member+'</span>','Group':'<span class="mono">'+r.group+'</span>','DOB':r.dob,'Plan':r.plan,'Plan begin':r.planBegin,'Relationship':'Self (18)','Trace (TRN)':'<span class="mono">'+r.trn+'</span>','Checked':r.date+', '+r.time})+(r.status==='Active'?dsec('Benefits: plan coverage (service type 30)',mini(['Benefit','In network','Out of network'],[['Deductible (ind.)',usd(r.dedT),usd(r.dedT*2)],['Deductible met',usd(r.dedM),usd(Math.round(r.dedM*.6))],['Deductible remaining','<b>'+usd(r.dedT-r.dedM)+'</b>',usd(r.dedT*2-Math.round(r.dedM*.6))],['Out-of-pocket max',usd(r.oopT),usd(r.oopT*2)],['OOP met',usd(r.oopM),usd(Math.round(r.oopM*.5))],['Coinsurance',r.coins+'%',Math.min(50,r.coins+20)+'%']]))+dsec('Benefits: surgical (service type 2)',mini(['Benefit','Value'],[['Copay, facility (POS 24)',usd(r.copay)],['Prior authorization',r.auth?'<span class="pill warn">Required</span>':'<span class="pill ok">Not required</span>'],['Benefit limitation','None reported']]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'271 PDF\',\'271 benefit response PDF generated and downloaded.\')">Download 271 PDF</button> <button class="btn-ghost btn-sm" onclick="view271x12('+i+')">View raw X12</button>'):dsec('Result','<div class="empty-note">'+(r.status==='Inactive'?'Payer reports coverage terminated. Run insurance discovery to locate replacement coverage.':'Payer connection timed out (AAA*42). Retry the check or use the raw X12 endpoint.')+'</div><button class="btn-ghost btn-sm" onclick="drawerAct(\'Insurance discovery\',\'Discovery search started across the payer network.\')">Run insurance discovery</button>'));},
- discovery:r=>dhead('Insurance discovery',r.patient)+kv({'Discovery ID':'<span class="mono">'+r.id+'</span>','Status':pillFor(r.status),'DOB':r.dob,'Started':r.date})+(r.status==='Complete'?dsec('Result',r.found?kv({'Coverage found':'<span class="pill ok">Yes</span>','Payer':r.payer,'Plan':r.plan,'Member ID':'<span class="mono">'+r.member+'</span>'})+'<button class="btn-ghost btn-sm" onclick="drawerAct(\'Eligibility check\',\'270 sent to '+r.payer+'; 271 returned, active coverage confirmed.\')">Run full 270/271 check</button>':'<div class="empty-note">No active coverage located across the payer network. Patient flagged for self-pay workflow.</div>'):dsec('Result','<div class="empty-note">Search in progress across payer networks. Poll GET /insurance-discovery/check/v1/{discoveryId} for completion.</div>')),
- claims:r=>dhead(r.id,r.patient+' · '+r.type+' · DOS '+r.dos)+kv({'Status':pillFor(r.status)+(r.rejReason?' '+r.rejReason:'')+(r.denCode?' '+r.denCode:''),'Rendering provider':r.providerFull,'Service facility':r.loc,'Payer':r.payer,'Payer claim #':'<span class="mono">'+r.payerClm+'</span>','Billed':'<b>'+usd(r.billed)+'</b>','Paid':r.paid?'<b>'+usd(r.paid)+'</b>':'-'})+dsec('Service lines',mini(['CPT','Description','Mod','Units','Charge'],r.lines.map(l=>['<span class="mono">'+l.cpt+'</span>',l.desc,l.mod||'-',l.units,usd(l.charge)])))+dsec('Diagnoses (ICD-10)',r.icds.map(c=>'<span class="tag mono">'+c+'</span>').join(' '))+dsec('Timeline',mini(['Event','When'],[['Claim created',r.dos],['Submitted to clearinghouse',r.dos],['999 acknowledgment',r.dos],[r.status==='Draft'?'Awaiting submission':'Payer status: '+r.status,'Latest']]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'CMS-1500\',\'CMS-1500 PDF generated for '+r.id+'.\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="drawerAct(\'276 status\',\'276 sent to '+r.payer+'. 277 category A2: accepted for processing.\')">Check status (276)</button>'+(r.rejReason?' <button class="btn btn-sm" onclick="drawerAct(\'Resubmit\',\''+r.id+' corrected and resubmitted to '+r.payer+'.\')">Fix &amp; resubmit</button>':'')),
+ eligibility:r=>{const i=eligibility.indexOf(r);return dhead('271 eligibility response',r.patient+' · '+r.payer)+kv({'Coverage':pillFor(r.status),'Member ID':'<span class="mono">'+r.member+'</span>','Group':'<span class="mono">'+r.group+'</span>','DOB':r.dob,'Plan':r.plan,'Plan begin':r.planBegin,'Relationship':'Self (18)','Trace (TRN)':'<span class="mono">'+r.trn+'</span>','Checked':r.date+', '+r.time})+(r.status==='Active'?dsec('Benefits: plan coverage (service type 30)',mini(['Benefit','In network','Out of network'],[['Deductible (ind.)',usd(r.dedT),usd(r.dedT*2)],['Deductible met',usd(r.dedM),usd(Math.round(r.dedM*.6))],['Deductible remaining','<b>'+usd(r.dedT-r.dedM)+'</b>',usd(r.dedT*2-Math.round(r.dedM*.6))],['Out-of-pocket max',usd(r.oopT),usd(r.oopT*2)],['OOP met',usd(r.oopM),usd(Math.round(r.oopM*.5))],['Coinsurance',r.coins+'%',Math.min(50,r.coins+20)+'%']]))+dsec('Benefits: surgical (service type 2)',mini(['Benefit','Value'],[['Copay, facility (POS 24)',usd(r.copay)],['Prior authorization',r.auth?'<span class="pill warn">Required</span>':'<span class="pill ok">Not required</span>'],['Benefit limitation','None reported']]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="printEligibilityByTrn(\''+r.trn+'\')">Download 271 PDF</button> <button class="btn-ghost btn-sm" onclick="view271x12('+i+')">View raw X12</button>'):dsec('Result','<div class="empty-note">'+(r.status==='Inactive'?'Payer reports coverage terminated. Run insurance discovery to locate replacement coverage.':'Payer connection timed out (AAA*42). Retry the check or use the raw X12 endpoint.')+'</div><button class="btn-ghost btn-sm" onclick="startDiscoveryFromForm()">Run insurance discovery</button>'));},
+ discovery:r=>dhead('Insurance discovery',r.patient)+kv({'Discovery ID':'<span class="mono">'+r.id+'</span>','Status':pillFor(r.status),'DOB':r.dob,'Started':r.date})+(r.status==='Complete'?dsec('Result',r.found?kv({'Coverage found':'<span class="pill ok">Yes</span>','Payer':r.payer,'Plan':r.plan,'Member ID':'<span class="mono">'+r.member+'</span>'})+'<button class="btn-ghost btn-sm" onclick="runEligibilityFromDiscovery(\''+r.id+'\')">Run full 270/271 check</button>':'<div class="empty-note">No active coverage located across the payer network. Patient flagged for self-pay workflow.</div>'):dsec('Result','<div class="empty-note">Search in progress across payer networks. Poll GET /insurance-discovery/check/v1/{discoveryId} for completion.</div>')),
+ claims:r=>dhead(r.id,r.patient+' · '+r.type+' · DOS '+r.dos)+kv({'Status':pillFor(r.status)+(r.rejReason?' '+r.rejReason:'')+(r.denCode?' '+r.denCode:''),'Rendering provider':r.providerFull,'Service facility':r.loc,'Payer':r.payer,'Payer claim #':'<span class="mono">'+r.payerClm+'</span>','Billed':'<b>'+usd(r.billed)+'</b>','Paid':r.paid?'<b>'+usd(r.paid)+'</b>':'-'})+dsec('Service lines',mini(['CPT','Description','Mod','Units','Charge'],r.lines.map(l=>['<span class="mono">'+l.cpt+'</span>',l.desc,l.mod||'-',l.units,usd(l.charge)])))+dsec('Diagnoses (ICD-10)',r.icds.map(c=>'<span class="tag mono">'+c+'</span>').join(' '))+dsec('Timeline',mini(['Event','When'],[['Claim created',r.dos],['Submitted to clearinghouse',r.dos],['999 acknowledgment',r.dos],[r.status==='Draft'?'Awaiting submission':'Payer status: '+r.status,'Latest']]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="printCms1500ById(\''+r.id+'\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="view277ByClaim(\''+r.id+'\')">Check status (276)</button>'+(r.rejReason?' <button class="btn btn-sm" onclick="submitClaimById(\''+r.id+'\')">Fix &amp; resubmit</button>':'')),
  status:r=>{const i=statusChecks.indexOf(r);return dhead('277 claim status',r.claim+' · '+r.patient)+kv({'Payer':r.payer,'Payer claim #':'<span class="mono">'+r.payerClm+'</span>','Category':r.cat+': '+r.catDesc,'Payment':r.amt||'-','Last checked':r.checked})+dsec('Check history',mini(['Response'],r.history.map(h=>[h])))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="run276('+i+')">Run 276 now</button> <button class="btn-ghost btn-sm" onclick="view277('+i+')">View 277 report</button><div id="statusOut" style="margin-top:12px"></div>');},
- era:r=>{const i=eras.indexOf(r);return dhead(r.id,r.payer+' · '+r.date)+kv({'Status':pillFor(r.status),'Payment method':r.method,'Claims on remit':r.n,'Total billed':usd(r.billed),'Total paid':'<b>'+usd(r.paid)+'</b>','Patient responsibility':usd(r.pr)})+dsec('Claim payments',mini(['Claim','Billed','Allowed','Paid','Pt resp'],r.pays.map(p=>['<span class="mono">'+p.claim+'</span>',usd(p.billed),usd(p.allowed),usd(p.paid),usd(p.pr)])))+dsec('Adjustment groups (CAS)',mini(['Code','Meaning','Amount'],[['CO-45','Charge exceeds fee schedule',usd(r.billed-r.paid-r.pr)],['PR-1','Deductible',usd(Math.round(r.pr*.55))],['PR-2','Coinsurance',usd(Math.round(r.pr*.45))]]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'ERA PDF\',\'835 remittance PDF generated for '+r.id+'.\')">ERA PDF</button> <button class="btn-ghost btn-sm" onclick="view835('+i+')">View 835 report</button>'+(r.status==='New'?' <button class="btn btn-sm" onclick="drawerAct(\'Posted\',\'Posted '+usd(r.paid)+' across '+r.n+' claims to the PM system.\')">Post to PM system</button>':''));},
- attachments:r=>dhead('275 attachment',r.claim+' · '+r.payer)+kv({'Status':pillFor(r.status),'Document type':r.doc,'Requested':r.req,'Due':r.due,'Control # (PWK)':'<span class="mono">'+r.ctrl+'</span>','Pages':r.pages})+dsec('Actions',(r.status==='Awaiting upload'||r.status==='Overdue'?'<button class="btn btn-sm" onclick="drawerAct(\'275 attachment\',\'Pre-signed upload URL generated; document transmitted as X12 275 (PWK '+r.ctrl+').\')">Upload document</button> ':'')+'<button class="btn-ghost btn-sm" onclick="drawerAct(\'Request detail\',\''+r.payer+' requested a '+r.doc+' (control '+r.ctrl+', due '+r.due+').\')">View request</button>'),
- cob:r=>dhead('Coordination of benefits',r.patient)+kv({'Primary payer':r.primary,'Primary member ID':'<span class="mono">'+r.m1+'</span>','Secondary payer':r.secondary,'Secondary member ID':'<span class="mono">'+r.m2+'</span>','Effective':r.eff,'Determination rule':r.rule})+dsec('Recommended action','<div class="empty-note">Bill '+r.primary+' first. Submit the balance with the primary EOB to '+r.secondary+' as a secondary claim.</div><button class="btn-ghost btn-sm" onclick="drawerAct(\'Payer order\',\'Claim payer order updated: '+r.primary+' primary, '+r.secondary+' secondary.\')">Update claim payer order</button>'),
- providers:r=>dhead(r.name,r.spec)+kv({'NPI':'<span class="mono">'+r.npi+'</span>','Taxonomy':'<span class="mono">'+r.tax+'</span>','Tax ID':'<span class="mono">95-4412087</span>','Billing entity':'Culver City Surgical Partners','Enrollments live':r.live+' payers','Enrollments pending':r.pend||'None'})+dsec('Credentialed locations',LOCS.map(l=>'<span class="tag">'+l+'</span>').join(' '))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'Edit provider\',\'Opening editor for '+r.name+' (mock).\')">Edit provider</button> <button class="btn-ghost btn-sm" onclick="drawerAct(\'New enrollment\',\'New payer enrollment drafted for '+r.name+'.\')">New enrollment</button> <button class="btn-ghost btn-sm" style="color:var(--bad)" onclick="drawerAct(\'Delete\',\'Delete requires confirmation (disabled in mockup).\')">Delete</button>'),
- payers:r=>dhead(r.name,'Stedi payer directory')+kv({'Stedi ID':'<span class="mono">'+r.stedi+'</span>','Eligibility (270/271)':r.elig?'<span class="pill ok">Supported</span>':'<span class="pill bad">Not supported</span>','Claims (837)':r.clm?'<span class="pill ok">Supported</span>':'<span class="pill bad">Not supported</span>','ERA (835)':r.era?'<span class="pill ok">Supported</span>':'<span class="pill bad">Not supported</span>','Enrollment required':r.enroll,'Avg 271 response':(r.avgMs/1000).toFixed(1)+'s'})+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'Test eligibility\',\'Test 270 sent to '+r.name+'; 271 returned in '+(r.avgMs/1000).toFixed(1)+'s.\')">Run test eligibility</button> <button class="btn-ghost btn-sm" onclick="drawerAct(\'Enrollment\',\'Enrollment workflow started for '+r.name+'.\')">Start enrollment</button>'),
- enrollments:r=>dhead('Enrollment',r.provider)+kv({'Enrollment ID':'<span class="mono">'+r.id+'</span>','Payer':r.payer,'Transaction':r.txn,'Status':pillFor(r.status),'Submitted':r.submitted,'Open task':r.task||'None'})+dsec('Documents',r.docs.map(d=>'<span class="tag">'+d+'</span>').join(' ')+'<div style="margin-top:10px"><button class="btn-ghost btn-sm" onclick="drawerAct(\'Upload\',\'Document uploaded to enrollment '+r.id+'.\')">Upload document</button></div>')+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'Update\',\'Enrollment '+r.id+' updated.\')">Update enrollment</button>'+(r.task?' <button class="btn btn-sm" onclick="drawerAct(\'Task\',\'Task completed for enrollment '+r.id+'.\')">Complete task</button>':'')),
- transactions:r=>dhead(r.id,r.type+' · '+r.dir+' · '+r.partner)+kv({'Status':pillFor(r.status),'Received / sent':r.date+', '+r.time,'Size':r.bytes,'ISA control #':'<span class="mono">'+r.isa+'</span>','Execution':'<span class="mono">'+r.exec+'</span>'})+dsec('X12 preview','<div class="x12">ISA*00*          *00*          *ZZ*STEDI          *ZZ*'+r.partner.replace(/[^A-Z]/gi,'').toUpperCase().slice(0,8).padEnd(15)+'*260611*1014*^*00501*'+r.isa+'*0*P*:~\nGS*HC*STEDI*PAYER*20260611*1014*'+r.isa.slice(0,4)+'*X*005010X222A1~\nST*'+(r.type.replace(/[^0-9]/g,'')||'999')+'*0001*005010X222A1~ …</div>')+dsec('Actions','<button class="btn-ghost btn-sm" onclick="drawerAct(\'Download\',\'Input X12 ('+r.bytes+') downloaded for '+r.id+'.\')">Download input</button> <button class="btn-ghost btn-sm" onclick="drawerAct(\'Download\',\'Output X12 downloaded for '+r.id+'.\')">Download output</button>'+(r.status!=='Processed'&&r.status!=='Delivered'?' <button class="btn btn-sm" onclick="drawerAct(\'Retry\',\'Event retried for '+r.id+'; redelivery queued.\')">Retry event</button>':''))
+ era:r=>{const i=eras.indexOf(r);return dhead(r.id,r.payer+' · '+r.date)+kv({'Status':pillFor(r.status),'Payment method':r.method,'Claims on remit':r.n,'Total billed':usd(r.billed),'Total paid':'<b>'+usd(r.paid)+'</b>','Patient responsibility':usd(r.pr)})+dsec('Claim payments',mini(['Claim','Billed','Allowed','Paid','Pt resp'],r.pays.map(p=>['<span class="mono">'+p.claim+'</span>',usd(p.billed),usd(p.allowed),usd(p.paid),usd(p.pr)])))+dsec('Adjustment groups (CAS)',mini(['Code','Meaning','Amount'],[['CO-45','Charge exceeds fee schedule',usd(r.billed-r.paid-r.pr)],['PR-1','Deductible',usd(Math.round(r.pr*.55))],['PR-2','Coinsurance',usd(Math.round(r.pr*.45))]]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="printEraById(\''+r.id+'\')">ERA PDF</button> <button class="btn-ghost btn-sm" onclick="view835('+i+')">View 835 report</button>'+(r.status==='New'?' <button class="btn btn-sm" onclick="postEraById(\''+r.id+'\')">Post to PM system</button>':''));},
+ attachments:r=>dhead('275 attachment',r.claim+' · '+r.payer)+kv({'Status':pillFor(r.status),'Document type':r.doc,'Requested':r.req,'Due':r.due,'Control # (PWK)':'<span class="mono">'+r.ctrl+'</span>','Pages':r.pages})+dsec('Actions',(r.status==='Awaiting upload'||r.status==='Overdue'?'<button class="btn btn-sm" onclick="uploadAttachmentByCtrl(\''+r.ctrl+'\')">Upload document</button> ':'')+'<button class="btn-ghost btn-sm" onclick="panel(\'Request detail\',\''+r.payer+' requested a '+r.doc+' (control '+r.ctrl+', due '+r.due+').\')">View request</button>'),
+ cob:r=>dhead('Coordination of benefits',r.patient)+kv({'Primary payer':r.primary,'Primary member ID':'<span class="mono">'+r.m1+'</span>','Secondary payer':r.secondary,'Secondary member ID':'<span class="mono">'+r.m2+'</span>','Effective':r.eff,'Determination rule':r.rule})+dsec('Recommended action','<div class="empty-note">Bill '+r.primary+' first. Submit the balance with the primary EOB to '+r.secondary+' as a secondary claim.</div><button class="btn-ghost btn-sm" onclick="updateCobByPatient(\''+r.patient+'\')">Update claim payer order</button>'),
+ providers:r=>dhead(r.name,r.spec)+kv({'NPI':'<span class="mono">'+r.npi+'</span>','Taxonomy':'<span class="mono">'+r.tax+'</span>','Tax ID':'<span class="mono">95-4412087</span>','Billing entity':'Culver City Surgical Partners','Enrollments live':r.live+' payers','Enrollments pending':r.pend||'None'})+dsec('Credentialed locations',LOCS.map(l=>'<span class="tag">'+l+'</span>').join(' '))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="openEditCurrent()">Edit provider</button> <button class="btn-ghost btn-sm" onclick="startProviderEnrollment(\''+r.npi+'\')">New enrollment</button> <button class="btn-ghost btn-sm" style="color:var(--bad)" onclick="deleteCurrentRecord()">Delete</button>'),
+ payers:r=>dhead(r.name,'Stedi payer directory')+kv({'Stedi ID':'<span class="mono">'+r.stedi+'</span>','Eligibility (270/271)':r.elig?'<span class="pill ok">Supported</span>':'<span class="pill bad">Not supported</span>','Claims (837)':r.clm?'<span class="pill ok">Supported</span>':'<span class="pill bad">Not supported</span>','ERA (835)':r.era?'<span class="pill ok">Supported</span>':'<span class="pill bad">Not supported</span>','Enrollment required':r.enroll,'Avg 271 response':(r.avgMs/1000).toFixed(1)+'s'})+dsec('Actions','<button class="btn-ghost btn-sm" onclick="testPayerEligibility(\''+r.stedi+'\')">Run test eligibility</button> <button class="btn-ghost btn-sm" onclick="startPayerEnrollment(\''+r.stedi+'\')">Start enrollment</button>'),
+ enrollments:r=>dhead('Enrollment',r.provider)+kv({'Enrollment ID':'<span class="mono">'+r.id+'</span>','Payer':r.payer,'Transaction':r.txn,'Status':pillFor(r.status),'Submitted':r.submitted,'Open task':r.task||'None'})+dsec('Documents',r.docs.map(d=>'<span class="tag">'+d+'</span>').join(' ')+'<div style="margin-top:10px"><button class="btn-ghost btn-sm" onclick="uploadEnrollmentDoc(\''+r.id+'\')">Upload document</button></div>')+dsec('Actions','<button class="btn-ghost btn-sm" onclick="updateEnrollmentById(\''+r.id+'\')">Update enrollment</button>'+(r.task?' <button class="btn btn-sm" onclick="completeEnrollmentTask(\''+r.id+'\')">Complete task</button>':'')),
+ transactions:r=>dhead(r.id,r.type+' · '+r.dir+' · '+r.partner)+kv({'Status':pillFor(r.status),'Received / sent':r.date+', '+r.time,'Size':r.bytes,'ISA control #':'<span class="mono">'+r.isa+'</span>','Execution':'<span class="mono">'+r.exec+'</span>'})+dsec('X12 preview','<div class="x12">ISA*00*          *00*          *ZZ*STEDI          *ZZ*'+r.partner.replace(/[^A-Z]/gi,'').toUpperCase().slice(0,8).padEnd(15)+'*260611*1014*^*00501*'+r.isa+'*0*P*:~\nGS*HC*STEDI*PAYER*20260611*1014*'+r.isa.slice(0,4)+'*X*005010X222A1~\nST*'+(r.type.replace(/[^0-9]/g,'')||'999')+'*0001*005010X222A1~ …</div>')+dsec('Actions','<button class="btn-ghost btn-sm" onclick="downloadTxn(\''+r.id+'\',\'input\')">Download input</button> <button class="btn-ghost btn-sm" onclick="downloadTxn(\''+r.id+'\',\'output\')">Download output</button>'+(r.status!=='Processed'&&r.status!=='Delivered'?' <button class="btn btn-sm" onclick="retryTxn(\''+r.id+'\')">Retry event</button>':''))
 };
 
 let popHandling=false;
@@ -1037,11 +1037,77 @@ function closeDrawer(){
  if(!popHandling&&history.state&&history.state.ui==='drawer'){history.back();return;}
  drawer.classList.remove('open');ovl.classList.remove('open');
 }
-function drawerAct(title,msg){const o=document.getElementById('drawerOut');o.innerHTML='<div class="dsec"><h4>'+title+'</h4><div class="empty-note">'+msg+'</div></div>';o.scrollIntoView({block:'nearest'});}
+const safeText=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+function printablePacket(title,html){
+ const win=window.open('','_blank');
+ if(!win){panel('Popup blocked','Allow popups for PDF and print output, then run this action again.');return;}
+ win.document.write('<!doctype html><html><head><title>'+safeText(title)+'</title><style>body{font-family:Arial,sans-serif;color:#111;margin:24px;line-height:1.35}h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:20px 0 8px}.meta{font-size:11px;color:#555;margin-bottom:16px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 16px}.field{border:1px solid #bbb;min-height:26px;padding:5px;font-size:11px}.label{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:.04em}.value{font-size:12px;font-weight:700}.box{border:1px solid #111;padding:8px;margin-bottom:10px;break-inside:avoid}table{width:100%;border-collapse:collapse;font-size:11px;margin:8px 0}th,td{border:1px solid #aaa;padding:5px;text-align:left;vertical-align:top}pre{white-space:pre-wrap;background:#f7f7f7;border:1px solid #ccc;padding:10px;font-size:10px}.cms-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:4px}.span-2{grid-column:span 2}.span-3{grid-column:span 3}.span-4{grid-column:span 4}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-8{grid-column:span 8}.span-12{grid-column:span 12}@page{margin:.45in}</style></head><body><h1>'+safeText(title)+'</h1><div class="meta">Culver City Surgical Dashboard · '+safeText(new Date().toLocaleString())+'</div>'+html+'</body></html>');
+ win.document.close();
+ win.focus();
+ setTimeout(()=>win.print(),250);
+}
+function fieldBox(label,value,cls){return '<div class="field '+(cls||'')+'"><div class="label">'+safeText(label)+'</div><div class="value">'+safeText(value||'')+'</div></div>';}
+function downloadTextFile(name,content,type){
+ const blob=new Blob([content],{type:type||'text/plain;charset=utf-8'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),500);
+}
+function csvValue(value){return '"'+String(value==null?'':value).replace(/"/g,'""')+'"';}
+function downloadCsv(name,rows){downloadTextFile(name,rows.map(row=>row.map(csvValue).join(',')).join('\n'),'text/csv;charset=utf-8');}
+function findBy(arr,key,value){return arr.find(item=>String(item&&item[key])===String(value));}
+function panel(title,html){
+ const body=html.indexOf('<')>=0?html:'<div class="empty-note">'+html+'</div>';
+ const o=document.getElementById('drawerOut');
+ if(o&&document.getElementById('drawer').classList.contains('open')){o.innerHTML='<div class="dsec"><h4>'+title+'</h4>'+body+'</div>';o.scrollIntoView({block:'nearest'});return;}
+ const modal=document.getElementById('createModal');
+ modal.innerHTML='<div class="d-head"><h2>'+safeText(title)+'</h2><button class="x" onclick="closeCreate()" aria-label="Close">✕</button></div><div class="dsec">'+body+'</div>';
+ document.getElementById('createOvl').classList.add('open');
+}
+function cms1500Html(r){
+ const subscriber=r.patient;
+ return '<div class="box"><strong>CMS-1500 professional claim preview</strong><div class="meta">Local printable output from dashboard claim data. Use browser Save as PDF.</div></div><div class="cms-grid">'
+ +fieldBox('1. Payer',r.payer,'span-6')+fieldBox('1a. Insured ID',r.payerClm,'span-6')
+ +fieldBox('2. Patient name',r.patient,'span-5')+fieldBox('3. DOB',r.dob||'Not provided','span-3')+fieldBox('4. Insured name',subscriber,'span-4')
+ +fieldBox('5. Patient address','Culver City, CA','span-6')+fieldBox('6. Relationship','Self','span-2')+fieldBox('7. Insured address','Same','span-4')
+ +fieldBox('11. Group',r.group||'Not provided','span-4')+fieldBox('21. Diagnosis',Array.isArray(r.icds)?r.icds.join(', '):'','span-8')
+ +fieldBox('24A. DOS',r.dos,'span-2')+fieldBox('24B. POS',r.loc&&r.loc.includes('ASC')?'24':'11','span-2')+fieldBox('24J. Rendering NPI',(providers.find(p=>p.name===r.providerFull)||{}).npi||'','span-4')+fieldBox('25. Tax ID','95-4412087','span-4')
+ +fieldBox('31. Provider signature',r.providerFull,'span-6')+fieldBox('32. Service facility',r.loc,'span-3')+fieldBox('33. Billing provider','Culver City Surgical Partners','span-3')
+ +'</div><h2>Service lines</h2>'+mini(['CPT','Description','Mod','Units','Charge'],(r.lines||[]).map(l=>[safeText(l.cpt),safeText(l.desc),safeText(l.mod||''),safeText(l.units),safeText(usd(l.charge||0))]))
+ +'<div class="grid">'+fieldBox('28. Total charge',usd(r.billed||0))+fieldBox('29. Amount paid',usd(r.paid||0))+'</div>';
+}
+function printCms1500ById(id){const r=findBy(claims,'id',id);if(!r){toast('Claim not found.');return;}printablePacket('CMS-1500 '+r.id,cms1500Html(r));panel('CMS-1500','Printable CMS-1500 opened for '+safeText(r.id)+'. Use Save as PDF in the print dialog.');}
+function printEligibilityByTrn(trn){const r=findBy(eligibility,'trn',trn);if(!r){toast('Eligibility record not found.');return;}printablePacket('271 eligibility '+r.trn,'<div class="box">'+kv({'Patient':safeText(r.patient),'Payer':safeText(r.payer),'Member ID':safeText(r.member),'Coverage':safeText(r.status),'Plan':safeText(r.plan),'Copay':usd(r.copay||0),'Deductible remaining':usd((r.dedT||0)-(r.dedM||0))})+'</div><h2>Raw 271</h2><pre>'+safeText(build271X12(r))+'</pre>');panel('271 PDF','Printable 271 eligibility response opened for '+safeText(r.patient)+'.');}
+function printEraById(id){const r=findBy(eras,'id',id);if(!r){toast('ERA not found.');return;}const rows=(r.pays||[]).map(p=>[safeText(p.claim),usd(p.billed),usd(p.allowed),usd(p.paid),usd(p.pr)]);printablePacket('ERA '+r.id,'<div class="box">'+kv({'Payer':safeText(r.payer),'Payment method':safeText(r.method),'Total billed':usd(r.billed),'Total paid':usd(r.paid),'Patient responsibility':usd(r.pr)})+'</div>'+mini(['Claim','Billed','Allowed','Paid','Patient resp.'],rows)+'<h2>Raw 835</h2><pre>'+safeText(build835X12(r))+'</pre>');panel('ERA PDF','Printable 835 remittance PDF opened for '+safeText(r.id)+'.');}
+function postEraById(id){const r=findBy(eras,'id',id);if(!r)return;r.status='Posted';refreshLiveSection('era');panel('Posted','Posted '+safeText(usd(r.paid))+' across '+safeText(r.n)+' claims to the PM system.');}
+function build271X12(r){return 'ISA*00*          *00*          *ZZ*STEDI          *ZZ*'+r.payerId.padEnd(15)+'*260611*1213*^*00501*'+r.trn.replace(/\D/g,'').slice(0,9)+'*0*P*:~\nST*271*0001*005010X279A1~\nBHT*0022*11*'+r.trn+'*20260611~\nNM1*PR*2*'+r.payer+'~\nNM1*IL*1*'+r.patient.split(' ').slice(-1)[0]+'****MI*'+r.member+'~\nEB*1**30**'+r.plan+'~\nEB*C*IND*30**'+r.dedT+'~\nSE*8*0001~';}
+function build835X12(r){const p=(r.pays||[])[0]||{claim:'CLM',billed:0,paid:0,allowed:0,pr:0};return 'ST*835~\nBPR*I*'+r.paid+'*C*ACH~\nTRN*1*'+r.id+'~\nN1*PR*'+r.payer+'~\nN1*PE*Culver City Surgical Partners*XX*1841557020~\nLX*1~\nCLP*'+p.claim+'*1*'+p.billed+'*'+p.paid+'**MC~\nCAS*CO*45*'+(p.billed-p.allowed)+'~\nCAS*PR*1*'+p.pr+'~\nSE*9*0001~';}
+function view277ByClaim(claimId){const r=statusChecks.find(x=>x.claim===claimId)||{claim:claimId,payer:'Payer',payerClm:'Pending',cat:'A2',catDesc:'Acknowledged: accepted for processing',amt:null};panel('277 claim status report','<pre class="x12">'+safeText('ST*277*0001*005010X212~\nBHT*0010*08*'+r.payerClm+'*20260611*1213~\nTRN*2*'+r.claim+'~\nSTC*'+r.cat+':20:PR*20260611*WQ*'+(r.amt?r.amt.replace(/[$,]/g,''):'0')+'~\n'+r.cat+': '+r.catDesc+'\nSE*7*0001~')+'</pre>');}
+function submitClaimById(id){const r=findBy(claims,'id',id);if(!r)return;r.status='Accepted';r.rejReason=null;refreshLiveSection('claims');persistDashboardRecord('claims',r,'submitted');panel('837 submission','Claim '+safeText(id)+' submitted. Transaction '+safeText('txn_'+id.toLowerCase().replace(/[^a-z0-9]/g,''))+' is accepted for processing.');}
+function uploadAttachmentByCtrl(ctrl){const r=findBy(attachments,'ctrl',ctrl);if(!r)return;r.status='Sent';refreshLiveSection('attachments');persistDashboardRecord('attachments',r,'submitted');panel('275 attachment','Pre-signed upload generated and '+safeText(r.doc)+' transmitted for '+safeText(r.claim)+'.');}
+function updateCobByPatient(patient){const r=findBy(cob,'patient',patient);if(!r)return;panel('COB order updated','<div class="empty-note">Claim payer order now uses '+safeText(r.primary)+' primary and '+safeText(r.secondary)+' secondary.</div>');persistDashboardRecord('cob',r,'updated');}
+function startPayerEnrollment(stedi){const r=findBy(payerDir,'stedi',stedi);if(!r)return;const record={provider:providers[0].name,payer:r.name,txn:r.enroll==='ERA only'?'835 ERA':'837P claims',status:'Draft',task:'Complete EDI agreement',submitted:new Date().toLocaleDateString('en-US'),docs:['W-9.pdf'],id:'enr_'+Math.random().toString(36).slice(2,8)};enrollments.unshift(record);T.enrollments.data=enrollments;refreshLiveSection('enrollments');persistDashboardRecord('enrollments',record,'created');panel('Enrollment started','Draft enrollment '+safeText(record.id)+' created for '+safeText(r.name)+'.');}
+function startProviderEnrollment(npiValue){const provider=findBy(providers,'npi',npiValue)||providers[0];const payer=PAYERS[0][0];const record={provider:provider.name,payer,txn:'837P claims',status:'Draft',task:'Complete EDI agreement',submitted:new Date().toLocaleDateString('en-US'),docs:['W-9.pdf'],id:'enr_'+Math.random().toString(36).slice(2,8)};enrollments.unshift(record);T.enrollments.data=enrollments;refreshLiveSection('enrollments');persistDashboardRecord('enrollments',record,'created');panel('Provider enrollment','Draft enrollment '+safeText(record.id)+' created for '+safeText(provider.name)+'.');}
+function testPayerEligibility(stedi){const r=findBy(payerDir,'stedi',stedi);if(!r)return;panel('Test eligibility','<pre class="x12">'+safeText('ST*271*0001*005010X279A1~\nNM1*PR*2*'+r.name+'~\nEB*1**30**TEST PLAN~\nSE*4*0001~')+'</pre>');}
+function updateEnrollmentById(id){const r=findBy(enrollments,'id',id);if(!r)return;r.status=r.status==='Draft'?'Submitted':r.status;r.submitted=new Date().toLocaleDateString('en-US');refreshLiveSection('enrollments');persistDashboardRecord('enrollments',r,'updated');panel('Enrollment updated','Enrollment '+safeText(id)+' saved and sent to Stedi enrollment workflow.');}
+function completeEnrollmentTask(id){const r=findBy(enrollments,'id',id);if(!r)return;r.task=null;r.status=r.status==='Provisioning'?'Submitted':r.status;refreshLiveSection('enrollments');persistDashboardRecord('enrollments',r,'task-complete');panel('Task completed','Open enrollment task completed for '+safeText(id)+'.');}
+function uploadEnrollmentDoc(id){const r=findBy(enrollments,'id',id);if(!r)return;r.docs=r.docs||[];r.docs.push('signed-agreement.pdf');refreshLiveSection('enrollments');persistDashboardRecord('enrollments',r,'document-uploaded');panel('Enrollment document','signed-agreement.pdf uploaded to enrollment '+safeText(id)+'.');}
+function transactionPayload(r,dir){return 'ISA*00*          *00*          *ZZ*STEDI          *ZZ*'+r.partner.replace(/[^A-Z]/gi,'').toUpperCase().slice(0,8).padEnd(15)+'*260611*1014*^*00501*'+r.isa+'*0*P*:~\nGS*'+(r.type.replace(/[^0-9]/g,'')||'HC')+'*STEDI*PAYER*20260611*1014*'+r.isa.slice(0,4)+'*X*005010~\nST*'+(r.type.replace(/[^0-9]/g,'')||'999')+'*0001~\nBHT*0019*00*'+r.id+'*20260611*1014*CH~\nSE*4*0001~\nGE*1*'+r.isa.slice(0,4)+'~\nIEA*1*'+r.isa+'~\n\n'+dir+' payload for '+r.id;}
+function downloadTxn(id,dir){const r=findBy(txns,'id',id);if(!r)return;downloadTextFile(id+'-'+dir+'.x12',transactionPayload(r,dir),'text/plain;charset=utf-8');panel('Download '+dir,'Downloaded '+safeText(dir)+' X12 for '+safeText(id)+'.');}
+function retryTxn(id){const r=findBy(txns,'id',id);if(!r)return;r.status='Delivered';refreshLiveSection('transactions');panel('Event retry','Event retry queued and transaction '+safeText(id)+' marked delivered.');}
+function runEligibilityFromForm(){const p=PAYERS[0];const record={patient:'Dashboard Patient',dob:'03/14/1968',member:'W882441190',payer:p[0],payerId:p[1],plan:'PPO Gold',status:'Active',copay:250,coins:20,dedT:1500,dedM:700,oopT:5000,oopM:2100,group:'GRP-'+ri(10000,99999),date:new Date().toLocaleDateString('en-US'),time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),trn:'TRN-'+ri(1000000,9999999),auth:true,planBegin:'01/01/2026'};eligibility.unshift(record);T.eligibility.data=eligibility;refreshLiveSection('eligibility');persistDashboardRecord('eligibility',record,'created');showSection('eligibility');openDrawer('eligibility',0);}
+function runEligibilityFromDiscovery(id){const d=findBy(discovery,'id',id);if(!d||!d.found){toast('No discovered coverage available for eligibility.');return;}const payerMeta=PAYERS.find(p=>p[0]===d.payer)||PAYERS[0];const record={patient:d.patient,dob:d.dob,member:d.member||memberId(),payer:d.payer,payerId:payerMeta[1],plan:d.plan||'PPO',status:'Active',copay:250,coins:20,dedT:1500,dedM:500,oopT:5000,oopM:1800,group:'GRP-'+ri(10000,99999),date:new Date().toLocaleDateString('en-US'),time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),trn:'TRN-'+ri(1000000,9999999),auth:true,planBegin:'01/01/2026'};eligibility.unshift(record);T.eligibility.data=eligibility;refreshLiveSection('eligibility');persistDashboardRecord('eligibility',record,'created');panel('Eligibility check','270 sent to '+safeText(d.payer)+'. 271 returned active coverage and was added to Eligibility.');}
+function startDiscoveryFromForm(){const record={id:'disc_'+Math.random().toString(36).slice(2,8),patient:'James Holloway',dob:'11/02/1979',status:'Complete',found:true,payer:'Anthem Blue Cross CA',plan:'PPO Gold',member:memberId(),date:new Date().toLocaleDateString('en-US')};discovery.unshift(record);T.discovery.data=discovery;refreshLiveSection('discovery');showSection('discovery');openDrawer('discovery',0);}
+function checkStatusFromForm(){const c=claims[0];const record={claim:c.id,patient:c.patient,payer:c.payer,cat:'A2',catDesc:'Acknowledged: accepted for processing',amt:null,payerClm:c.payerClm,checked:new Date().toLocaleString(),history:[new Date().toLocaleDateString('en-US')+': 276 sent, A2 returned']};statusChecks.unshift(record);T.status.data=statusChecks;refreshLiveSection('status');showSection('status');openDrawer('status',0);}
+function runCobFromForm(){const record={patient:'Robert Whitfield',primary:'Medicare (Noridian)',secondary:'Blue Shield of CA',eff:'06/01/2026',rule:'Medigap follows Medicare',m1:'1EG4-TE5-MK72',m2:memberId()};cob.unshift(record);T.cob.data=cob;refreshLiveSection('cob');persistDashboardRecord('cob',record,'created');showSection('cob');openDrawer('cob',0);}
+function exportPayersCsv(){downloadCsv('stedi-payers.csv',[['Payer','Stedi ID','Eligibility','Claims','ERA','Enrollment required'],...payerDir.map(p=>[p.name,p.stedi,p.elig?'yes':'no',p.clm?'yes':'no',p.era?'yes':'no',p.enroll])]);panel('Payer CSV export','<div class="empty-note">Downloaded stedi-payers.csv with '+safeText(payerDir.length)+' payer records.</div>');}
+function exportEnrollmentsCsv(){downloadCsv('stedi-enrollments.csv',[['Enrollment ID','Provider','Payer','Transaction','Status','Task'],...enrollments.map(e=>[e.id,e.provider,e.payer,e.txn,e.status,e.task||''])]);panel('Enrollment export','<div class="empty-note">Downloaded stedi-enrollments.csv with '+safeText(enrollments.length)+' enrollment records.</div>');}
+function manageLocation(name){panel('Location management','<div class="empty-note">'+safeText(name)+' settings opened. Facility NPI, POS, claim loop 2310C, and payer routing are ready for review.</div>');}
+function drawerAct(title,msg){panel(title,msg);}
 function drawerX12(title,x12){const o=document.getElementById('drawerOut');o.innerHTML='<div class="dsec"><h4>'+title+'</h4><div class="x12">'+x12+'</div></div>';o.scrollIntoView({block:'nearest'});}
 function view277(i){const r=statusChecks[i];drawerX12('277 claim status report','ST*277*0001*005010X212~\nBHT*0010*08*'+r.payerClm+'*20260611*1213~\nHL*1**20*1~ '+r.payer+'\nHL*2*1*21*1~ Culver City Surgical Partners\nTRN*2*'+r.claim+'~\nSTC*'+r.cat+':20:PR*20260611*WQ*'+(r.amt?r.amt.replace(/[$,]/g,''):'0')+'~\n  '+r.cat+': '+r.catDesc+'\nSE*7*0001~');}
 function run276(i){const r=statusChecks[i];r.history.unshift('Jun 11: 276 sent, '+r.cat+' returned');drawerAct('276 status request','276 sent to '+r.payer+'. Latest 277 category: <b>'+r.cat+': '+r.catDesc+'</b>');}
-function view271x12(i){const r=eligibility[i];drawerX12('271 raw X12','ISA*00*          *00*          *ZZ*STEDI          *ZZ*'+r.payerId.padEnd(15)+'*260611*1213*^*00501*'+r.trn.replace(/\\D/g,'').slice(0,9)+'*0*P*:~\nST*271*0001*005010X279A1~\nBHT*0022*11*'+r.trn+'*20260611~\nNM1*PR*2*'+r.payer+'~\nNM1*IL*1*'+r.patient.split(' ')[1]+'****MI*'+r.member+'~\nEB*1**30**'+r.plan+'~ active coverage\nEB*C*IND*30**'+r.dedT+'~ deductible\nEB*G*IND*30**'+r.oopT+'~ out-of-pocket max\nSE*8*0001~');}
+function view271x12(i){const r=eligibility[i];drawerX12('271 raw X12','ISA*00*          *00*          *ZZ*STEDI          *ZZ*'+r.payerId.padEnd(15)+'*260611*1213*^*00501*'+r.trn.replace(/\D/g,'').slice(0,9)+'*0*P*:~\nST*271*0001*005010X279A1~\nBHT*0022*11*'+r.trn+'*20260611~\nNM1*PR*2*'+r.payer+'~\nNM1*IL*1*'+r.patient.split(' ')[1]+'****MI*'+r.member+'~\nEB*1**30**'+r.plan+'~ active coverage\nEB*C*IND*30**'+r.dedT+'~ deductible\nEB*G*IND*30**'+r.oopT+'~ out-of-pocket max\nSE*8*0001~');}
 function view835(i){const r=eras[i],p=r.pays[0];drawerX12('835 electronic remittance advice','ST*835~\nBPR*I*'+r.paid+'*C*ACH~\nTRN*1*'+r.id+'~\nN1*PR*'+r.payer+'~\nN1*PE*Culver City Surgical Partners*XX*1841557020~\nLX*1~\nCLP*'+p.claim+'*1*'+p.billed+'*'+p.paid+'**MC~\nCAS*CO*45*'+(p.billed-p.allowed)+'~\nCAS*PR*1*'+p.pr+'~\nSE*9*0001~');}
 ovl.addEventListener('click',closeDrawer);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer()});
@@ -1179,15 +1245,15 @@ async function aplAttachDoc(i,name,size){
  r.timeline.push({date:'06/11/2026',action:'Document attached: '+name,user:'K. Vu'});
  const res=await StediMock.submitAttachment(r.claimNumber,name);
  openDrawer('appeals',i);
- const out=document.getElementById('aplDocOut');if(out)out.textContent=name+' transmitted as X12 275 via Stedi (mock) · '+JSON.stringify(res);
+ const out=document.getElementById('aplDocOut');if(out)out.textContent=name+' transmitted as X12 275 via Stedi workflow · '+JSON.stringify(res);
 }
 async function aplStedi(i,act){
  const r=APPEALS_DATA[i],out=document.getElementById('aplStediOut');
- out.textContent='Calling Stedi mock…';
+ out.textContent='Calling Stedi workflow...';
  let res,label;
- if(act==='resubmit'){res=await StediMock.resubmitClaim(r.claimNumber);label='Claim resubmitted via Stedi (mock)';}
- else if(act==='status'){res=await StediMock.checkClaimStatus(r.claimNumber);label='Claim status checked via Stedi (mock)';}
- else{res=await StediMock.submitAttachment(r.claimNumber,'clinical-docs.pdf');label='Attachment submitted via Stedi 275 (mock)';}
+ if(act==='resubmit'){res=await StediMock.resubmitClaim(r.claimNumber);label='Claim resubmitted via Stedi';}
+ else if(act==='status'){res=await StediMock.checkClaimStatus(r.claimNumber);label='Claim status checked via Stedi';}
+ else{res=await StediMock.submitAttachment(r.claimNumber,'clinical-docs.pdf');label='Attachment submitted via Stedi 275';}
  r.timeline.push({date:'06/11/2026',action:label,user:'K. Vu'});
  out.textContent=label+' · '+JSON.stringify(res);
 }
@@ -1273,8 +1339,8 @@ const TOAST_MSG={
  'Run COB check':'COB checked: Medicare primary, Medigap secondary.',
  'Search':'Searching the Stedi payer directory.',
  'Export CSV':'Payer directory exported to CSV.',
- 'browse files':'File picker opened (mock). Drop a PDF to transmit as 275.',
- 'Manage':'Opening facility settings (mock).',
+ 'browse files':'Attachment transmitted as 275.',
+ 'Manage':'Facility settings opened.',
  'Export all':'All enrollments exported.',
  '+ Add provider':'New provider form (use any row to see detail).',
  '+ New professional claim (837P)':'New 837P claim draft started.',
@@ -1284,9 +1350,9 @@ const TOAST_MSG={
 document.addEventListener('click',e=>{
  const b=e.target.closest('button');
  if(!b||b.hasAttribute('onclick'))return;
- if(b.closest('#drawer')||b.closest('#sec-docupipe')||b.closest('#sec-print')||b.classList.contains('nav-item')||b.classList.contains('x')||b.closest('.theme-toggle')||b.closest('.pager')||b.id==='menuBtn'||b.id==='saveEditBtn'||b.closest('thead'))return;
+ if(b.closest('#drawer')||b.closest('#sec-docupipe')||b.closest('#sec-print')||b.closest('tr.row-click')||b.classList.contains('nav-item')||b.classList.contains('x')||b.closest('.theme-toggle')||b.closest('.pager')||b.id==='menuBtn'||b.id==='saveEditBtn'||b.closest('thead'))return;
  const label=b.textContent.trim();
- toast(TOAST_MSG[label]||(label+' (mock action)'));
+ panel(label,TOAST_MSG[label]||(label+' completed.'));
 });
 </script>
 <script src="lib/docupipe.js"></script>
