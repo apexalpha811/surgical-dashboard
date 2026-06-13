@@ -91,3 +91,7 @@ If a UI shows a Stedi endpoint label, the matching button must produce the endpo
 ## Cross-module endpoint actions
 
 When an endpoint action creates a record in another dashboard module, navigate to that module and open the created record. Creating data in the background plus showing a status panel is not enough for operator workflows like Discovery to Eligibility.
+
+## Stedi workflow landings
+
+For Stedi-style workflows, match the landing module to the transaction family: 270/271 opens Eligibility, 276/277 opens Claim status, 837 submissions open Transactions, 835 posting reopens ERA, 275 submissions open Attachments, and payer/provider enrollment actions open Enrollments.

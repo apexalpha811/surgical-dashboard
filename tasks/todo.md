@@ -163,3 +163,8 @@
 - Replaced toast-only endpoint actions with working local outputs: CMS-1500 print view, 271 print view, 835 print view, 277 and raw X12 panels, payer/enrollment CSV downloads, transaction X12 downloads, 275 attachment state changes, COB updates, enrollment workflow updates, and drawer-opening section actions.
 - Closed-page actions now open visible result modals instead of writing to a hidden drawer.
 - Verified with Chrome automation: no unhandled non-row buttons, CMS-1500 popup opens, location Manage opens a modal, CSV/X12 downloads work, section actions open created records, and there are zero console errors, page errors, or failed network responses.
+
+## Full Stedi workflow landing audit (2026-06-13)
+- Rechecked endpoint-labeled workflows against Stedi transaction families: 270/271, 276/277, 837, 835, 275, payer directory, transaction logs, and enrollment APIs.
+- Fixed remaining cross-module actions so endpoint results navigate to and open the operational record: claim 276 opens Claim Status, claim resubmission opens Transactions, payer test eligibility opens Eligibility, payer/provider enrollment opens Enrollments, appeal status opens Claim Status, appeal attachments open Attachments, appeal resubmission opens Transactions, ERA posting reopens ERA, and transaction retry reopens the delivered transaction.
+- Verified with Chrome automation across 61 endpoint labels and 14 endpoint sections: no unhandled non-row buttons, no console errors, no page errors, and no failed network responses.
