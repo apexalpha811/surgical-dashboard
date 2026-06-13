@@ -411,8 +411,7 @@ async function standardizeWithDocupipe(module, body) {
     };
   }
 
-  const forceSchemaId = body.forceSchemaId === true || body.forceSchemaId === "true";
-  const schemaId = forceSchemaId ? String(body.schemaId || module.docupipeSchemaId || "").trim() : "";
+  const schemaId = String(body.schemaId || module.docupipeSchemaId || "").trim();
 
   if (body.documentId) {
     await waitForDocupipeDocument(body.documentId);
