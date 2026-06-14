@@ -131,3 +131,7 @@ For substantial dashboard work, use `tasks/efficient-frontier.md`: keep endpoint
 ## Cloudflare Pages storage boundary
 
 Cloudflare Pages Functions cannot rely on local filesystem writes. In live mode, require Supabase for module settings, imports, dashboard records, and delete tombstones instead of silently falling back to seed data.
+
+## Supabase new secret keys
+
+Supabase `sb_secret_` API keys are not JWTs. Send them in the `apikey` header only. Do not send `Authorization: Bearer sb_secret_...`, or Supabase REST returns `401 Invalid API key`.

@@ -309,13 +309,18 @@ async function deleteDashboardRecord(env, body) {
 
 async function supabaseRequest(env, pathname, options = {}) {
   const cfg = config(env);
+  const authHeaders = {
+    "apikey": cfg.supabaseServiceRoleKey
+  };
+  if (!cfg.supabaseServiceRoleKey.startsWith("sb_secret_")) {
+    authHeaders.Authorization = `Bearer ${cfg.supabaseServiceRoleKey}`;
+  }
   const response = await fetch(`${cfg.supabaseUrl}/rest/v1${pathname}`, {
     method: options.method || "GET",
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/json",
-      "apikey": cfg.supabaseServiceRoleKey,
-      "Authorization": `Bearer ${cfg.supabaseServiceRoleKey}`,
+      ...authHeaders,
       ...(options.headers || {})
     },
     body: options.body
