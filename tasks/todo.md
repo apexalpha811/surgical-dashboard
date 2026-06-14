@@ -188,6 +188,13 @@
 - Added `/` keyboard focus for global search.
 - Verified with `npm run check`, inline script syntax checks, and Chrome automation: counts render, claim and ERA queue jumps open records, Recent records reopens the claim, `/` focuses search, DocuPipe shortcut opens `#docupipe`, logo returns to `#overview`, refresh preserves context, and there are zero console errors, page errors, or failed network responses.
 
+## COB payer order repair (2026-06-13)
+- Fixed `Update claim payer order` so it updates the linked claim instead of only showing a COB artifact.
+- The action now applies primary payer, secondary payer, COB rule, effective date, member IDs, and COB transaction ID to the claim.
+- If payer order changes on a submitted claim, the dashboard queues a corrected 837P or 837I transaction with status `Ready` and opens the claim drawer.
+- Verified with Chrome automation: COB opened Claims, showed secondary payer and COB rule, displayed `Corrected 837`, created a ready 837I correction transaction, and produced zero console errors, page errors, or failed network responses.
+- Re-ran endpoint-button audit for COB, 270/271, 276/277, ERA posting, 275 attachments, payer enrollment, and transaction retry. All produced visible state changes with zero runtime failures.
+
 ## Stedi endpoint lifecycle audit (2026-06-13)
 - Added shared Stedi transaction artifacts for endpoint-labeled actions: request/input, response/output, endpoint path, transaction ID, partner, status, and source claim.
 - Fixed 276/277 behavior: `Run 276 now` creates a fresh 276 request and saved 277 response, while `View 277 report` opens the saved 277 or explains that no report exists yet.
