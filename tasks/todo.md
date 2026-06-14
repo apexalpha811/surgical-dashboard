@@ -194,3 +194,13 @@
 - Updated 270/271, insurance discovery, COB, 837 claim submission, CMS-1500 PDF, 835 ERA PDF/report, 275 attachments, payer search/CSV, provider/enrollment create/update/delete/document/task, event retry, and transaction download behavior to create endpoint-shaped artifacts.
 - Transaction drawers now show saved request/input and response/output so each click has an auditable Stedi lifecycle trail.
 - Verified with `npm run check`, inline script syntax checks, and Chrome automation: 270/271, 276/277 run, 277 view, claim status from claim drawer, discovery, COB, 275 attachment, payer search, payer eligibility, enrollment update, and transaction drawer all create or display the expected endpoint artifacts with zero console errors, page errors, or failed network responses.
+
+## Efficient Frontier workflow implementation (2026-06-13)
+- Added `tasks/efficient-frontier.md` as the durable operating workflow for substantial DocuPipe and Stedi dashboard work.
+- The workflow defines what Codex keeps centralized, what can be delegated, how delegation packets must be written, required verification, and commit/push rules.
+- Updated `tasks/lessons.md` so future sessions load this workflow from normal project memory.
+
+## Original folder merge (2026-06-13)
+- Replaced the original dashboard app files with the current DocuPipe clone code while preserving the original folder's `.git` directory.
+- Excluded local secrets and logs from the copy: `.env`, `server.log`, and `server.err.log`.
+- Verified in the original folder with `npm run check`, inline script syntax checks, `/healthz` on port `8752`, and Chrome automation for Overview, Claims queue jump, logo home navigation, and DocuPipe navigation.

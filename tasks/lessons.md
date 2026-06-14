@@ -115,3 +115,7 @@ In a dashboard shell, the sidebar brand/logo should behave as a home control. Wi
 ## Stedi endpoint buttons need lifecycle artifacts
 
 For Stedi-labeled buttons, visible output is not enough. Each action must create or retrieve the endpoint's matching request, response, transaction ID, raw or report artifact, and land on the operational record. For example, `Run 276 now` sends and saves a 276/277 lifecycle, while `View 277 report` only opens the latest saved 277 response.
+
+## Efficient Frontier dashboard workflow
+
+For substantial dashboard work, use `tasks/efficient-frontier.md`: keep endpoint interpretation, risk, integration, and final review centralized, and delegate only bounded docs scans, clickable inventories, browser checks, or non-overlapping edits.
