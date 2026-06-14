@@ -226,3 +226,9 @@
 - Live Cloudflare Functions require Supabase for durable module settings, imports, dashboard records, and delete tombstones.
 - Added a 60 MB browser upload guard before DocuPipe base64 upload.
 - Verified `npm run check`, inline script syntax checks, Cloudflare local mock `/healthz`, `/api/modules`, mock DocuPipe upload and standardization, Stedi preview, dashboard import, oversized file guard, Claims queue jump, and logo home navigation.
+
+## Cloudflare live mode switch (2026-06-14)
+- Changed `wrangler.toml` from `APP_MODE = "mock"` to `APP_MODE = "live"` because Cloudflare dashboard plaintext vars are managed by Wrangler config.
+- Committed and pushed `5df5a6d Set Cloudflare production mode live`, then redeployed Cloudflare Pages.
+- Verified production `/healthz` returns `mode: live`.
+- Supabase write probe currently fails with `Invalid API key`, so Cloudflare can see a Supabase key but `SUPABASE_SERVICE_ROLE_KEY` must be replaced with the correct secret key from the same Supabase project.
