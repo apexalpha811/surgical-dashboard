@@ -135,3 +135,7 @@ Cloudflare Pages Functions cannot rely on local filesystem writes. In live mode,
 ## Supabase new secret keys
 
 Supabase `sb_secret_` API keys are not JWTs. Send them in the `apikey` header only. Do not send `Authorization: Bearer sb_secret_...`, or Supabase REST returns `401 Invalid API key`.
+
+## Module delete semantics
+
+For editable DocuPipe modules, DELETE should remove the module row, not soft-disable it. Soft-disabled test modules still show up in `/api/modules` and pollute the operator's schema list.

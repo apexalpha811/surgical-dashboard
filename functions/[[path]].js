@@ -45,10 +45,8 @@ async function handleApi(context, url) {
 
   if (moduleMatch && request.method === "DELETE") {
     const moduleId = decodeURIComponent(moduleMatch[1]);
-    const module = (await readModules(context.env)).find(item => item.id === moduleId);
-    if (!module) return json({ error: `Unknown module: ${moduleId}` }, 404);
-    module.enabled = false;
-    return json({ module: await updateModule(context.env, moduleId, module) || module });
+    const deleted = await deleteModule(context.env, moduleId);
+    return deleted ? json({ deleted: true, moduleId }) : json({ error: `Unknown module: ${moduleId}` }, 404);
   }
 
   if (request.method === "POST" && url.pathname === "/api/docupipe/upload") {
@@ -200,6 +198,18 @@ async function updateModule(env, moduleId, module) {
     body: JSON.stringify(moduleToRow(next))
   });
   return Array.isArray(rows) && rows[0] ? moduleFromRow(rows[0]) : null;
+}
+
+async function deleteModule(env, moduleId) {
+  requireSupabaseForLive(env);
+  if (!hasSupabase(env)) {
+    return (await readModules(env)).some(item => item.id === moduleId);
+  }
+  const rows = await supabaseRequest(env, `/docupipe_modules?id=eq.${encodeURIComponent(moduleId)}`, {
+    method: "DELETE",
+    headers: { "Prefer": "return=representation" }
+  });
+  return Array.isArray(rows) && rows.length > 0;
 }
 
 async function upsertModules(env, modules) {

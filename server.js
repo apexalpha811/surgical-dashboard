@@ -99,6 +99,21 @@ async function updateModule(moduleId, module) {
   return Array.isArray(rows) && rows[0] ? moduleFromRow(rows[0]) : null;
 }
 
+async function deleteModule(moduleId) {
+  if (!hasSupabase()) {
+    const modules = readFileModules();
+    const next = modules.filter(item => item.id !== moduleId);
+    if (next.length === modules.length) return false;
+    writeFileModules(next);
+    return true;
+  }
+  const rows = await supabaseRequest(`/docupipe_modules?id=eq.${encodeURIComponent(moduleId)}`, {
+    method: "DELETE",
+    headers: { "Prefer": "return=representation" }
+  });
+  return Array.isArray(rows) && rows.length > 0;
+}
+
 async function upsertModules(modules) {
   if (!hasSupabase()) {
     writeFileModules(modules);
@@ -487,15 +502,12 @@ async function handleApi(req, res, url) {
 
   if (moduleMatch && req.method === "DELETE") {
     const moduleId = decodeURIComponent(moduleMatch[1]);
-    const modules = await readModules();
-    const module = modules.find(item => item.id === moduleId);
-    if (!module) {
+    const deleted = await deleteModule(moduleId);
+    if (!deleted) {
       sendJson(res, 404, { error: `Unknown module: ${moduleId}` });
       return;
     }
-    module.enabled = false;
-    const next = await updateModule(moduleId, module);
-    sendJson(res, 200, { module: next || module });
+    sendJson(res, 200, { deleted: true, moduleId });
     return;
   }
 
