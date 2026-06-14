@@ -1033,14 +1033,16 @@ function buildStediPreview(module, standardization, overrides) {
 
 function buildClaimPreview(module, data) {
   const patient = data.patient || {};
-  const payer = data.payer || {};
+  const payer = objectValue(data.payer);
   const provider = data.provider || {};
   const claim = data.claim || {};
   const serviceLines = Array.isArray(data.serviceLines) ? data.serviceLines : [];
   const patientName = first(data.patientName, patient.fullName, joinName(patient.firstName, patient.lastName), "Unknown Patient");
-  const payerName = first(data.payer, payer.name, "Unknown Payer");
+  const payerName = first(typeof data.payer === "string" ? data.payer : null, payer.name, "Unknown Payer");
   const providerName = first(data.renderingProvider, provider.renderingProviderName, provider.organizationName, "Imported Provider");
   const claimNumber = first(data.claimId, data.claimNumber, claim.claimNumber, `CLM-${Date.now().toString().slice(-5)}`);
+  const claimType = normalizeClaimType(first(data.claimType, data.type, data.claimFormType, claim.claimType, claim.type, "837P"));
+  const endpoint = claimType === "837I" ? "/change/medicalnetwork/institutionalclaims/v1/submission" : module.stediEndpoint;
   const total = number(first(data.billedAmount, claim.totalChargeAmount, sum(serviceLines.map(line => line.chargeAmount || line.charge)), 0));
   const paid = number(first(data.paidAmount, claim.paidAmount, claim.totalPaidAmount, 0));
   const serviceFacility = first(data.serviceFacility, claim.serviceFacility, "Culver City ASC");
@@ -1084,14 +1086,14 @@ function buildClaimPreview(module, data) {
   const dashboardRecord = {
     id: claimNumber,
     patient: patientName,
-    type: "837P",
+    type: claimType,
     provider: providerName ? providerName.replace(/,.*$/, "") : "Dr. Imported",
     providerFull: providerName,
     loc: serviceFacility,
     payer: payerName,
     billed: total,
     paid,
-    status: first(data.status, "Draft"),
+    status: normalizeClaimStatus(first(data.status, "Draft")),
     dos: displayDate(first(claim.dateOfService, data.dateOfService)),
     lines: cptLines.map(line => ({
       cpt: first(line.cptCode, line.cpt, "00000"),
@@ -1105,7 +1107,7 @@ function buildClaimPreview(module, data) {
     rejReason: null,
     denCode: null
   };
-  return finalizePreview("professionalClaim837P", module.stediEndpoint, payload, dashboardRecord, validateClaim(payload));
+  return finalizePreview("professionalClaim837P", endpoint, payload, dashboardRecord, validateClaim(payload));
 }
 
 function buildEligibilityPreview(module, data) {
@@ -1335,6 +1337,21 @@ function first(...values) {
   return null;
 }
 
+function objectValue(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function normalizeClaimType(value) {
+  const text = String(value || "").toUpperCase();
+  return text.includes("837I") || text.includes("INSTITUTIONAL") ? "837I" : "837P";
+}
+
+function normalizeClaimStatus(value) {
+  const text = String(value || "").trim();
+  if (/^pending$/i.test(text)) return "Pending payer";
+  return text || "Draft";
+}
+
 function number(value) {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   const parsed = Number(String(value || "").replace(/[$,]/g, ""));
@@ -1370,6 +1387,7 @@ function compactDate(value) {
 function displayDate(value) {
   if (!value) return "";
   const text = String(value);
+  if (/^[A-Za-z]{3,9}\s+\d{1,2}$/.test(text.trim())) return text.trim();
   const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (iso) return `${iso[2]}/${iso[3]}/${iso[1]}`;
   const date = new Date(text);

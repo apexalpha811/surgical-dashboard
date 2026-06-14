@@ -1,5 +1,13 @@
 # Lessons
 
+## DocuPipe live account and schema checks
+
+When live DocuPipe upload returns `402`, verify `GET /account` before assuming the integration path is wrong. The API can reject `/document` before parsing when `remainingCredits` is zero. Also verify configured schema IDs against `GET /schemas`; stale IDs make standardization look broken even when parsing would otherwise work.
+
+## DocuPipe claim type mapping
+
+When claim extraction includes `837I` or institutional claim language, map the dashboard claim `type` to `837I` and route the preview endpoint to `/change/medicalnetwork/institutionalclaims/v1/submission`. Do not force all DocuPipe claim imports into 837P just because the module is named professional claim intake.
+
 ## DocuPipe file upload payload
 
 When sending a local file to DocuPipe `POST /document`, put the base64 file string at `document.file.contents` with `document.fileExtension`. Do not send `document.file.base64`; DocuPipe returns a `422` validation error because the expected file object is missing `contents`.

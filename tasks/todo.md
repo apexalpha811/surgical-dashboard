@@ -4,6 +4,12 @@
 - Updated DocuPipe preset endpoints to `/change/medicalnetwork/reports/v2/{transactionId}/835`, `/claim-attachments/file`, and `/providers`; `Print Stedi preview` now requires an actual preview payload.
 - Verified with `npm run check`, inline `index.html` script parsing, Tier 2 browser endpoint audit across 101 visible buttons, and DocuPipe module/runtime checks.
 - Left: no live Stedi writes were submitted. The dashboard still produces local endpoint-shaped artifacts unless real API credentials/proxy wiring are added.
+
+## DocuPipe test3.png audit (2026-06-14)
+- Verified `C:\Users\kv8n11\Downloads\test3.png` locally: source is claim `CLM-20559`, `837I`, Hannah Castillo, DOS `Apr 4`, Dr. Sunita Patel, Marina del Rey Clinic, Aetna, payer claim `PC999441613`, billed `$33,450`, four service lines, diagnoses `M75.101` and `K63.5`.
+- Updated claim module schema ID from stale `kEMrIoXe` to account-visible `3CNrau0Z`.
+- Fixed DocuPipe claim mapping so extracted 837I data lands in Claims as `type: 837I`, routes to `/change/medicalnetwork/institutionalclaims/v1/submission`, keeps `Apr 4` as the visible DOS, normalizes `Pending` to `Pending payer`, and maps payer/provider/facility/amounts/service lines/diagnoses into the correct fields.
+- Live DocuPipe upload still returns `402` from `POST /document`; `GET /account` reports `remainingCredits: 0`, `overageCredits: 0`, and no classes or workflows are configured, so DocuPipe cannot currently auto-route schema selection through classify workflows for this key.
 # Culver City Surgical Billing Dashboard Mockup
 
 ## What changed (2026-06-11)
