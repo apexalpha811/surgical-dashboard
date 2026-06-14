@@ -25,7 +25,7 @@ export async function onRequest(context) {
 async function handleApi(context, url) {
   const request = context.request;
   if (request.method === "GET" && url.pathname === "/api/modules") {
-    return json({ modules: await readModules(context.env), storage: hasSupabase(context.env) ? "supabase" : "seed" });
+    return json({ modules: await readModules(context.env), storage: hasSupabase(context.env) ? "supabase" : "seed", mode: isLive(context.env) && config(context.env).docupipeApiKey ? "live" : "mock" });
   }
 
   if (request.method === "POST" && url.pathname === "/api/modules") {

@@ -469,7 +469,7 @@ function stediHeaders() {
 
 async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/modules") {
-    sendJson(res, 200, { modules: await readModules(), storage: hasSupabase() ? "supabase" : "file" });
+    sendJson(res, 200, { modules: await readModules(), storage: hasSupabase() ? "supabase" : "file", mode: isLive() && config.docupipeApiKey ? "live" : "mock" });
     return;
   }
 
