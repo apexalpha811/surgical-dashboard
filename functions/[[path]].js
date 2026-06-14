@@ -663,7 +663,7 @@ function buildClaimPreview(module, data) {
   const provider = data.provider || {};
   const claim = data.claim || {};
   const serviceLines = Array.isArray(data.serviceLines) ? data.serviceLines : [];
-  const patientName = first(data.patientName, patient.fullName, joinName(patient.firstName, patient.lastName), "Unknown Patient");
+  const patientName = first(data.patientName, patient.fullName, patient.name, joinName(patient.firstName, patient.lastName), "Unknown Patient");
   const payerName = first(typeof data.payer === "string" ? data.payer : null, payer.name, "Unknown Payer");
   const providerName = first(data.renderingProvider, provider.renderingProviderName, provider.organizationName, "Imported Provider");
   const claimNumber = first(data.claimId, data.claimNumber, claim.claimNumber, `CLM-${Date.now().toString().slice(-5)}`);
@@ -682,7 +682,7 @@ function buildClaimPreview(module, data) {
     claimInformation: { patientControlNumber: claimNumber, placeOfServiceCode: first(claim.placeOfService, data.placeOfService, "24"), claimChargeAmount: total.toFixed(2), serviceFacilityLocation: { organizationName: serviceFacility }, serviceLines: cptLines.map((line, index) => ({ serviceLineNumber: String(index + 1), professionalService: { procedureIdentifier: "HC", procedureCode: first(line.cptCode, line.cpt, "00000"), procedureModifiers: Array.isArray(line.modifiers) ? line.modifiers.filter(Boolean) : line.modifier && line.modifier !== "-" ? [line.modifier] : [], lineItemChargeAmount: number(first(line.chargeAmount, line.charge, 0)).toFixed(2), measurementUnit: "UN", serviceUnitCount: String(first(line.units, 1)) }, diagnosisCodePointers: Array.isArray(line.diagnosisPointers) ? line.diagnosisPointers : [] })) },
     diagnosisCodes: Array.isArray(data.diagnoses) ? data.diagnoses : Array.isArray(data.diagnosisCodes) ? data.diagnosisCodes : []
   };
-  const dashboardRecord = { id: claimNumber, patient: patientName, type: claimType, provider: providerName ? providerName.replace(/,.*$/, "") : "Dr. Imported", providerFull: providerName, loc: serviceFacility, payer: payerName, billed: total, paid, status: normalizeClaimStatus(first(data.status, "Draft")), dos: displayDate(first(claim.dateOfService, data.dateOfService)), lines: cptLines.map(line => ({ cpt: first(line.cptCode, line.cpt, "00000"), desc: first(line.description, "Procedure"), mod: Array.isArray(line.modifiers) ? line.modifiers.join(", ") : first(line.modifier, "") === "-" ? "" : first(line.modifier, ""), units: first(line.units, 1), charge: number(first(line.chargeAmount, line.charge, 0)) })), icds: Array.isArray(data.diagnoses) ? data.diagnoses : Array.isArray(data.diagnosisCodes) ? data.diagnosisCodes : [], payerClm: first(data.payerClaimNumber, payer.payerClaimNumber, "Pending"), rejReason: null, denCode: null };
+  const dashboardRecord = { id: claimNumber, patient: patientName, type: claimType, provider: providerName ? providerName.replace(/,.*$/, "") : "Dr. Imported", providerFull: providerName, loc: serviceFacility, payer: payerName, billed: total, paid, status: normalizeClaimStatus(first(data.status, "Draft")), dos: displayDate(first(claim.dateOfService, data.dateOfService)), lines: cptLines.map(line => ({ cpt: first(line.cptCode, line.cpt, "00000"), desc: first(line.description, "Procedure"), mod: Array.isArray(line.modifiers) ? line.modifiers.join(", ") : first(line.modifier, "") === "-" ? "" : first(line.modifier, ""), units: first(line.units, 1), charge: number(first(line.chargeAmount, line.charge, 0)) })), icds: Array.isArray(data.diagnoses) ? data.diagnoses : Array.isArray(data.diagnosisCodes) ? data.diagnosisCodes : [], payerClm: first(data.payerClaimNumber, payer.payerClaimNumber, payer.claimNumber, "Pending"), rejReason: null, denCode: null };
   return finalizePreview("professionalClaim837P", endpoint, payload, dashboardRecord, validateClaim(payload));
 }
 
@@ -775,6 +775,7 @@ function normalizeClaimStatus(value) {
 }
 
 function number(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) value = value.value ?? value.amount;
   if (typeof value === "number" && Number.isFinite(value)) return value;
   const parsed = Number(String(value || "").replace(/[$,]/g, ""));
   return Number.isFinite(parsed) ? parsed : 0;

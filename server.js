@@ -1037,7 +1037,7 @@ function buildClaimPreview(module, data) {
   const provider = data.provider || {};
   const claim = data.claim || {};
   const serviceLines = Array.isArray(data.serviceLines) ? data.serviceLines : [];
-  const patientName = first(data.patientName, patient.fullName, joinName(patient.firstName, patient.lastName), "Unknown Patient");
+  const patientName = first(data.patientName, patient.fullName, patient.name, joinName(patient.firstName, patient.lastName), "Unknown Patient");
   const payerName = first(typeof data.payer === "string" ? data.payer : null, payer.name, "Unknown Payer");
   const providerName = first(data.renderingProvider, provider.renderingProviderName, provider.organizationName, "Imported Provider");
   const claimNumber = first(data.claimId, data.claimNumber, claim.claimNumber, `CLM-${Date.now().toString().slice(-5)}`);
@@ -1103,7 +1103,7 @@ function buildClaimPreview(module, data) {
       charge: number(first(line.chargeAmount, line.charge, 0))
     })),
     icds: Array.isArray(data.diagnoses) ? data.diagnoses : Array.isArray(data.diagnosisCodes) ? data.diagnosisCodes : [],
-    payerClm: first(data.payerClaimNumber, payer.payerClaimNumber, "Pending"),
+    payerClm: first(data.payerClaimNumber, payer.payerClaimNumber, payer.claimNumber, "Pending"),
     rejReason: null,
     denCode: null
   };
@@ -1353,6 +1353,7 @@ function normalizeClaimStatus(value) {
 }
 
 function number(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) value = value.value ?? value.amount;
   if (typeof value === "number" && Number.isFinite(value)) return value;
   const parsed = Number(String(value || "").replace(/[$,]/g, ""));
   return Number.isFinite(parsed) ? parsed : 0;

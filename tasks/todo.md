@@ -10,6 +10,14 @@
 - Updated claim module schema ID from stale `kEMrIoXe` to account-visible `3CNrau0Z`.
 - Fixed DocuPipe claim mapping so extracted 837I data lands in Claims as `type: 837I`, routes to `/change/medicalnetwork/institutionalclaims/v1/submission`, keeps `Apr 4` as the visible DOS, normalizes `Pending` to `Pending payer`, and maps payer/provider/facility/amounts/service lines/diagnoses into the correct fields.
 - Live DocuPipe upload still returns `402` from `POST /document`; `GET /account` reports `remainingCredits: 0`, `overageCredits: 0`, and no classes or workflows are configured, so DocuPipe cannot currently auto-route schema selection through classify workflows for this key.
+
+## DocuPipe live re-verification (2026-06-14, corrected)
+- Account now has `remainingCredits: 445` (prior `0` note was stale). Ran the real pipeline on `test3.png`: `POST /document` -> poll -> `POST /v3/standardize` (schema `ao7dV4Lo` "Medical Claim") -> `GET /standardization`. DocuPipe extraction is faithful to the source (patient, payer, provider, facility, DOS `Apr 4`, billed 33450, 4 service lines, diagnoses).
+- Corrected stale schema ID: module `claim-intake-837p` pointed at `3CNrau0Z`, which does NOT exist in this account (only `ao7dV4Lo` and `wzlKtNFc` exist). Set it to `ao7dV4Lo`.
+- Found `buildClaimPreview` mis-mapped the real schema shape: patient -> "Unknown Patient" (schema uses `patient.name`), billed/line charges -> 0 (schema returns `{value,unit}` money objects), payer claim # -> "Pending" (schema uses `payer.claimNumber`). Fixed in both `server.js` and `functions/[[path]].js`: `number()` now unwraps `{value,unit}`, patient name reads `patient.name`, payer claim reads `payer.claimNumber`.
+- Verified end-to-end through `/api/stedi/preview`: 11/12 fields now correct, record routes to the Claims section. `patient.id` "8371" has no website field and is correctly dropped (per user: do not fabricate fields not present on the site).
+- Claim type shows `837P` (default) not `837I`: schema `ao7dV4Lo` has no claim-type field, so per user direction we do not fabricate it. To show 837I, the schema would need a claim-type field (deferred).
+- True DocuPipe auto-classification is not set up: 0 classes, 0 workflows, and 4 of 5 modules have empty `docupipeSchemaId`, so a Classify & Route workflow has nothing to route to yet.
 # Culver City Surgical Billing Dashboard Mockup
 
 ## What changed (2026-06-11)
