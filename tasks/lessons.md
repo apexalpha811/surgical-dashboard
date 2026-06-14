@@ -127,3 +127,7 @@ For Stedi-labeled buttons, visible output is not enough. Each action must create
 ## Efficient Frontier dashboard workflow
 
 For substantial dashboard work, use `tasks/efficient-frontier.md`: keep endpoint interpretation, risk, integration, and final review centralized, and delegate only bounded docs scans, clickable inventories, browser checks, or non-overlapping edits.
+
+## Cloudflare Pages storage boundary
+
+Cloudflare Pages Functions cannot rely on local filesystem writes. In live mode, require Supabase for module settings, imports, dashboard records, and delete tombstones instead of silently falling back to seed data.

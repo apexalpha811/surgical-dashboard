@@ -1,0 +1,11 @@
+name = "culver-city-surgical-dashboard"
+compatibility_date = "2026-06-13"
+pages_build_output_dir = "."
+
+[vars]
+APP_MODE = "mock"
+DOCUPIPE_BASE_URL = "https://app.docupipe.ai"
+STEDI_HEALTHCARE_BASE_URL = "https://healthcare.us.stedi.com/2024-04-01"
+STEDI_CLAIMS_BASE_URL = "https://claims.us.stedi.com/2025-03-07"
+STEDI_ENROLLMENTS_BASE_URL = "https://enrollments.us.stedi.com/2024-09-01"
+STEDI_PAYERS_BASE_URL = "https://payers.us.stedi.com/2024-04-01"

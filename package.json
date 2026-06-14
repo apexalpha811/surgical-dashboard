@@ -6,7 +6,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check lib/docupipe.js"
+    "check": "node --check server.js && node --check lib/docupipe.js && node --check \"functions/[[path]].js\"",
+    "cf:dev": "npx wrangler pages dev . --compatibility-date=2026-06-13",
+    "cf:dev:mock": "npx wrangler pages dev . --compatibility-date=2026-06-13 --binding APP_MODE=mock",
+    "cf:deploy": "npx wrangler pages deploy . --project-name=culver-city-surgical-dashboard"
   },
   "engines": {
     "node": ">=20"

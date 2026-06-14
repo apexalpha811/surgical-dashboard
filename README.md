@@ -1,139 +1,111 @@
-# Culver City Surgical Dashboard - DocuPipe Clone
+# Culver City Surgical Dashboard
 
-This folder is the DocuPipe and Stedi integration clone. The original dashboard folder remains unchanged. See `DOCUPIPE_SETUP.md` for server, API key, mock mode, live mode, and Print Center setup.
+Cloudflare Pages dashboard for DocuPipe intake, Stedi-shaped healthcare workflows, Supabase persistence, claim packets, and billing operations.
 
-## Original Dashboard Notes
+## Active Hosting
 
-Static-HTML medical billing dashboard mockup with a comprehensive Insurance Appeals tracking module. Uses plain browser JavaScript (no modules, no build process) loaded via script tags in `index.html`.
+Production target: Cloudflare Pages + Pages Functions.
 
-## Project Overview
+GitHub repo watched for production:
 
-This dashboard enables ASC (Ambulatory Surgery Center) billing staff to track, manage, and appeal insurance claim denials. The Appeals module provides:
-
-- 10 sample appeal records with realistic claim data, patient information, and denial codes (CARC codes)
-- Appeal letter generation with 3 distinct formal template variants
-- Mock Stedi healthcare API integration (simulates real Stedi EDI endpoints)
-- Clinical decision support via Claude AI for medical necessity argumentation
-- Timeline tracking of appeal progression (denial received, submitted, resolved)
-- Deadline management and payer coordination
-
-## File Map
-
-**Core data:**
-- `lib/data/appeals.js` - `APPEALS_DATA` constant with 10 appeal records including patient demographics, claim details, denial codes, appeal status, and formatted appeal letter drafts
-
-**Appeal letter generation:**
-- `lib/ai/generateAppealLetter.js` - `generateAppealLetter(appeal, variant)` function returning hardcoded multi-paragraph appeal letters in 3 template styles; includes live Claude API and Stedi MCP workflow as comment block
-
-**Stedi API mock:**
-- `lib/stedi.js` - `StediMock` global object with 6 async functions simulating Stedi healthcare API and MCP tool calls (fetchERADenials, resubmitClaim, checkClaimStatus, submitAttachment, searchPayer, runEligibilityCheck)
-
-**Configuration:**
-- `.env.example` - Template for API keys (Stedi, Anthropic) and app name; copy to `.env` for local development
-
-**Documentation:**
-- `README.md` - This file
-
-## Live Integration Guide
-
-### Swap Mock to Claude API
-
-In `lib/ai/generateAppealLetter.js`, the comment block at the top shows the exact live implementation:
-
-```javascript
-import Anthropic from "@anthropic-ai/sdk";
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-const response = await client.messages.create({
-  model: "claude-sonnet-4-5",
-  max_tokens: 1024,
-  messages: [{
-    role: "user",
-    content: `You are a professional medical billing specialist writing a formal
-    insurance appeal letter on behalf of an Ambulatory Surgery Center (ASC).
-    Write a formal appeal letter to ${payer} referencing denial code ${denialCode}
-    (${denialReason}) for CPT codes ${cptCodes} and diagnosis ${diagnosisCodes}.
-    The claim number is ${claimNumber} for service date ${dateOfService}.
-    Amount denied: $${amountDenied}. Appeal type: ${appealType}.
-    Request reconsideration citing medical necessity. Include placeholders for
-    facility name, address, and provider NPI.`
-  }]
-});
-return response.content[0].text;
+```txt
+apexalpha811/surgical-dashboard.git
 ```
 
-**Steps to activate:**
-1. Load the Anthropic SDK: `npm install @anthropic-ai/sdk`
-2. Set `ANTHROPIC_API_KEY` in `.env` (obtain from https://console.anthropic.com)
-3. Replace the `generateAppealLetter` function with the live implementation above
-4. Obtain a Business Associate Agreement (BAA) with Anthropic before using real patient data in production
+The app is mostly static HTML, CSS, and browser JavaScript. API routes are handled by Cloudflare Pages Functions under `functions/`. The legacy `server.js` Node server remains for local fallback only.
 
-### Swap Mock to Stedi Healthcare API
+## Required Cloudflare Environment Variables
 
-In `lib/stedi.js`, each function includes a TODO comment showing the real endpoint:
+Set these in Cloudflare Pages project settings:
 
-- `fetchERADenials()` - GET `https://healthcare.us.stedi.com/2024-04-01/era` (pull CARC/RARC denial codes and ERA documents)
-- `resubmitClaim(claimId)` - POST `https://healthcare.us.stedi.com/2024-04-01/claims` (resubmit corrected claim)
-- `checkClaimStatus(claimId)` - POST `https://healthcare.us.stedi.com/2024-04-01/claim-status` (track claim processing)
-- `submitAttachment(claimId, file)` - POST `https://healthcare.us.stedi.com/2024-04-01/attachments` (attach clinical docs to appeal)
-- `searchPayer()` - Stedi MCP tool `payer_search` (lookup payer rules and endpoints)
-- `runEligibilityCheck()` - Stedi MCP tool `eligibility_check` (verify patient coverage)
+```env
+APP_MODE=live
+DOCUPIPE_API_KEY=your_docupipe_api_key_here
+DOCUPIPE_BASE_URL=https://app.docupipe.ai
+STEDI_API_KEY=your_stedi_api_key_here
+STEDI_HEALTHCARE_BASE_URL=https://healthcare.us.stedi.com/2024-04-01
+STEDI_CLAIMS_BASE_URL=https://claims.us.stedi.com/2025-03-07
+STEDI_ENROLLMENTS_BASE_URL=https://enrollments.us.stedi.com/2024-09-01
+STEDI_PAYERS_BASE_URL=https://payers.us.stedi.com/2024-04-01
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
+```
 
-**Steps to activate:**
-1. Set `STEDI_API_KEY` in `.env` (obtain from https://stedi.com)
-2. Replace `StediMock` functions with actual HTTP requests using `fetch` or `axios`
-3. See https://stedi.com/docs for API reference and MCP integration
+In Cloudflare live mode, Supabase is required for durable module settings, imports, dashboard records, and delete tombstones. Without Supabase variables, live write routes return a clear setup error.
 
-### Agentic Workflow with Stedi + Claude
+## Cloudflare Setup
 
-The comment block in `lib/ai/generateAppealLetter.js` documents the full workflow:
+1. In Cloudflare, create a Pages project connected to `apexalpha811/surgical-dashboard.git`.
+2. Build command: leave blank, or use `echo "static dashboard"`.
+3. Build output directory: `.`
+4. Add the environment variables above.
+5. Deploy the `main` branch.
+6. Verify:
+   - `/healthz`
+   - `/api/modules`
+   - dashboard home page
+   - DocuPipe intake in mock mode first, then live mode after variables are confirmed.
 
-1. Stedi MCP `searchPayer()` - Get payer ID and approved submission channels
-2. Stedi MCP `runEligibilityCheck()` - Confirm patient coverage and deductible status
-3. Stedi ERA API `fetchERADenials()` - Pull CARC/RARC codes from payer
-4. Claude API `generateAppealLetter()` - Draft formal appeal letter using denial + CPT/diagnosis data
-5. Stedi 275/005010X222 API `submitAttachment()` - Attach clinical docs to appeal submission
-6. Dashboard timeline logging - Record submission, set deadline tracker, monitor payer response
+## Local Development
 
-## HIPAA Compliance Notice
+Cloudflare local preview:
 
-This dashboard is a mockup using synthetic demo data. Before deploying to production with real patient information:
-
-- **Obtain a Business Associate Agreement (BAA)** with Anthropic Inc. before sending any real patient data to the Claude API
-- **Encrypt data in transit** (HTTPS only, no HTTP)
-- **Secure API keys** using environment variables or a secrets manager (never commit `.env` to version control)
-- **Audit logging** - Track all claim modifications, appeals submitted, and API calls
-- **User access control** - Implement role-based access for billing staff, clinicians, and administrators
-- **Data retention** - Follow state and federal regulations on claim records (typically 5-7 years minimum)
-
-See your healthcare compliance officer and legal team before production deployment.
-
-## Deployment
-
-This is a **static HTML dashboard**. No Node.js, no Next.js, no build step required.
-
-**Option 1: Local preview**
 ```bash
-cd C:\Users\kv8n11\culver-city-surgical-dashboard
-python -m http.server 8000
-# or
-npx http-server
-```
-Then open `http://localhost:8000` in your browser.
-
-**Option 2: Cloud static hosting**
-Deploy the entire folder to any static host (Vercel, Netlify, S3, GitHub Pages, etc.). No `vercel.json` config needed.
-
-**Option 3: Docker**
-```dockerfile
-FROM nginx:alpine
-COPY . /usr/share/nginx/html
+npm run cf:dev
 ```
 
-The dashboard loads all JavaScript via `<script>` tags in `index.html`. No modules, no build tools, no import/export statements.
+Mock-only Cloudflare preview:
 
----
+```bash
+npm run cf:dev:mock
+```
 
-**Last updated:** June 11, 2026
+Legacy local Node fallback:
 
-For questions or contributions, contact the ASC billing team.
+```bash
+npm start
+```
+
+Static and syntax checks:
+
+```bash
+npm run check
+```
+
+The DocuPipe upload UI blocks files over 60 MB before upload so base64 JSON requests stay below Cloudflare request limits.
+
+## API Surface
+
+The browser uses relative API paths. These routes are preserved in Cloudflare:
+
+```txt
+GET  /api/modules
+POST /api/modules
+PUT  /api/modules/:id
+DELETE /api/modules/:id
+POST /api/docupipe/upload
+POST /api/docupipe/standardize
+GET  /api/docupipe/schemas
+GET  /api/docupipe/schemas/:id
+GET  /api/docupipe/jobs/:jobId
+GET  /api/docupipe/documents/:documentId
+GET  /api/docupipe/standardizations/:id
+POST /api/stedi/preview
+POST /api/stedi/submit
+POST /api/imports
+GET  /api/dashboard-records
+POST /api/dashboard-records
+POST /api/dashboard-records/delete
+GET  /healthz
+```
+
+## Data And Safety
+
+- Do not commit `.env`, logs, or API keys.
+- Use Supabase service role key only as a server-side Cloudflare secret.
+- Do not expose DocuPipe, Stedi, or Supabase service keys in browser JavaScript.
+- Use mock mode for demos that should not call paid live APIs.
+
+## Legacy Render Note
+
+Render is no longer the intended production host. The previous Node `server.js` deployment path is retained only as a local fallback and for reference in Git history.

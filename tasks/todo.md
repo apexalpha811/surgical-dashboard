@@ -218,3 +218,11 @@
 - Replaced the original dashboard app files with the current DocuPipe clone code while preserving the original folder's `.git` directory.
 - Excluded local secrets and logs from the copy: `.env`, `server.log`, and `server.err.log`.
 - Verified in the original folder with `npm run check`, inline script syntax checks, `/healthz` on port `8752`, and Chrome automation for Overview, Claims queue jump, logo home navigation, and DocuPipe navigation.
+
+## Cloudflare Pages migration (2026-06-14)
+- Added Cloudflare Pages Functions for the existing `/api/...` and `/healthz` routes while keeping `server.js` as a local legacy fallback.
+- Added `wrangler.toml`, Cloudflare npm scripts, and Cloudflare-first README setup.
+- Removed the active Render blueprint so Render is no longer the production deployment path.
+- Live Cloudflare Functions require Supabase for durable module settings, imports, dashboard records, and delete tombstones.
+- Added a 60 MB browser upload guard before DocuPipe base64 upload.
+- Verified `npm run check`, inline script syntax checks, Cloudflare local mock `/healthz`, `/api/modules`, mock DocuPipe upload and standardization, Stedi preview, dashboard import, oversized file guard, Claims queue jump, and logo home navigation.
