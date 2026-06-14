@@ -1705,7 +1705,7 @@ function submitCreate(key){
  if(key==='claims'){
   const artifact=createTransactionForClaim(record,'837 claim submission created from dashboard form');
   record.transactionId=artifact.id;
-  record.status='Accepted';
+  record.status='Pending payer';
  }
  if(key==='enrollments'){
   const request={providerName:record.provider,payerName:record.payer,transactionType:record.txn,status:'DRAFT'};
