@@ -1,3 +1,9 @@
+# Stedi Button Audit Implementation (2026-06-14)
+- Added a shared `stediClient` facade in `index.html` for eligibility, insurance discovery, 837P/837I, CMS-1500 PDF, 276/277, ERA PDF/report, 275 attachments, COB, payers, providers, enrollments, transactions, and event retry artifacts.
+- Replaced remaining fake success paths in button handlers so endpoint-labeled actions create, retrieve, print, download, or open endpoint-shaped artifacts with request, response, transaction ID, endpoint, and source object details.
+- Updated DocuPipe preset endpoints to `/change/medicalnetwork/reports/v2/{transactionId}/835`, `/claim-attachments/file`, and `/providers`; `Print Stedi preview` now requires an actual preview payload.
+- Verified with `npm run check`, inline `index.html` script parsing, Tier 2 browser endpoint audit across 101 visible buttons, and DocuPipe module/runtime checks.
+- Left: no live Stedi writes were submitted. The dashboard still produces local endpoint-shaped artifacts unless real API credentials/proxy wiring are added.
 # Culver City Surgical Billing Dashboard Mockup
 
 ## What changed (2026-06-11)
@@ -232,3 +238,4 @@
 - Committed and pushed `5df5a6d Set Cloudflare production mode live`, then redeployed Cloudflare Pages.
 - Verified production `/healthz` returns `mode: live`.
 - Supabase write probe currently fails with `Invalid API key`, so Cloudflare can see a Supabase key but `SUPABASE_SERVICE_ROLE_KEY` must be replaced with the correct secret key from the same Supabase project.
+
