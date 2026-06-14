@@ -116,6 +116,10 @@ In a dashboard shell, the sidebar brand/logo should behave as a home control. Wi
 
 When a COB action says it updates payer order, it must mutate the linked claim, persist the claim, open the claim drawer, and queue a corrected 837 when the original claim was already submitted. A COB artifact panel alone is not a working endpoint outcome.
 
+## Endpoint-button audit scope
+
+When the user asks to audit all dashboard buttons against endpoint labels, do not prioritize only the highest-impact buttons. Check every visible section button and representative drawer action, and downgrade or rename any button that cannot produce a real state change, artifact, file, print view, or opened record.
+
 ## Stedi endpoint buttons need lifecycle artifacts
 
 For Stedi-labeled buttons, visible output is not enough. Each action must create or retrieve the endpoint's matching request, response, transaction ID, raw or report artifact, and land on the operational record. For example, `Run 276 now` sends and saves a 276/277 lifecycle, while `View 277 report` only opens the latest saved 277 response.

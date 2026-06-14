@@ -452,8 +452,8 @@ th.sort:hover{color:var(--text)}
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
         <h3 style="margin:0">Claim queue</h3>
         <div class="spacer"></div>
-        <button class="btn btn-sm" onclick="openCreate('claims')">+ New professional claim (837P)</button>
-        <button class="btn-ghost btn-sm" onclick="openCreate('claims')">+ Institutional (837I)</button>
+        <button class="btn btn-sm" onclick="openCreate('claims',{type:'837P'})">+ New professional claim (837P)</button>
+        <button class="btn-ghost btn-sm" onclick="openCreate('claims',{type:'837I'})">+ Institutional (837I)</button>
       </div>
       <div class="sub">Click any row for service lines, diagnoses, and adjudication detail</div>
       <div class="tbl-wrap"><table>
@@ -926,6 +926,11 @@ const PAYERS=[
 ];
 const PLANS=['PPO Gold','PPO Silver','HMO Select','EPO Value','Choice Plus','Open Access','Part B','Managed Care','HDHP Bronze','POS Premier'];
 const LOCS=['Culver City ASC','Marina del Rey Clinic','El Segundo Imaging & Pain'];
+const LOCATION_CONFIGS={
+ 'Culver City ASC':{name:'Culver City ASC',address:'9808 Washington Blvd, Suite 200',city:'Culver City',state:'CA',zip:'90232',npi:'1841557020',pos:'24',role:'ASC service facility'},
+ 'Marina del Rey Clinic':{name:'Marina del Rey Clinic',address:'4560 Admiralty Way, Suite 310',city:'Marina del Rey',state:'CA',zip:'90292',npi:'1992304186',pos:'11',role:'Office service facility'},
+ 'El Segundo Imaging & Pain':{name:'El Segundo Imaging & Pain',address:'2041 Rosecrans Ave, Suite 155',city:'El Segundo',state:'CA',zip:'90245',npi:'1577449863',pos:'11',role:'Office service facility'}
+};
 const SPECS=[['Orthopedic surgery','207X00000X'],['General surgery','208600000X'],['Pain management','208VP0014X'],['Ophthalmology','207W00000X'],['Gastroenterology','207RG0100X'],['Podiatry','213E00000X'],['Anesthesiology','207L00000X'],['Otolaryngology','207Y00000X']];
 const CPTS=[['29881','Knee arthroscopy w/ meniscectomy',4820],['29827','Arthroscopic rotator cuff repair',7240],['64483','Transforaminal epidural, lumbar',1180],['63030','Lumbar discectomy',9640],['47562','Laparoscopic cholecystectomy',8150],['49505','Inguinal hernia repair',6480],['66984','Cataract extraction w/ IOL',3420],['45380','Colonoscopy with biopsy',1950],['43239','Upper GI endoscopy with biopsy',1720],['28296','Bunionectomy w/ osteotomy',5310],['62323','Interlaminar epidural injection',1240],['27447','Total knee arthroplasty',21800],['23472','Total shoulder arthroplasty',19400],['64635','RF ablation, lumbar facet',2360]];
 const ICDS=['M17.11','M75.101','M54.16','K80.20','K40.90','H25.11','K63.5','M20.11','M48.062','Z12.11','M25.561','G89.29'];
@@ -1363,7 +1368,27 @@ function checkStatusFromForm(){const c=claims[0];const index=createStatusForClai
 function runCobFromForm(){const request={patient:'Robert Whitfield',knownPayer:'Medicare (Noridian)',memberId:'1EG4-TE5-MK72'};const response={patient:request.patient,primary:'Medicare (Noridian)',secondary:'Blue Shield of CA',effectiveDate:'06/01/2026',rule:'Medigap follows Medicare',payerResponsibilities:['Primary adjudicates claim first','Secondary receives remaining balance with primary EOB']};const artifact=stediArtifact('COB','/coordination-of-benefits',request,response,{partner:request.knownPayer,description:'COB primacy check response saved'});const record={patient:response.patient,primary:response.primary,secondary:response.secondary,eff:response.effectiveDate,rule:response.rule,m1:request.memberId,m2:memberId(),transactionId:artifact.id,cobArtifact:artifact};cob.unshift(record);T.cob.data=cob;refreshLiveSection('cob');persistDashboardRecord('cob',record,'created');showSection('cob');openDrawer('cob',0);}
 function exportPayersCsv(){const request={format:'csv',filters:'current payer directory'};const response={count:payerDir.length,fileName:'stedi-payers.csv'};stediArtifact('Payers CSV','/payers/csv',request,response,{partner:'Stedi payer directory',description:'Payer directory CSV export'});downloadCsv(response.fileName,[['Payer','Stedi ID','Eligibility','Claims','ERA','Enrollment required'],...payerDir.map(p=>[p.name,p.stedi,p.elig?'yes':'no',p.clm?'yes':'no',p.era?'yes':'no',p.enroll])]);panel('Payer CSV export','<div class="empty-note">Downloaded '+safeText(response.fileName)+' with '+safeText(payerDir.length)+' payer records from /payers/csv.</div>');}
 function exportEnrollmentsCsv(){const request={format:'csv',filters:'current enrollment table'};const response={count:enrollments.length,fileName:'stedi-enrollments.csv'};stediArtifact('Enrollment export','/enrollments/export',request,response,{partner:'Stedi enrollments',description:'Enrollment export created'});downloadCsv(response.fileName,[['Enrollment ID','Provider','Payer','Transaction','Status','Task'],...enrollments.map(e=>[e.id,e.provider,e.payer,e.txn,e.status,e.task||''])]);panel('Enrollment export','<div class="empty-note">Downloaded '+safeText(response.fileName)+' with '+safeText(enrollments.length)+' enrollment records.</div>');}
-function manageLocation(name){panel('Location management','<div class="empty-note">'+safeText(name)+' is local facility configuration used in 837 billing provider, rendering provider, and service facility loops. It is not a standalone Stedi endpoint, but it changes what the 837 request sends.</div>');}
+function locationConfig(name){try{const saved=JSON.parse(localStorage.getItem('ccs-location-configs')||'{}');return saved[name]||LOCATION_CONFIGS[name]||{name,address:'',city:'',state:'CA',zip:'',npi:'',pos:'11',role:'Service facility'};}catch{return LOCATION_CONFIGS[name]||{name,address:'',city:'',state:'CA',zip:'',npi:'',pos:'11',role:'Service facility'};}}
+function manageLocation(name){
+ const cfg=locationConfig(name),modal=document.getElementById('createModal');
+ modal.innerHTML='<div class="d-head"><h2>Manage location</h2><button class="x" onclick="closeCreate()" aria-label="Close">✕</button></div>'+
+  '<div class="empty-note">Local service facility settings. These populate 837 service facility loops and CMS-1500 facility fields.</div>'+
+  ['name','address','city','state','zip','npi','pos','role'].map(k=>'<div class="field" style="margin-bottom:12px"><label>'+k.toUpperCase()+'</label><input id="loc-'+k+'" value="'+safeText(cfg[k]||'')+'"></div>').join('')+
+  '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="saveLocationConfig(\''+safeText(name)+'\')">Save location</button><button class="btn-ghost" onclick="createLocationTestClaim(\''+safeText(name)+'\')">Create test 837</button><button class="btn-ghost" onclick="closeCreate()">Cancel</button></div>';
+ document.getElementById('createOvl').classList.add('open');
+}
+function saveLocationConfig(name){
+ const keys=['name','address','city','state','zip','npi','pos','role'],cfg={};
+ keys.forEach(k=>{const el=document.getElementById('loc-'+k);cfg[k]=el?el.value:'';});
+ let saved={};try{saved=JSON.parse(localStorage.getItem('ccs-location-configs')||'{}');}catch{}
+ saved[name]=cfg;localStorage.setItem('ccs-location-configs',JSON.stringify(saved));
+ panel('Location saved','<div class="empty-note">'+safeText(cfg.name||name)+' will now populate service facility data for new 837 claims at POS '+safeText(cfg.pos)+'.</div>');
+}
+function createLocationTestClaim(name){
+ const cfg=locationConfig(name),payer=PAYERS[0][0],provider=providers[0];
+ const record={id:'CLM-LOC-'+ri(10000,99999),patient:'Location Test Patient',type:'837P',provider:'Dr. '+provider.last,providerFull:provider.name,loc:cfg.name||name,facilityNpi:cfg.npi,facilityPos:cfg.pos,payer,billed:8500,paid:0,status:'Draft',dos:new Date().toLocaleDateString('en-US'),lines:[{cpt:'29881',desc:'Knee arthroscopy w/ meniscectomy',mod:'',units:1,charge:8500}],icds:['M17.11'],payerClm:'Pending'};
+ claims.unshift(record);T.claims.data=claims;refreshLiveSection('claims');persistDashboardRecord('claims',record,'created-from-location');closeCreate();focusRecord('claims',0);
+}
 function drawerAct(title,msg){panel(title,msg);}
 function drawerX12(title,x12){const o=document.getElementById('drawerOut');o.innerHTML='<div class="dsec"><h4>'+title+'</h4><div class="x12">'+x12+'</div></div>';o.scrollIntoView({block:'nearest'});}
 function view277(i){const r=statusChecks[i];if(!r||!r.raw277){panel('277 report','No saved 277 response exists yet. Run 276 now to submit a claim status request and save the payer response.');return;}drawerX12('277 claim status report',r.raw277);}
@@ -1588,10 +1613,11 @@ const CREATE={
   {k:'enroll',label:'Enrollment required',type:'select',opts:['None','ERA only','Claims + ERA','All transactions']}
  ],build:v=>({name:v.name||'New Payer',stedi:v.stedi||('PAYER-'+ri(100,999)),elig:true,clm:true,era:true,enroll:v.enroll,avgMs:ri(800,4000)})}
 };
-function openCreate(key){
+function openCreate(key,defaults){
+ const preset=defaults||{};
  const c=CREATE[key];
  document.getElementById('createModal').innerHTML='<div class="d-head"><h2>'+c.title+'</h2><button class="x" onclick="closeCreate()" aria-label="Close">✕</button></div>'+
-  c.fields.map(f=>'<div class="field" style="margin-bottom:12px"><label>'+f.label+'</label>'+(f.type==='select'?'<select id="cf-'+f.k+'">'+f.opts.map(o=>'<option>'+o+'</option>').join('')+'</select>':'<input id="cf-'+f.k+'" value="'+(f.v||'')+'">')+'</div>').join('')+
+  c.fields.map(f=>{const value=preset[f.k]??f.v??'';return '<div class="field" style="margin-bottom:12px"><label>'+f.label+'</label>'+(f.type==='select'?'<select id="cf-'+f.k+'">'+f.opts.map(o=>'<option'+(String(o)===String(value)?' selected':'')+'>'+o+'</option>').join('')+'</select>':'<input id="cf-'+f.k+'" value="'+safeText(value)+'">')+'</div>';}).join('')+
   '<div style="margin-top:16px;display:flex;gap:8px"><button class="btn" onclick="submitCreate(\''+key+'\')">Create</button><button class="btn-ghost" onclick="closeCreate()">Cancel</button></div>';
  document.getElementById('createOvl').classList.add('open');
 }

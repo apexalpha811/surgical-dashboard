@@ -195,6 +195,13 @@
 - Verified with Chrome automation: COB opened Claims, showed secondary payer and COB rule, displayed `Corrected 837`, created a ready 837I correction transaction, and produced zero console errors, page errors, or failed network responses.
 - Re-ran endpoint-button audit for COB, 270/271, 276/277, ERA posting, 275 attachments, payer enrollment, and transaction retry. All produced visible state changes with zero runtime failures.
 
+## Full button endpoint parity pass (2026-06-13)
+- Fixed `+ Institutional (837I)` so it opens the claim form with claim type set to `837I` instead of reusing the 837P default.
+- Replaced location `Manage` from an explanatory panel with editable local service facility settings and a `Create test 837` action that opens a claim draft with facility NPI/POS.
+- Verified section-level buttons: Run eligibility check, Start discovery, 837P create, 837I create, Check status, browse files, Run COB check, Update claim payer order, Manage location, Payer Search, Export CSV, and Export all.
+- Verified representative drawer actions: View raw 271, Download 271 PDF, CMS-1500 PDF, View 835 report, ERA PDF, payer Run test eligibility, enrollment Upload document, enrollment Update enrollment, and transaction input/output downloads.
+- All verified actions produced endpoint-shaped state, an opened record, a download, a print popup, or a transaction artifact. Chrome automation reported zero console errors, page errors, or failed network requests.
+
 ## Stedi endpoint lifecycle audit (2026-06-13)
 - Added shared Stedi transaction artifacts for endpoint-labeled actions: request/input, response/output, endpoint path, transaction ID, partner, status, and source claim.
 - Fixed 276/277 behavior: `Run 276 now` creates a fresh 276 request and saved 277 response, while `View 277 report` opens the saved 277 or explains that no report exists yet.
