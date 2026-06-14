@@ -1083,6 +1083,14 @@ function buildClaimPreview(module, data) {
     },
     diagnosisCodes: Array.isArray(data.diagnoses) ? data.diagnoses : Array.isArray(data.diagnosisCodes) ? data.diagnosisCodes : []
   };
+  const missing = [];
+  if (!first(data.patientName, patient.fullName, patient.name, joinName(patient.firstName, patient.lastName))) missing.push("patient");
+  if (!first(typeof data.payer === "string" ? data.payer : null, payer.name)) missing.push("payer");
+  if (!first(data.renderingProvider, provider.renderingProviderName, provider.organizationName)) missing.push("provider");
+  if (!first(data.serviceFacility, claim.serviceFacility)) missing.push("loc");
+  if (!first(data.payerClaimNumber, payer.payerClaimNumber, payer.claimNumber)) missing.push("payerClm");
+  if (!first(data.billedAmount, claim.totalChargeAmount) && sum(serviceLines.map(line => line.chargeAmount || line.charge)) <= 0) missing.push("billed");
+  if (!first(claim.dateOfService, data.dateOfService)) missing.push("dos");
   const dashboardRecord = {
     id: claimNumber,
     patient: patientName,
@@ -1105,7 +1113,8 @@ function buildClaimPreview(module, data) {
     icds: Array.isArray(data.diagnoses) ? data.diagnoses : Array.isArray(data.diagnosisCodes) ? data.diagnosisCodes : [],
     payerClm: first(data.payerClaimNumber, payer.payerClaimNumber, payer.claimNumber, "Pending"),
     rejReason: null,
-    denCode: null
+    denCode: null,
+    missing
   };
   return finalizePreview("professionalClaim837P", endpoint, payload, dashboardRecord, validateClaim(payload));
 }
