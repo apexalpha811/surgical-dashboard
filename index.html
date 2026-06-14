@@ -723,10 +723,9 @@ th.sort:hover{color:var(--text)}
       <div class="docu-stack">
         <div class="card">
           <h3>Run intake</h3>
-          <div class="sub">Upload, standardize, review, then insert into the dashboard</div>
-          <div class="field" style="margin-bottom:12px">
-            <label>Schema module</label>
-            <select id="docuModuleSelect"></select>
+          <div class="sub">Choose a document — it is parsed and filed to the right dashboard section automatically.</div>
+          <div class="docu-auto-note" style="margin:8px 0 12px;padding:8px 10px;border-radius:8px;background:rgba(80,160,120,0.12);border:1px solid rgba(80,160,120,0.35);font-size:13px;line-height:1.45">
+            <b>Automated intake.</b> Selecting a file runs detection, standardization, mapping, and import on its own. The manual schema picker below is an advanced override and is not the normal path.
           </div>
           <div class="docu-upload">
             <div class="field">
@@ -734,12 +733,20 @@ th.sort:hover{color:var(--text)}
               <input type="file" id="docuFile" accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.doc,.docx,.xls,.xlsx,.csv,.txt,.json,.xml,.html">
             </div>
             <div class="docu-actions">
-              <button class="btn btn-sm" id="docuUploadBtn">Upload</button>
+              <button class="btn btn-sm" id="docuRunBtn">Run intake</button>
+              <button class="btn-ghost btn-sm" id="docuUploadBtn">Upload</button>
               <button class="btn-ghost btn-sm" id="docuStandardizeBtn">Standardize</button>
               <button class="btn-ghost btn-sm" id="docuPreviewBtn">Preview Stedi</button>
-              <button class="btn btn-sm" id="docuInsertBtn">Input to dashboard</button>
+              <button class="btn-ghost btn-sm" id="docuInsertBtn">Input to dashboard</button>
             </div>
           </div>
+          <details class="docu-advanced" style="margin-top:12px">
+            <summary style="cursor:pointer;font-size:13px;opacity:0.85">Advanced: manually override the detected type (not normal)</summary>
+            <div class="field" style="margin-top:10px">
+              <label>Schema module</label>
+              <select id="docuModuleSelect"></select>
+            </div>
+          </details>
           <div class="dsec">
             <h4>Status</h4>
             <div class="docu-status-list" id="docuStatusList">
