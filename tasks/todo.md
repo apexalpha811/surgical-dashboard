@@ -187,3 +187,10 @@
 - The sidebar brand/logo now returns to the Overview route at `#overview`.
 - Added `/` keyboard focus for global search.
 - Verified with `npm run check`, inline script syntax checks, and Chrome automation: counts render, claim and ERA queue jumps open records, Recent records reopens the claim, `/` focuses search, DocuPipe shortcut opens `#docupipe`, logo returns to `#overview`, refresh preserves context, and there are zero console errors, page errors, or failed network responses.
+
+## Stedi endpoint lifecycle audit (2026-06-13)
+- Added shared Stedi transaction artifacts for endpoint-labeled actions: request/input, response/output, endpoint path, transaction ID, partner, status, and source claim.
+- Fixed 276/277 behavior: `Run 276 now` creates a fresh 276 request and saved 277 response, while `View 277 report` opens the saved 277 or explains that no report exists yet.
+- Updated 270/271, insurance discovery, COB, 837 claim submission, CMS-1500 PDF, 835 ERA PDF/report, 275 attachments, payer search/CSV, provider/enrollment create/update/delete/document/task, event retry, and transaction download behavior to create endpoint-shaped artifacts.
+- Transaction drawers now show saved request/input and response/output so each click has an auditable Stedi lifecycle trail.
+- Verified with `npm run check`, inline script syntax checks, and Chrome automation: 270/271, 276/277 run, 277 view, claim status from claim drawer, discovery, COB, 275 attachment, payer search, payer eligibility, enrollment update, and transaction drawer all create or display the expected endpoint artifacts with zero console errors, page errors, or failed network responses.

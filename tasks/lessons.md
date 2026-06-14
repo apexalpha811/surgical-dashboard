@@ -111,3 +111,7 @@ Browser-generated PDFs cannot be truly encrypted or permission-locked without a 
 ## Dashboard brand navigation
 
 In a dashboard shell, the sidebar brand/logo should behave as a home control. Wire it to the overview route and current app hash instead of leaving it decorative.
+
+## Stedi endpoint buttons need lifecycle artifacts
+
+For Stedi-labeled buttons, visible output is not enough. Each action must create or retrieve the endpoint's matching request, response, transaction ID, raw or report artifact, and land on the operational record. For example, `Run 276 now` sends and saves a 276/277 lifecycle, while `View 277 report` only opens the latest saved 277 response.
