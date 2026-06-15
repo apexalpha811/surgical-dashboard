@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
+<script>(function(){try{var t=localStorage.getItem('ccs-active-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Culver City Surgical | Billing Dashboard</title>
@@ -309,7 +310,6 @@ th.sort:hover{color:var(--text)}
   <button class="nav-item" data-sec="print">▣&nbsp; Print center</button>
   <button class="nav-item" data-sec="transactions">≣&nbsp; Transactions & events</button>
 
-  <div class="sidebar-foot">Clone · DocuPipe + Stedi<br>localhost:8742</div>
 </aside>
 
 <!-- ================= MAIN ================= -->
@@ -1592,7 +1592,7 @@ const payerSearchInput=document.getElementById('payerSearchInput');
 function payerSearch(){searchSection('payers',payerSearchInput.value);}
 if(payerSearchInput)payerSearchInput.addEventListener('keydown',e=>{if(e.key==='Enter')payerSearch();});
 const initialSection=rememberedSection();
-setTheme(localStorage.getItem(ACTIVE_THEME_KEY)==='light'?'light':'dark');
+setTheme(localStorage.getItem(ACTIVE_THEME_KEY)==='dark'?'dark':'light');
 showSection(initialSection);
 history.replaceState({sec:initialSection},'','#'+initialSection);
 updateRibbonCounts();
