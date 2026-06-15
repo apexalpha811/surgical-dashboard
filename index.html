@@ -92,6 +92,7 @@ body{
   padding:6px 14px;border-radius:999px;cursor:pointer;color:var(--sub);
 }
 .theme-toggle button.on{background:var(--lime);color:#0A0A0F}
+[data-theme="dark"] #btnDark,[data-theme="light"] #btnLight{background:var(--lime);color:#0A0A0F}
 .avatar{width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700}
 .workflow-ribbon{
   display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:-14px 0 24px;
@@ -323,7 +324,7 @@ th.sort:hover{color:var(--text)}
     <div class="spacer"></div>
     <input class="search" id="globalSearch" placeholder="🔍 Search patients, claims, payers..." aria-label="Search all records">
     <div class="theme-toggle" id="themeToggle" role="group" aria-label="Theme">
-      <button id="btnDark" class="on">Dark</button>
+      <button id="btnDark">Dark</button>
       <button id="btnLight">Light</button>
     </div>
     <div class="avatar">KV</div>
