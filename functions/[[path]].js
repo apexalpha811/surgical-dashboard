@@ -81,6 +81,10 @@ async function handleApi(context, url) {
     return json(buildStediPreview(context.env, module, body.standardization || body.data || {}, { target: body.target }));
   }
 
+  if (request.method === "POST" && url.pathname === "/api/stedi/eligibility") {
+    return json(await runEligibilityCheck(context.env, await readJsonBody(request)));
+  }
+
   if (request.method === "POST" && url.pathname === "/api/imports") {
     return json(await saveImportRecord(context.env, await readJsonBody(request)), 201);
   }
@@ -539,7 +543,8 @@ function docupipeReadHeaders(env) {
 }
 
 function stediHeaders(env) {
-  return { "Content-Type": "application/json", "Accept": "application/json", "Authorization": config(env).stediApiKey };
+  const key = config(env).stediApiKey;
+  return { "Content-Type": "application/json", "Accept": "application/json", "Authorization": key ? (/^key\s/i.test(key) ? key : `Key ${key}`) : "" };
 }
 
 function stediBaseForTarget(env, target) {
@@ -692,6 +697,62 @@ function buildClaimPreview(module, data) {
   if (!first(claim.dateOfService, data.dateOfService)) missing.push("dos");
   const dashboardRecord = { id: claimNumber, patient: patientName, type: claimType, provider: providerName ? providerName.replace(/,.*$/, "") : "Dr. Imported", providerFull: providerName, loc: serviceFacility, payer: payerName, billed: total, paid, status: normalizeClaimStatus(first(data.status, "Draft")), dos: displayDate(first(claim.dateOfService, data.dateOfService)), lines: cptLines.map(line => ({ cpt: first(line.cptCode, line.cpt, "00000"), desc: first(line.description, "Procedure"), mod: Array.isArray(line.modifiers) ? line.modifiers.join(", ") : first(line.modifier, "") === "-" ? "" : first(line.modifier, ""), units: first(line.units, 1), charge: number(first(line.chargeAmount, line.charge, 0)) })), icds: Array.isArray(data.diagnoses) ? data.diagnoses : Array.isArray(data.diagnosisCodes) ? data.diagnosisCodes : [], payerClm: first(data.payerClaimNumber, payer.payerClaimNumber, payer.claimNumber, "Pending"), rejReason: null, denCode: null, missing };
   return finalizePreview("professionalClaim837P", endpoint, payload, dashboardRecord, validateClaim(payload));
+}
+
+function buildEligibilityRequest(body) {
+  const name = first(body.name, joinName(body.firstName, body.lastName), "");
+  const stcs = Array.isArray(body.serviceTypeCodes) && body.serviceTypeCodes.length ? body.serviceTypeCodes.map(String) : [String(body.serviceTypeCode || "30")];
+  return {
+    controlNumber: String(body.controlNumber || Date.now().toString().slice(-9)),
+    tradingPartnerServiceId: String(body.payerId || body.tradingPartnerServiceId || "").trim(),
+    provider: { organizationName: first(body.providerOrganizationName, "Culver City Surgical Partners"), npi: String(body.providerNpi || "1999999984") },
+    subscriber: {
+      firstName: first(body.firstName, splitName(name).firstName, null) || undefined,
+      lastName: first(body.lastName, splitName(name).lastName, null) || undefined,
+      dateOfBirth: compactDate(first(body.dateOfBirth, body.dob, null)) || undefined,
+      memberId: first(body.memberId, null) || undefined
+    },
+    encounter: { serviceTypeCodes: stcs }
+  };
+}
+
+async function runEligibilityCheck(env, body) {
+  const request = buildEligibilityRequest(body);
+  if (!request.tradingPartnerServiceId) sendConfigError("Payer ID (tradingPartnerServiceId) is required for an eligibility check.");
+  if (!isLive(env) || !config(env).stediApiKey) {
+    const response = { meta: { applicationMode: "mock" }, benefitsInformation: [], errors: [{ description: "Mock mode: set APP_MODE=live and STEDI_API_KEY for a real 270/271 check." }] };
+    return { mode: "mock", request, response, record: eligibilityRecordFrom271(body, request, response) };
+  }
+  const url = `${config(env).stediHealthcareBaseUrl}/change/medicalnetwork/eligibility/v3`;
+  const response = await callJson(url, { method: "POST", headers: stediHeaders(env), body: JSON.stringify(request) });
+  return { mode: "live", endpoint: url, request, response, record: eligibilityRecordFrom271(body, request, response) };
+}
+
+function eligibilityRecordFrom271(body, request, response) {
+  const benefits = Array.isArray(response.benefitsInformation) ? response.benefitsInformation : [];
+  const errors = Array.isArray(response.errors) ? response.errors : [];
+  const amtFor = code => { const item = benefits.find(b => String(b.code) === code); return item ? number(first(item.benefitAmount, item.benefitDollarAmount, 0)) : 0; };
+  const active = benefits.some(b => String(b.code) === "1") || (benefits.length > 0 && !errors.length);
+  const sub = response.subscriber || {};
+  const coinsItem = benefits.find(b => String(b.code) === "A");
+  return {
+    patient: first(body.name, joinName(request.subscriber.firstName, request.subscriber.lastName), joinName(sub.firstName, sub.lastName), "Unknown Patient"),
+    dob: displayDate(first(body.dateOfBirth, body.dob)),
+    member: first(request.subscriber.memberId, sub.memberId, "Pending"),
+    payer: first((response.payer || {}).name, body.payerName, request.tradingPartnerServiceId),
+    payerId: request.tradingPartnerServiceId,
+    plan: first((response.planInformation || {}).planNumber, "Reported by payer"),
+    status: errors.length ? "Inactive" : active ? "Active" : "Inactive",
+    copay: amtFor("B"),
+    coins: coinsItem && coinsItem.benefitPercent ? Math.round(number(coinsItem.benefitPercent) * 100) : 0,
+    dedT: amtFor("C"), dedM: 0, oopT: amtFor("G"), oopM: 0,
+    group: first(sub.groupNumber, ""),
+    date: new Date().toLocaleDateString("en-US"),
+    time: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+    trn: first((response.subscriberTraceNumbers || [])[0] && response.subscriberTraceNumbers[0].traceNumber, response.controlNumber, ""),
+    planBegin: "",
+    eligErrors: errors.map(e => e.description || e.code).filter(Boolean)
+  };
 }
 
 function buildEligibilityPreview(module, data) {

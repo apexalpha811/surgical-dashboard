@@ -379,10 +379,19 @@ th.sort:hover{color:var(--text)}
         <span class="endpoint"><b>POST</b> /change/medicalnetwork/eligibility/v3</span>
         <span class="endpoint"><b>POST</b> /change/medicalnetwork/eligibility/v3/raw-x12</span>
         <div class="form-grid" style="margin-top:14px">
-          <div class="field"><label>Member ID</label><input value="W882441190"></div>
-          <div class="field"><label>Patient DOB</label><input value="03/14/1968"></div>
-          <div class="field"><label>Payer</label><select><option>Anthem Blue Cross CA</option><option>UnitedHealthcare</option><option>Aetna</option></select></div>
-          <div class="field"><label>Service type</label><select><option>Surgical (2)</option><option>Health benefit plan coverage (30)</option></select></div>
+          <div class="field"><label>First name</label><input id="el-first" value="Falcon"></div>
+          <div class="field"><label>Last name</label><input id="el-last" value="Dent"></div>
+          <div class="field"><label>Member ID</label><input id="el-member" value="007007007"></div>
+          <div class="field"><label>Patient DOB</label><input id="el-dob" value=""></div>
+          <div class="field"><label>Payer</label><select id="el-payer">
+            <option value="AMTAS00425">Stedi Test Payer — Ameritas (AMTAS00425)</option>
+            <option value="60054">Aetna (60054)</option>
+            <option value="87726">UnitedHealthcare (87726)</option>
+          </select></div>
+          <div class="field"><label>Service type</label><select id="el-svc">
+            <option value="30">Health benefit plan coverage (30)</option>
+            <option value="2">Surgical (2)</option>
+          </select></div>
         </div>
         <button class="btn" onclick="runEligibilityFromForm()">Run eligibility check</button>
       </div>
@@ -1430,7 +1439,25 @@ function transactionPayload(r,dir){if(dir==='input'&&r.input)return r.input;if(d
 function downloadTxn(id,dir){const r=findBy(txns,'id',id);if(!r)return;stediClient.transactionDownload(r,dir);downloadTextFile(id+'-'+dir+'.txt',transactionPayload(r,dir),'text/plain;charset=utf-8');panel('Download '+dir,'Downloaded saved '+safeText(dir)+' artifact for '+safeText(id)+'.');}
 function retryTxn(id){const r=findBy(txns,'id',id);if(!r)return;const retry=stediClient.retryEvent(r);r.status='Delivered';r.retryArtifact=retry;refreshLiveSection('transactions');focusRecord('transactions',txns.indexOf(r));}
 function buildEligibilityRecord(seed){const p=seed.payer?[seed.payer,seed.payerId||payerIdForName(seed.payer)]:PAYERS[0];const dedT=seed.dedT||1500,dedM=seed.dedM==null?700:seed.dedM;const record={patient:seed.patient||'Dashboard Patient',dob:seed.dob||'03/14/1968',member:seed.member||'W882441190',payer:p[0],payerId:p[1],plan:seed.plan||'PPO Gold',status:seed.status||'Active',copay:seed.copay==null?250:seed.copay,coins:seed.coins==null?20:seed.coins,dedT,dedM,oopT:seed.oopT||5000,oopM:seed.oopM||2100,group:seed.group||'GRP-'+ri(10000,99999),date:new Date().toLocaleDateString('en-US'),time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),trn:'TRN-'+ri(1000000,9999999),auth:seed.auth!==false,planBegin:'01/01/2026'};const request={subscriber:{memberId:record.member,dateOfBirth:record.dob,name:record.patient},payer:{name:record.payer,id:record.payerId},serviceTypeCode:'30',traceNumber:record.trn};const response={eligibilityCheckId:'elig_'+Math.random().toString(36).slice(2,9),traceNumber:record.trn,coverage:record.status,benefitsInformation:[{serviceTypeCode:'30',coverageLevel:'IND',deductibleRemaining:record.dedT-record.dedM,copay:record.copay,coinsurance:record.coins}],rawX12:build271X12(record)};attachArtifact(record,'eligibilityArtifact',stediClient.eligibility(record,request,response));eligibility.unshift(record);T.eligibility.data=eligibility;refreshLiveSection('eligibility');return record;}
-function runEligibilityFromForm(){const record=buildEligibilityRecord({});persistDashboardRecord('eligibility',record,'created');showSection('eligibility');openDrawer('eligibility',0);}
+async function runEligibilityFromForm(){
+ const v=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
+ const payerSel=document.getElementById('el-payer');
+ const payerId=payerSel?payerSel.value:'';
+ const payerName=payerSel&&payerSel.selectedOptions[0]?payerSel.selectedOptions[0].textContent.replace(/\s*\([^)]*\)\s*$/,'').replace(/^Stedi Test Payer\s*—\s*/,''):payerId;
+ let result;
+ try{
+  const resp=await fetch('/api/stedi/eligibility',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({firstName:v('el-first'),lastName:v('el-last'),memberId:v('el-member'),dob:v('el-dob'),payerId,payerName,serviceTypeCode:v('el-svc')||'30'})});
+  result=await resp.json();
+  if(!resp.ok){toast('Eligibility error: '+(result.error||resp.status));return;}
+ }catch(e){toast('Eligibility request failed: '+e.message);return;}
+ const record=result.record;
+ if(!record){toast('No eligibility record returned.');return;}
+ record.trn=record.trn||'TRN-'+ri(1000000,9999999);
+ eligibility.unshift(record);T.eligibility.data=eligibility;refreshLiveSection('eligibility');
+ persistDashboardRecord('eligibility',record,'created');
+ showSection('eligibility');openDrawer('eligibility',0);
+ toast((record.eligErrors&&record.eligErrors.length)?('Payer: '+record.eligErrors.join('; ')):((result.mode==='live'?'Live ':'')+'271: '+record.status+' coverage'));
+}
 function runEligibilityFromDiscovery(id){const d=findBy(discovery,'id',id);if(!d||!d.found){panel('Eligibility check','No discovered coverage is available for a 270/271 eligibility request.');return;}const payerMeta=PAYERS.find(p=>p[0]===d.payer)||PAYERS[0];const record=buildEligibilityRecord({patient:d.patient,dob:d.dob,member:d.member||memberId(),payer:d.payer,payerId:payerMeta[1],plan:d.plan||'PPO'});persistDashboardRecord('eligibility',record,'created');showSection('eligibility');history.pushState({sec:'eligibility'},'','#eligibility');openDrawer('eligibility',0);}
 function startDiscoveryFromForm(){const request={firstName:'James',lastName:'Holloway',dateOfBirth:'11/02/1979',ssnLast4:'masked'};const response={discoveryId:'disc_'+Math.random().toString(36).slice(2,8),status:'Complete',coverageFound:true,payer:'Anthem Blue Cross CA',plan:'PPO Gold',memberId:memberId()};const artifact=stediClient.discovery(request,response);const record={id:response.discoveryId,patient:'James Holloway',dob:request.dateOfBirth,status:'Complete',found:true,payer:response.payer,plan:response.plan,member:response.memberId,date:new Date().toLocaleDateString('en-US'),transactionId:artifact.id,discoveryArtifact:artifact};discovery.unshift(record);T.discovery.data=discovery;refreshLiveSection('discovery');showSection('discovery');openDrawer('discovery',0);}
 function checkStatusFromForm(){const c=claims[0];const index=createStatusForClaim(c.id,true);showSection('status');openDrawer('status',index);}
