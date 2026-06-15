@@ -1170,6 +1170,21 @@ function stediArtifact(kind,endpoint,request,response,opts){
  refreshLiveSection('transactions');
  return record;
 }
+/* Fire a real Stedi call through the server proxy and patch the transaction record with the live response.
+   Returns the record synchronously so existing callers keep working; the real response patches in async. */
+function goLive(rec,base,path,method,payload){
+ if(!rec||!path||path.indexOf('{')>=0)return rec;
+ fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:base,path:path,method:method||'POST',payload:payload})})
+  .then(r=>r.json()).then(d=>{
+   if(!d||d.mode!=='live')return;
+   rec.response=d.response;rec.output=compactJson(d.response);rec.live=true;rec.ok=d.ok;rec.stediEndpoint=d.endpoint;rec.status=d.ok?'Delivered':'Mapping failed';
+   refreshLiveSection('transactions');
+   const o=document.getElementById('drawerOut');
+   if(o&&document.getElementById('drawer').classList.contains('open')){o.textContent='';const sec=document.createElement('div');sec.className='dsec';const h=document.createElement('h4');h.textContent='Live Stedi response ('+(d.ok?'accepted':'rejected by Stedi')+')';const pre=document.createElement('pre');pre.className='x12';pre.textContent=compactJson(d.response);sec.appendChild(h);sec.appendChild(pre);o.appendChild(sec);}
+   toast(d.ok?'Stedi accepted the request.':'Stedi response received — see transaction record.');
+  }).catch(e=>{rec.response={error:String(e)};rec.output=String(e);refreshLiveSection('transactions');});
+ return rec;
+}
 const stediClient={
  artifact(kind,endpoint,request,response,opts){return stediArtifact(kind,endpoint,request,response,opts);},
  eligibility(record,request,response){
@@ -1182,13 +1197,13 @@ const stediClient={
   return stediArtifact('271 PDF','/eligibility-manager/eligibility-checks/{eligibilityCheckId}/pdf',request,response,{partner:record.payer,description:'Retrieve human-readable 271 eligibility PDF'});
  },
  discovery(request,response){
-  return stediArtifact('Insurance discovery','/insurance-discovery/check/v1',request,response,{partner:'Stedi payer network',output:compactJson({post:response,get:{endpoint:'/insurance-discovery/check/v1/{discoveryId}',status:response.status,coverageFound:response.coverageFound}}),description:'Discovery check created and retrieved to completion'});
+  return goLive(stediArtifact('Insurance discovery','/insurance-discovery/check/v1',request,response,{partner:'Stedi payer network',output:compactJson({post:response,get:{endpoint:'/insurance-discovery/check/v1/{discoveryId}',status:response.status,coverageFound:response.coverageFound}}),description:'Discovery check created and retrieved to completion'}),'healthcare','/insurance-discovery/check/v1','POST',request);
  },
  claim(claim,label){
   const endpoint=claim.type==='837I'?'/change/medicalnetwork/institutionalclaims/v1/submission':'/change/medicalnetwork/professionalclaims/v3/submission';
   const request={claimId:claim.id,claimType:claim.type,payer:claim.payer,billingProvider:'Culver City Surgical Partners',renderingProvider:claim.providerFull,serviceFacility:claim.loc,diagnoses:claim.icds,serviceLines:claim.lines,totalCharge:claim.billed};
   const response={claimId:claim.id,accepted:true,transactionStatus:'ACCEPTED_FOR_PROCESSING',businessIdentifier:claim.id,payerClaimNumber:claim.payerClm,acknowledgment:'999 accepted, 277CA pending or received separately'};
-  return stediArtifact(claim.type||'837P',endpoint,request,response,{partner:claim.payer,sourceClaim:claim.id,input:'837 claim request\n'+compactJson(request),output:'999 acknowledgment and Stedi claim submission response\n'+compactJson(response),status:'Delivered',description:label||'837 claim submission'});
+  return goLive(stediArtifact(claim.type||'837P',endpoint,request,response,{partner:claim.payer,sourceClaim:claim.id,input:'837 claim request\n'+compactJson(request),output:'999 acknowledgment and Stedi claim submission response\n'+compactJson(response),status:'Delivered',description:label||'837 claim submission'}),'healthcare',endpoint,'POST',request);
  },
  cms1500(claim){
   const endpoint=claim.transactionId?'/export/{transactionId}/1500/pdf':'/export/pdf';
@@ -1200,7 +1215,7 @@ const stediClient={
   const request={claimNumber:record.claim,payer:record.payer,payerClaimNumber:record.payerClm,serviceDate:record.dateOfService||record.checked||new Date().toLocaleDateString('en-US')};
   const response={transactionId:'277_'+Math.random().toString(36).slice(2,9),claimNumber:record.claim,payerClaimNumber:record.payerClm,categoryCode:record.cat,statusCode:'20',entityCode:'PR',categoryDescription:record.catDesc,paymentAmount:record.amt||null,checkedAt:new Date().toISOString(),reportType:'277'};
   const input=build276X12(record),output=build277X12(record);
-  return stediArtifact('276/277','/change/medicalnetwork/claimstatus/v2',request,response,{partner:record.payer,sourceClaim:record.claim,input,output,report:output,description:'276 claim status request with saved 277 response'});
+  return goLive(stediArtifact('276/277','/change/medicalnetwork/claimstatus/v2',request,response,{partner:record.payer,sourceClaim:record.claim,input,output,report:output,description:'276 claim status request with saved 277 response'}),'healthcare','/change/medicalnetwork/claimstatus/v2','POST',request);
  },
  eraPdf(era){
   const request={transactionId:era.transactionId||era.id};
@@ -1218,13 +1233,13 @@ const stediClient={
   const createResponse={attachmentId:'att_'+Math.random().toString(36).slice(2,9),uploadURL:'https://upload.stedi.example/'+record.ctrl,expiresInMinutes:15};
   const submitRequest={attachmentId:createResponse.attachmentId,claimId:record.claim,controlNumber:record.ctrl,documentType:record.doc,transmissionCode:'EL'};
   const submitResponse={accepted:true,attachmentId:createResponse.attachmentId,status:'SUBMITTED_TO_PAYER',summary:'275 attachment queued for adjudication'};
-  return stediArtifact('275','/claim-attachments/file + /claim-attachments/raw-x12-submission',submitRequest,submitResponse,{partner:record.payer,sourceClaim:record.claim,input:'POST /claim-attachments/file\n'+compactJson(createRequest)+'\n\nPUT pre-signed uploadURL\n\nPOST /claim-attachments/raw-x12-submission\n'+compactJson(submitRequest),output:compactJson({createResponse,submitResponse}),status:'Delivered',description:'Create attachment upload URL, upload file, submit X12 275'});
+  return goLive(stediArtifact('275','/claim-attachments/file + /claim-attachments/raw-x12-submission',submitRequest,submitResponse,{partner:record.payer,sourceClaim:record.claim,input:'POST /claim-attachments/file\n'+compactJson(createRequest)+'\n\nPUT pre-signed uploadURL\n\nPOST /claim-attachments/raw-x12-submission\n'+compactJson(submitRequest),output:compactJson({createResponse,submitResponse}),status:'Delivered',description:'Create attachment upload URL, upload file, submit X12 275'}),'claims','/claim-attachments/file','POST',createRequest);
  },
- cob(request,response,opts){return stediArtifact('COB','/coordination-of-benefits',request,response,{...(opts||{}),description:(opts&&opts.description)||'COB primacy check response saved'});},
- payerSearch(request,response){return stediArtifact('Payer search','/payers/search',request,response,{partner:'Stedi payer directory',description:'Payer search response with transaction support flags'});},
+ cob(request,response,opts){return goLive(stediArtifact('COB','/coordination-of-benefits',request,response,{...(opts||{}),description:(opts&&opts.description)||'COB primacy check response saved'}),'healthcare','/coordination-of-benefits','POST',request);},
+ payerSearch(request,response){return goLive(stediArtifact('Payer search','/payers/search',request,response,{partner:'Stedi payer directory',description:'Payer search response with transaction support flags'}),'payers','/payers/search?query='+encodeURIComponent((request&&request.query&&request.query!=='*'?request.query:'health')),'GET',null);},
  payerCsv(count){return stediArtifact('Payers CSV','/payers/csv',{format:'csv',filters:'current payer directory'},{count,fileName:'stedi-payers.csv'},{partner:'Stedi payer directory',description:'Payer directory CSV export'});},
- provider(record){return stediArtifact('Provider','/providers',{name:record.name,npi:record.npi,taxonomy:record.tax,taxId:'95-4412087'},{providerId:record.npi,created:true,provider:record.name},{partner:'Stedi enrollments',description:'Provider record created for transaction enrollment'});},
- enrollment(record,request,response,description){return stediArtifact('Enrollment','/enrollments',request,response,{partner:record.payer,description:description||'Transaction enrollment request created'});},
+ provider(record){return goLive(stediArtifact('Provider','/providers',{name:record.name,npi:record.npi,taxonomy:record.tax,taxId:'95-4412087'},{providerId:record.npi,created:true,provider:record.name},{partner:'Stedi enrollments',description:'Provider record created for transaction enrollment'}),'enrollments','/providers','POST',{name:record.name,npi:record.npi,taxonomy:record.tax,taxId:'95-4412087'});},
+ enrollment(record,request,response,description){return goLive(stediArtifact('Enrollment','/enrollments',request,response,{partner:record.payer,description:description||'Transaction enrollment request created'}),'enrollments','/enrollments','POST',request);},
  enrollmentUpdate(record,request,response){return stediArtifact('Enrollment update','/enrollments/{enrollmentId}',request,response,{partner:record.payer,description:'Enrollment status updated'});},
  enrollmentTask(record,request,response){return stediArtifact('Enrollment task','/tasks/{taskId}',request,response,{partner:record.payer,description:'Enrollment task completed'});},
  enrollmentDocument(record,request,response){return stediArtifact('Enrollment document','/enrollments/{enrollmentId}/documents',request,response,{partner:record.payer,description:'Enrollment document uploaded'});},

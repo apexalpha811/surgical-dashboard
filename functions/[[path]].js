@@ -85,6 +85,10 @@ async function handleApi(context, url) {
     return json(await runEligibilityCheck(context.env, await readJsonBody(request)));
   }
 
+  if (request.method === "POST" && url.pathname === "/api/stedi/call") {
+    return json(await stediProxy(context.env, await readJsonBody(request)));
+  }
+
   if (request.method === "POST" && url.pathname === "/api/imports") {
     return json(await saveImportRecord(context.env, await readJsonBody(request)), 201);
   }
@@ -714,6 +718,30 @@ function buildEligibilityRequest(body) {
     },
     encounter: { serviceTypeCodes: stcs }
   };
+}
+
+const STEDI_PROXY_ALLOW = ["/change/medicalnetwork/", "/insurance-discovery/", "/coordination-of-benefits", "/claim-attachments/", "/enrollments", "/providers", "/payers", "/eligibility-manager/"];
+
+// Generic authenticated proxy to Stedi (see server.js for rationale). Errors are returned, not thrown.
+async function stediProxy(env, body) {
+  const cfg = config(env);
+  const bases = { healthcare: cfg.stediHealthcareBaseUrl, claims: cfg.stediClaimsBaseUrl, enrollments: cfg.stediEnrollmentsBaseUrl, payers: cfg.stediPayersBaseUrl };
+  const path = String(body.path || "").trim();
+  if (!path.startsWith("/") || path.includes("{")) sendConfigError("Invalid or unresolved Stedi path.");
+  if (!STEDI_PROXY_ALLOW.some(p => path.startsWith(p))) sendConfigError("Stedi path not allowed.");
+  const method = String(body.method || "POST").toUpperCase();
+  const endpoint = `${bases[body.base] || bases.healthcare}${path}`;
+  if (!isLive(env) || !cfg.stediApiKey) {
+    return { mode: "mock", endpoint, ok: false, request: body.payload || null, response: { message: "Mock mode — set APP_MODE=live and STEDI_API_KEY for a real Stedi call." } };
+  }
+  let response, ok = true;
+  try {
+    response = await callJson(endpoint, { method, headers: stediHeaders(env), body: method === "GET" ? undefined : JSON.stringify(body.payload || {}) });
+  } catch (error) {
+    ok = false;
+    response = error.details || { error: String(error.message || error), statusCode: error.statusCode };
+  }
+  return { mode: "live", endpoint, ok, request: body.payload || null, response };
 }
 
 async function runEligibilityCheck(env, body) {

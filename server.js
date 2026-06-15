@@ -579,6 +579,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/stedi/call") {
+    const body = await readJsonBody(req);
+    sendJson(res, 200, await stediProxy(body));
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/imports") {
     const body = await readJsonBody(req);
     const result = await saveImportRecord(body);
@@ -1146,6 +1152,37 @@ function buildEligibilityRequest(body) {
     },
     encounter: { serviceTypeCodes: stcs }
   };
+}
+
+const STEDI_PROXY_BASES = {
+  healthcare: () => config.stediHealthcareBaseUrl,
+  claims: () => config.stediClaimsBaseUrl,
+  enrollments: () => config.stediEnrollmentsBaseUrl,
+  payers: () => config.stediPayersBaseUrl
+};
+const STEDI_PROXY_ALLOW = ["/change/medicalnetwork/", "/insurance-discovery/", "/coordination-of-benefits", "/claim-attachments/", "/enrollments", "/providers", "/payers", "/eligibility-manager/"];
+
+// Generic authenticated proxy to Stedi. Forwards a built payload to the real Stedi endpoint
+// with the server-side key. Errors (incl. sandbox "not available in Test Mode") are returned,
+// not thrown, so the caller can see the real Stedi response and confirm the wiring is live.
+async function stediProxy(body) {
+  const path = String(body.path || "").trim();
+  if (!path.startsWith("/") || path.includes("{")) sendConfigError("Invalid or unresolved Stedi path.");
+  if (!STEDI_PROXY_ALLOW.some(p => path.startsWith(p))) sendConfigError("Stedi path not allowed.");
+  const baseFn = STEDI_PROXY_BASES[body.base] || STEDI_PROXY_BASES.healthcare;
+  const method = String(body.method || "POST").toUpperCase();
+  const endpoint = `${baseFn()}${path}`;
+  if (!isLive() || !config.stediApiKey) {
+    return { mode: "mock", endpoint, ok: false, request: body.payload || null, response: { message: "Mock mode — set APP_MODE=live and STEDI_API_KEY for a real Stedi call." } };
+  }
+  let response, ok = true;
+  try {
+    response = await callJson(endpoint, { method, headers: stediHeaders(), body: method === "GET" ? undefined : JSON.stringify(body.payload || {}) });
+  } catch (error) {
+    ok = false;
+    response = error.details || { error: String(error.message || error), statusCode: error.statusCode };
+  }
+  return { mode: "live", endpoint, ok, request: body.payload || null, response };
 }
 
 async function runEligibilityCheck(body) {
