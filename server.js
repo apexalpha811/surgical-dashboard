@@ -230,22 +230,16 @@ async function saveDashboardRecord(body) {
     }
   }
   const row = {
-    module_id: `dashboard:${target}`,
-    document_id: "",
-    standardization_id: "",
     target,
     status: String(body.status || "dashboard"),
-    extracted_json: { source: "dashboard", recordKey: String(body.recordKey || "") },
-    stedi_preview_json: {},
-    dashboard_record_json: { ...record, recordKey: String(body.recordKey || storedDashboardRecordKey(target, record)) },
-    warnings: []
+    dashboard_record_json: { ...record, recordKey: String(body.recordKey || storedDashboardRecordKey(target, record)) }
   };
   const rows = await supabaseRequest("/dashboard_records", {
     method: "POST",
     headers: { "Prefer": "return=representation" },
     body: JSON.stringify(row)
   });
-  return { mode: "supabase", saved: true, target, import: Array.isArray(rows) ? rows[0] : rows };
+  return { mode: "supabase", saved: true, target, record: Array.isArray(rows) ? rows[0] : rows };
 }
 
 async function deleteDashboardRecord(body) {
