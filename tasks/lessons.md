@@ -147,3 +147,23 @@ Supabase `sb_secret_` API keys are not JWTs. Send them in the `apikey` header on
 ## Module delete semantics
 
 For editable DocuPipe modules, DELETE should remove the module row, not soft-disable it. Soft-disabled test modules still show up in `/api/modules` and pollute the operator's schema list.
+
+## Stedi payer API response structure
+
+Payer search and detail endpoints return `{response: {items: [{payer: {...}}]}}` not `{response: {payers: [...]}}` and not `{items: [{...}]}`. The payer object is wrapped under `item.payer`, and fields are `displayName` (not `payerName`), `primaryPayerId` (not `payerId`), `stediId`. Unwrap immediately: `const data = item.payer || item;` before reading fields. Code that uses `d.response.payers` or `item.payerName` will always return empty results.
+
+## Supabase service role authorization
+
+Supabase `sb_secret_` API keys are service credentials, not JWTs. Send them in the `Authorization: Bearer {key}` header (not `apikey` header) for REST API calls. Supabase was returning 401 when the header was missing — enabling Supabase writes required fixing the auth header from conditionally skipped to always-sent.
+
+## Dashboard record target validation
+
+When saving a dashboard record to Supabase via `POST /api/dashboard-records`, the server must recognize the `target` field (claims, eligibility, providers, payers, enrollments, attachments, appeals, cob, transactions) in `dashboardSectionForStoredTarget()`. Missing "transactions" in the validation list caused "Unknown dashboard record target" errors even when the schema was correct. Add new targets to the validation array in server.js, not just in the UI.
+
+## Dynamic form options for live data
+
+Forms that have payer or provider dropdowns must read from live arrays at render time, not hardcode static lists. When payers or providers are added to the dashboard (via Stedi API or manual entry), forms must immediately show the new options. Use `getFormOptions(key, fieldKey)` to read live state instead of using `PAYERS.map()` or `providers.slice()` in form definitions. Hardcoded arrays show stale data after add/edit actions.
+
+## Race condition in live search selection
+
+When a typeahead search result is selected, the code may clear the search results array BEFORE the detail lookup uses that array as a fallback. Capture the selected item into a local variable before clearing: `const fromSearch = _payerResults.find(...); _payerResults = []; loadPayerDetail(..., fromSearch)`. Not doing this causes the UI to render a fallback stub instead of the real search result.

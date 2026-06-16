@@ -258,21 +258,42 @@
 - Already pushed to `origin/main`
 
 
-## RESUME (2026-06-15) — Scaffold all remaining Stedi actions live
+## COMPLETED (2026-06-15) — Payer Directory + Persistence
+
+✅ **Fixed three payer search bugs:**
+1. Response key: use `d.response.items` not `d.response.payers`
+2. Field names: use `item.payer.displayName` not `item.payerName`
+3. Race condition: capture `fromSearch = _payerResults.find()` BEFORE clearing `_payerResults`
+
+✅ **Wired form dropdowns to live data:**
+- Created `getFormOptions(key, fieldKey)` — returns live payer/provider arrays instead of static PAYERS/providers
+- Both `openCreate()` and `renderEditFields()` now call `getFormOptions` for all payer/provider selects
+- Fallback: `payerDir.length ? payerDir : PAYERS` so forms work even when no payers added yet
+
+✅ **Implemented Supabase persistence:**
+- Created `dashboard_records` table (id, target, status, dashboard_record_json, created_at, updated_at)
+- Fixed schema mismatch: only send {target, status, dashboard_record_json} not extra fields
+- Fixed auth: always send `Authorization: Bearer {key}` header (was conditionally skipping)
+- Added "transactions" to valid dashboard record targets
+- Page refresh now restores all payers, transactions, and other dashboard records from Supabase
+
+✅ **Verified end-to-end:**
+- Type payer name → typeahead search fires to Stedi
+- Select result → payer detail loads from API
+- Click "Add to Network Payers" → calls `persistDashboardRecord()` → writes to Supabase
+- Page refresh → payer still visible in Network Payers table
+
+Committed and pushed.
+
+---
+
+## NEXT (2026-06-16) — Scaffold all remaining Stedi actions live
 GOAL: Wire every remaining Stedi action button to call REAL Stedi endpoints (production-ready), verify each REACHES Stedi in sandbox (real response or sandbox "not available in Test Mode" rejection counts as verified wiring), then commit + push.
-
-USER DECISION: Option 2 (scaffold all now, verify what's verifiable in sandbox). No fake/placeholder results from buttons.
-
-DONE ALREADY (committed/pushed this session):
-- Eligibility live: /api/stedi/eligibility (server.js + functions) — verified active coverage (Ameritas test payer AMTAS00425 / Falcon Dent 007007007 / NPI 1999999984).
-- Auth fix: stediHeaders sends "Authorization: Key {key}" (server.js + functions).
-- STEDI_API_KEY set in .env + Cloudflare secret (sandbox key test_azQW2wJ...).
-- Demo data: every section trimmed to 5, tagged demo:true, red DEMO tag/banner.
 
 CONFIRMED FACTS:
 - Stedi auth: "Authorization: Key {apikey}".
-- Sandbox BLOCKS (403 "not available in Test Mode"): claim submission /change/medicalnetwork/professionalclaims/v3/submission, and per matrix also 276/277, 275 attachments, COB, enrollments, insurance discovery. Eligibility is the only sandbox-verifiable success. So "verify" = confirm the request REACHES Stedi (real response/rejection), not a success.
-- Config bases (server.js config / functions config(env)): stediHealthcareBaseUrl=https://healthcare.us.stedi.com/2024-04-01, stediClaimsBaseUrl=https://claims.us.stedi.com/2025-03-07, stediEnrollmentsBaseUrl=https://enrollments.us.stedi.com/2024-09-01, stediPayersBaseUrl=https://payers.us.stedi.com/2024-04-01.
+- Sandbox BLOCKS (403 "not available in Test Mode"): claim submission, 276/277, 275 attachments, COB, enrollments, insurance discovery. Eligibility is the only sandbox-verifiable success. So "verify" = confirm the request REACHES Stedi (real response/rejection), not a success.
+- Config bases: stediHealthcareBaseUrl=https://healthcare.us.stedi.com/2024-04-01, stediClaimsBaseUrl=https://claims.us.stedi.com/2025-03-07, stediEnrollmentsBaseUrl=https://enrollments.us.stedi.com/2024-09-01, stediPayersBaseUrl=https://payers.us.stedi.com/2024-04-01.
 
 PLAN (generic proxy approach):
 1. Add helper `stediProxy(body)` + route `POST /api/stedi/call` in server.js AND functions/[[path]].js. Body: {base:'healthcare'|'claims'|'enrollments'|'payers', path:'/...', method:'POST'|'GET', payload:{}}. Forward to base+path with stediHeaders(); CATCH errors so sandbox 403s are returned (not thrown). Return {mode, endpoint, ok, request, response}. Restrict base to the 4 allowlisted keys.
@@ -282,3 +303,38 @@ PLAN (generic proxy approach):
 5. COMMIT + PUSH (autodeploys). Use browser UA if cur/python hits 403 bot-block on the live site.
 
 NOTE: index.html PreToolUse hook blocks edits whose new_string contains "innerHTML" — match smaller substrings that exclude the innerHTML= assignment.
+
+---
+
+## COMPLETED (2026-06-16) — Eligibility section full rebuild
+
+✅ **Database** (`supabase/migrations/20260616000000_eligibility.sql`):
+- Created 4 new tables: `patients`, `eligibility_checks`, `eligibility_batches`, `work_queue`
+- Run manually in Supabase SQL editor (confirmed succeeded)
+
+✅ **API routes** (both `functions/[[path]].js` and `server.js`):
+- `GET /api/patients` — typeahead search against Supabase `patients` table
+- `POST /api/patients` — create patient record
+- `POST /api/stedi/eligibility/check` — real-time 270/271, auto-saves patient + eligibility_check to Supabase
+- `GET /api/eligibility/checks` — load all checks from Supabase
+- `POST /api/eligibility/batch` — submit batch to Stedi eligibility-manager
+- `GET /api/eligibility/batches/:id` — poll batch status
+- `POST /api/work_queue` — create auth/work queue item
+- Fix: eligibility check now auto-upserts patient into `patients` table so typeahead works on repeat visits
+
+✅ **UI** (`index.html`):
+- KPI tiles: total checks, active coverage %, auth required, timeouts
+- Filter chips: All / Active / Inactive / Auth Required / Timeout with live counts
+- Intake form: patient typeahead, payer typeahead, all required fields, NPI sync from location
+- Batch panel: CSV paste or file upload, preview, submit, manual status refresh
+- 10-column results table (Patient, DOS, Payer, Member ID, Coverage, Plan, Copay, Deduct Rem, Auth, Checked)
+- 5-tab detail drawer: Summary, Benefits, Auth & Referrals, Raw JSON, PDF
+- All JS functions use DOM creation (no innerHTML assignments) to pass PreToolUse hook
+
+✅ **Overview section wired to real data** (same session):
+- All 5 KPI tiles computed from live claims/eras arrays (charges, collections, clean claim rate, days in A/R, denial rate)
+- A/R aging bars rebuilt dynamically from open claims grouped by payer
+- Work queue counts from real claim, enrollment, ERA, and attachment states
+- Both `updateOverviewKpis` and `updateEligKpis` hooked into `loadDashboardRecords` and `refreshLiveSection`
+
+Committed and pushed across 4 commits (5a72f1a, 50d97f1, 24422dd + tasks).
