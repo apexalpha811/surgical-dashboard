@@ -2564,10 +2564,21 @@ renderAppealsTable();
 /* Create forms: Providers, Claims, Enrollments, Payers */
 const CREATE={
  providers:{title:'Add provider',data:providers,key:'providers',fields:[
-  {k:'name',label:'Provider name',v:'Dr. '},
-  {k:'spec',label:'Specialty',type:'select',opts:SPECS.map(s=>s[0])},
-  {k:'npi',label:'NPI (blank to auto-generate)',v:''}
- ],build:v=>{const sp=SPECS.find(s=>s[0]===v.spec)||SPECS[0];const last=(v.name.replace(/^Dr\.\s*/,'').split(',')[0].trim().split(' ').slice(-1)[0])||'New';return{name:v.name||'Dr. New Provider',last,spec:v.spec,tax:sp[1],npi:v.npi||npi(),live:0,pend:0};}},
+  {k:'name',label:'Display name',v:''},
+  {k:'npi',label:'NPI',v:''},
+  {k:'taxId',label:'Tax ID',v:''},
+  {k:'taxIdType',label:'Tax ID type',type:'select',opts:['EIN','SSN']},
+  {k:'contactType',label:'Contact type',type:'select',opts:['Individual','Org']},
+  {k:'firstName',label:'First name',v:''},
+  {k:'lastName',label:'Last name',v:''},
+  {k:'email',label:'Email',v:''},
+  {k:'phone',label:'Phone',v:''},
+  {k:'address',label:'Street address 1',v:''},
+  {k:'addressLine2',label:'Street address 2',v:''},
+  {k:'city',label:'City',v:''},
+  {k:'state',label:'State',v:''},
+  {k:'zip',label:'ZIP Code',v:''}
+ ],build:v=>({name:v.name||'New Provider',npi:v.npi||npi(),taxId:v.taxId||'',taxIdType:v.taxIdType||'EIN',contactType:v.contactType||'Individual',firstName:v.firstName||'',lastName:v.lastName||'',email:v.email||'',phone:v.phone||'',address:v.address||'',addressLine2:v.addressLine2||'',city:v.city||'',state:v.state||'',zip:v.zip||'',spec:'',tax:'',id:'',live:0,pend:0})},
  claims:{title:'New claim',data:claims,key:'claims',fields:[
   {k:'patient',label:'Patient name',v:''},
   {k:'type',label:'Claim type',type:'select',opts:['837P','837I']},
@@ -2714,13 +2725,21 @@ const EDIT={
   {k:'date',label:'Checked date',v:''}
  ],render:r=>({...r}),build:(v,r)=>({...r,patient:v.patient||r.patient,member:v.member||r.member,payer:v.payer||r.payer,plan:v.plan||r.plan,status:v.status||r.status,copay:+v.copay||0,coins:+v.coins||0,dedT:+v.dedT||0,dedM:+v.dedM||0,oopT:+v.oopT||0,oopM:+v.oopM||0,group:v.group||r.group,date:v.date||r.date})},
  providers:{title:'Edit provider',fields:[
-  {k:'name',label:'Provider name',v:''},
-  {k:'spec',label:'Specialty',type:'select',opts:SPECS.map(s=>s[0])},
+  {k:'name',label:'Display name',v:''},
   {k:'npi',label:'NPI',v:''},
-  {k:'tax',label:'Taxonomy',v:''},
-  {k:'live',label:'Live enrollments',v:'0'},
-  {k:'pend',label:'Pending enrollments',v:'0'}
- ],render:r=>({name:r.name||'',spec:r.spec||'',npi:r.npi||'',tax:r.tax||'',live:r.live||0,pend:r.pend||0}),build:(v,r)=>({...r,name:v.name||r.name,spec:v.spec||r.spec,npi:v.npi||r.npi,tax:v.tax||r.tax,last:(v.name||r.name||'').replace(/^Dr\\.\\s*/,'').split(',')[0].trim().split(' ').slice(-1)[0]||r.last,live:+v.live||0,pend:+v.pend||0})},
+  {k:'taxId',label:'Tax ID',v:''},
+  {k:'taxIdType',label:'Tax ID type',type:'select',opts:['EIN','SSN']},
+  {k:'contactType',label:'Contact type',type:'select',opts:['Individual','Org']},
+  {k:'firstName',label:'First name',v:''},
+  {k:'lastName',label:'Last name',v:''},
+  {k:'email',label:'Email',v:''},
+  {k:'phone',label:'Phone',v:''},
+  {k:'address',label:'Street address 1',v:''},
+  {k:'addressLine2',label:'Street address 2',v:''},
+  {k:'city',label:'City',v:''},
+  {k:'state',label:'State',v:''},
+  {k:'zip',label:'ZIP Code',v:''}
+ ],render:r=>({name:r.name||'',npi:r.npi||'',taxId:r.taxId||'',taxIdType:r.taxIdType||'EIN',contactType:r.contactType||'Individual',firstName:r.firstName||'',lastName:r.lastName||'',email:r.email||'',phone:r.phone||'',address:r.address||'',addressLine2:r.addressLine2||'',city:r.city||'',state:r.state||'',zip:r.zip||''}),build:(v,r)=>({...r,name:v.name||r.name,npi:v.npi||r.npi,taxId:v.taxId||r.taxId||'',taxIdType:v.taxIdType||r.taxIdType||'EIN',contactType:v.contactType||r.contactType||'Individual',firstName:v.firstName||r.firstName||'',lastName:v.lastName||r.lastName||'',email:v.email||r.email||'',phone:v.phone||r.phone||'',address:v.address||r.address||'',addressLine2:v.addressLine2||r.addressLine2||'',city:v.city||r.city||'',state:v.state||r.state||'',zip:v.zip||r.zip||''})},
  payers:{title:'Edit payer',fields:[
   {k:'name',label:'Payer name',v:''},
   {k:'stedi',label:'Stedi ID',v:''},
