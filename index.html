@@ -1117,7 +1117,7 @@ function enrollmentFromStediResponse(item){
   const p=item.provider&&typeof item.provider==='object'?item.provider:{};
   const c=p.contact&&typeof p.contact==='object'?p.contact:{};
   const addr=p.address&&typeof p.address==='object'?p.address:{};
-  const tp=item.tradingPartner&&typeof item.tradingPartner==='object'?item.tradingPartner:{};
+  const tp=item.tradingPartner&&typeof item.tradingPartner==='object'?item.tradingPartner:item.payer&&typeof item.payer==='object'?item.payer:{};
   const txnSets=Array.isArray(item.transactionSets)?item.transactionSets:[];
   const txnLabel=txnSets.map(t=>typeof t==='object'?(t.name||t.transactionSetIdentifier||''):String(t)).filter(Boolean).join(', ');
   const fmtDate=v=>{if(!v)return null;try{return new Date(v).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}catch{return String(v);}};
@@ -1273,7 +1273,7 @@ const DETAIL={
     'Contact email':r.contactEmail?'<a href="mailto:'+safeText(r.contactEmail)+'">'+safeText(r.contactEmail)+'</a>':'—',
     'Date of submission':safeText(r.submittedDate||'—'),
     'Requested effective date':safeText(r.requestedEffectiveDate||'—'),
-    'Aggregation preference':r.aggregationPreference?safeText(r.aggregationPreference.replace(/_/g,' ')):null,
+    'Aggregation preference':r.aggregationPreference?safeText(String(r.aggregationPreference).replace(/_/g,' ')):null,
     'Open task':r.task?'<span class="pill warn">'+safeText(r.task)+'</span>':'<span class="pill ok">None</span>'
   });
   const historyBlock=r.history&&r.history.length
