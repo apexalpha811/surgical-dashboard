@@ -180,8 +180,6 @@ tr.row-click:hover td{background:var(--card2)}
 .drawer.open{transform:none}
 .drawer table{min-width:0}
 .miss{color:var(--bad);font-style:italic}
-.demo-row td:first-child::after{content:"DEMO";margin-left:6px;padding:1px 5px;border-radius:4px;background:var(--bad-bg);color:var(--bad);font-size:.58rem;font-weight:700;letter-spacing:.05em;vertical-align:middle}
-.demo-banner{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad);border-radius:8px;padding:7px 11px;margin:0 0 12px;font-size:.74rem;font-weight:700;letter-spacing:.02em}
 .d-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:6px}
 .d-head h2{font-size:1.05rem;font-weight:800;letter-spacing:-.01em}
 .d-head .x{margin-left:auto;background:none;border:1px solid var(--border);border-radius:8px;color:var(--sub);width:30px;height:30px;cursor:pointer;font-size:.9rem;flex-shrink:0}
@@ -957,59 +955,17 @@ const ICDS=['M17.11','M75.101','M54.16','K80.20','K40.90','H25.11','K63.5','M20.
 const DOCS=['Operative report','Implant invoice','Pre-op H&P','Imaging study (MRI)','Anesthesia record','Pathology report'];
 const COB_RULES=['Medicare Secondary Payer: working aged','Birthday rule (dependent child)','Employer plan primary over spouse plan','Medigap follows Medicare','COBRA continuation secondary'];
 
-/* providers (104) */
 const providers=[];
-(function(){const anchors=[['Alejandro Reyes','MD','Orthopedic surgery'],['Sunita Patel','MD','General surgery'],['Michael Chen','MD','Pain management'],['Dana Whitcomb','DO','Anesthesiology']];
- anchors.forEach(a=>providers.push({name:'Dr. '+a[0]+', '+a[1],last:a[0].split(' ')[1],spec:a[2],tax:SPECS.find(s=>s[0]===a[2])[1],npi:npi(),live:ri(8,12),pend:ri(0,1)}));
- for(let i=0;i<100;i++){const f=FIRST[(i*3+1)%FIRST.length],l=LAST[(i*5+2)%LAST.length],s=SPECS[i%SPECS.length];providers.push({name:'Dr. '+f+' '+l+', '+pick(['MD','MD','DO']),last:l,spec:s[0],tax:s[1],npi:npi(),live:ri(3,12),pend:ri(0,2)});}})();
-
-/* eligibility (120) */
 const eligibility=[];
-for(let i=0;i<120;i++){const p=PAYERS[i%PAYERS.length];const st=rnd()<.82?'Active':(rnd()<.6?'Inactive':'Payer timeout');const dedT=pick([500,1000,1500,2500,4000,6000]),dedM=ri(0,dedT);const oopT=dedT*ri(2,4),oopM=Math.min(oopT,dedM+ri(0,2000));eligibility.push({patient:patient(i),dob:dob(),member:memberId(),payer:p[0],payerId:p[1],plan:pick(PLANS),status:st,copay:pick([0,150,250,300,500]),coins:pick([0,10,20,30]),dedT,dedM,oopT,oopM,group:'GRP-'+ri(10000,99999),date:dateStr(),time:timeStr(),trn:'TRN-'+ri(1000000,9999999),auth:rnd()<.5,planBegin:'01/01/2026'});}
-
-/* discovery (100) */
 const discovery=[];
-for(let i=0;i<100;i++){const done=rnd()<.85,found=done&&rnd()<.6,p=PAYERS[i%PAYERS.length];discovery.push({id:'disc_'+Math.random().toString(36).slice(2,8),patient:patient(i+40),dob:dob(),status:done?'Complete':'Searching',found,payer:found?p[0]:null,plan:found?pick(PLANS):null,member:found?memberId():null,date:dateStr()});}
-
-/* claims (140) */
 const claims=[];
-for(let i=0;i<140;i++){const pr=providers[i%24],p=PAYERS[(i*3)%PAYERS.length];const nLines=ri(1,4),lines=[];let billed=0;for(let j=0;j<nLines;j++){const c=CPTS[(i+j*5)%CPTS.length];const u=1;const ch=c[2]+ri(-200,400);billed+=ch;lines.push({cpt:c[0],desc:c[1],mod:rnd()<.3?pick(['LT','RT','50','59']):'',units:u,charge:ch});}const r=rnd();const status=r<.45?'Accepted':r<.65?'Paid':r<.78?'Pending payer':r<.88?'Rejected':r<.95?'Denied':'Draft';const paid=status==='Paid'?Math.round(billed*(0.55+rnd()*0.3)):0;claims.push({id:'CLM-'+(20560-i),patient:patient(i+10),type:rnd()<.7?'837P':'837I',provider:'Dr. '+pr.last,providerFull:pr.name,loc:LOCS[i%3],payer:p[0],billed,paid,status,dos:dateStr(),lines,icds:[ICDS[i%ICDS.length],ICDS[(i+5)%ICDS.length]],payerClm:'PC'+ri(100000000,999999999),rejReason:status==='Rejected'?pick(['Subscriber ID not found','Invalid POS code','Missing rendering NPI','Duplicate claim']):null,denCode:status==='Denied'?pick(['CO-197: precert absent','CO-50: not medically necessary','PR-204: not covered by plan']):null});}
-
-/* claim status (120) */
-const CATS=[['A2','Acknowledged: accepted for processing'],['P3','Pending: under review'],['F1','Finalized: payment'],['F2','Finalized: denial'],['P1','Pending: in process']];
 const statusChecks=[];
-for(let i=0;i<120;i++){const c=claims[i%claims.length],cat=CATS[i%CATS.length];statusChecks.push({claim:c.id,patient:c.patient,payer:c.payer,cat:cat[0],catDesc:cat[1],amt:cat[0]==='F1'?usd(c.billed*0.7):null,payerClm:c.payerClm,checked:dateStr()+', '+timeStr(),history:[dateStr()+': 276 sent, '+cat[0]+' returned',dateStr()+': 276 sent, P1 returned',dateStr()+': claim acknowledged (999)']});}
-
-/* ERA (100) */
 const eras=[];
-for(let i=0;i<100;i++){const p=PAYERS[i%PAYERS.length],n=ri(2,8);let billed=0,paid=0,pr=0;const pays=[];for(let j=0;j<n;j++){const b=ri(1200,28000),al=Math.round(b*(0.5+rnd()*0.35)),pp=Math.round(al*(0.75+rnd()*0.25)),prr=al-pp;billed+=b;paid+=pp;pr+=prr;pays.push({claim:'CLM-'+(20560-((i*4+j)%140)),billed:b,allowed:al,paid:pp,pr:prr});}eras.push({id:(rnd()<.7?'EFT-':'CHK-')+ri(1000000,9999999),payer:p[0],n,billed,paid,pr,status:rnd()<.65?'Posted':'New',date:dateStr(),method:rnd()<.7?'ACH':'Paper check',pays});}
-
-/* attachments (100) */
 const attachments=[];
-for(let i=0;i<100;i++){const c=claims[(i*2)%claims.length],r=rnd();attachments.push({claim:c.id,payer:c.payer,doc:DOCS[i%DOCS.length],req:dateStr(),due:dateStr(),status:r<.5?'Sent':r<.75?'Awaiting upload':r<.9?'Accepted':'Overdue',ctrl:'PWK-'+ri(100000,999999),pages:ri(2,40)});}
-
-/* COB (100) */
 const cob=[];
-for(let i=0;i<100;i++){const p1=PAYERS[i%PAYERS.length],p2=PAYERS[(i+5)%PAYERS.length];cob.push({patient:patient(i+20),primary:p1[0],secondary:p2[0],eff:'0'+ri(1,9)+'/01/'+ri(2024,2026),rule:COB_RULES[i%COB_RULES.length],m1:memberId(),m2:memberId()});}
-
-/* payer directory (108) */
-const ORGS=['Anthem Blue Cross','Blue Shield','UnitedHealthcare','Aetna','Cigna','Humana','Kaiser Foundation','Health Net','Oscar Health','Molina Healthcare','Centene','WellCare','Bright Health','Ambetter','Regence','Premera','CareFirst','Highmark','EmblemHealth','Geisinger','Scan Health','Astiva Health','Clever Care','Alignment Health','Inland Empire HP','LA Care','Santa Clara Family HP'];
-const VARIANTS=['of CA','Medicare Advantage','HMO','PPO'];
 const payerDir=[];
-ORGS.forEach((o,i)=>VARIANTS.forEach((v,j)=>{payerDir.push({name:o+' '+v,stedi:o.split(' ').map(w=>w.slice(0,3).toUpperCase()).join('')+'-'+v.split(' ').map(w=>w[0]).join('').toUpperCase()+(i*4+j),elig:rnd()<.95,clm:rnd()<.9,era:rnd()<.85,enroll:pick(['None','ERA only','Claims + ERA','All transactions']),avgMs:ri(800,9000)});}));
-
-/* enrollments (100) */
-const ENR_ST=['Live','Live','Live','Provisioning','Submitted','Rejected','Draft'];
 const enrollments=[];
-for(let i=0;i<100;i++){const pr=providers[i%providers.length],p=PAYERS[(i*2)%PAYERS.length],st=ENR_ST[i%ENR_ST.length];enrollments.push({provider:pr.name,payer:p[0],txn:pick(['835 ERA','837P claims','837I claims','270 eligibility']),status:st,task:st==='Provisioning'?'EDI agreement signature':st==='Submitted'?'Awaiting payer (est. 14 days)':st==='Rejected'?'Resubmit with corrected tax ID':null,submitted:dateStr(),docs:st==='Live'?['EDI agreement.pdf','W-9.pdf']:['W-9.pdf'],id:'enr_'+Math.random().toString(36).slice(2,8)});}
-
-/* transactions (160) */
-const TXT=['837P','837I','835','270','271','276','277','275','999','277CA'];
 const txns=[];
-for(let i=0;i<160;i++){const t=TXT[i%TXT.length],inbound=['835','271','277','999','277CA'].includes(t),p=PAYERS[(i*5)%PAYERS.length];const r=rnd();txns.push({id:'txn_'+Math.random().toString(36).slice(2,9),type:t,dir:inbound?'Inbound':'Outbound',partner:p[0],date:dateStr(),time:timeStr(),status:r<.88?(inbound?'Processed':'Delivered'):r<.95?'Mapping failed':'Delivery retry',isa:String(ri(100000000,999999999)),exec:'exec_'+Math.random().toString(36).slice(2,8),bytes:ri(2,180)+' KB'});}
-
-/* Demo data: keep 5 labeled samples per section, tagged so they can be bulk-deleted later. */
-[claims,eligibility,discovery,statusChecks,eras,attachments,cob,providers,payerDir,enrollments,txns].forEach(arr=>{if(arr.length>5)arr.length=5;arr.forEach(r=>{r.demo=true;});});
 
 /* generic paginated tables */
 const PER=12;
@@ -1029,7 +985,7 @@ const T={
 };
 Object.values(T).forEach(t=>t.page=0);
 
-function renderTable(key){const t=T[key],src=t._filtered||t.data,tb=document.getElementById('tb-'+key);const maxP=Math.ceil(src.length/PER)-1;t.page=Math.max(0,Math.min(t.page,maxP));const s=t.page*PER;tb.innerHTML=src.slice(s,s+PER).map((r,i)=>'<tr class="row-click'+(r&&r.demo?' demo-row':'')+'" data-key="'+key+'" data-i="'+(s+i)+'">'+t.row(r)+'</tr>').join('');document.getElementById('pgr-'+key).innerHTML='<button class="btn-ghost btn-sm" onclick="pg(\''+key+'\',-1)" '+(t.page===0?'disabled':'')+'>‹ Prev</button><span>'+(s+1)+'–'+Math.min(s+PER,src.length)+' of '+src.length+'</span><button class="btn-ghost btn-sm" onclick="pg(\''+key+'\',1)" '+(t.page===maxP?'disabled':'')+'>Next ›</button>';}
+function renderTable(key){const t=T[key],src=t._filtered||t.data,tb=document.getElementById('tb-'+key);const maxP=Math.ceil(src.length/PER)-1;t.page=Math.max(0,Math.min(t.page,maxP));const s=t.page*PER;tb.innerHTML=src.slice(s,s+PER).map((r,i)=>'<tr class="row-click'+'" data-key="'+key+'" data-i="'+(s+i)+'">'+t.row(r)+'</tr>').join('');document.getElementById('pgr-'+key).innerHTML='<button class="btn-ghost btn-sm" onclick="pg(\''+key+'\',-1)" '+(t.page===0?'disabled':'')+'>‹ Prev</button><span>'+(s+1)+'–'+Math.min(s+PER,src.length)+' of '+src.length+'</span><button class="btn-ghost btn-sm" onclick="pg(\''+key+'\',1)" '+(t.page===maxP?'disabled':'')+'>Next ›</button>';}
 function pg(key,d){T[key].page+=d;renderTable(key)}
 function searchSection(key,text){const t=T[key];if(!text){delete t._filtered;t.page=0;renderTable(key);return;}const q=text.toLowerCase();t._filtered=t.data.filter(r=>Object.values(r).some(v=>v!=null&&String(v).toLowerCase().includes(q)));t.page=0;renderTable(key);}
 Object.keys(T).forEach(renderTable);
@@ -1085,7 +1041,7 @@ const DETAIL={
 
 let popHandling=false;
 function openDrawer(key,i){
- drawer.innerHTML=((T[key].data[i]&&T[key].data[i].demo)?'<div class="demo-banner">DEMO DATA — sample record, not a real transaction</div>':'')+DETAIL[key](T[key].data[i])+'<div id="drawerOut"></div>';
+ drawer.innerHTML=DETAIL[key](T[key].data[i])+'<div id="drawerOut"></div>';
  localStorage.setItem(ACTIVE_DRAWER_KEY,JSON.stringify({key,index:i,recordKey:dashboardRecordKey(key,T[key].data[i])}));
  rememberRecentRecord(key,i);
  if(!drawer.classList.contains('open')){
@@ -1633,7 +1589,7 @@ function renderAppealsTable(){
  const k=aplSort.key,d=aplSort.dir;
  APPEALS_DATA.sort((x,y)=>{let a=x[k],b=y[k];if(Array.isArray(a))a=a.join();if(Array.isArray(b))b=b.join();if(k==='deadlineDate')return d*(aplDate(a)-aplDate(b));if(typeof a==='number')return d*(a-b);return d*String(a).localeCompare(String(b))});
  document.getElementById('appealsHead').innerHTML='<tr>'+APL_COLS.map(c=>'<th class="sort" data-k="'+c[0]+'">'+c[1]+(aplSort.key===c[0]?(d>0?' ▲':' ▼'):'')+'</th>').join('')+'<th></th></tr>';
- document.getElementById('tb-appeals').innerHTML=APPEALS_DATA.map((r,i)=>'<tr class="row-click'+(r&&r.demo?' demo-row':'')+'" data-key="appeals" data-i="'+i+'"><td class="mono">'+r.claimNumber+'</td><td>'+r.patientName+'</td><td>'+r.payer+'</td><td class="mono">'+r.cptCodes.join(', ')+'</td><td class="mono">'+r.denialCode+'</td><td style="font-size:.72rem;color:var(--sub)">'+r.denialReason+'</td><td>'+r.appealType+'</td><td>'+aplPill(r.appealStatus)+'</td><td>'+r.deadlineDate+'</td><td class="money">'+usd(r.amountDenied)+'</td><td><button class="btn-ghost btn-sm">View</button></td></tr>').join('');
+ document.getElementById('tb-appeals').innerHTML=APPEALS_DATA.map((r,i)=>'<tr class="row-click'+'" data-key="appeals" data-i="'+i+'"><td class="mono">'+r.claimNumber+'</td><td>'+r.patientName+'</td><td>'+r.payer+'</td><td class="mono">'+r.cptCodes.join(', ')+'</td><td class="mono">'+r.denialCode+'</td><td style="font-size:.72rem;color:var(--sub)">'+r.denialReason+'</td><td>'+r.appealType+'</td><td>'+aplPill(r.appealStatus)+'</td><td>'+r.deadlineDate+'</td><td class="money">'+usd(r.amountDenied)+'</td><td><button class="btn-ghost btn-sm">View</button></td></tr>').join('');
 }
 document.getElementById('appealsHead').addEventListener('click',e=>{
  const th=e.target.closest('th.sort');if(!th)return;
