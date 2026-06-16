@@ -1,0 +1,131 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button "Go to dashboard overview" [ref=e4] [cursor=pointer]:
+        - generic [ref=e5]: CC
+        - generic [ref=e6]:
+          - text: Culver City Surgical
+          - generic [ref=e7]: Revenue Cycle · Stedi EDI
+      - generic [ref=e8]: Workflow
+      - button "⌂ Overview" [ref=e9] [cursor=pointer]
+      - button "✓ Eligibility" [ref=e10] [cursor=pointer]
+      - button "◎ Insurance discovery" [ref=e11] [cursor=pointer]
+      - button "⇪ Claims" [ref=e12] [cursor=pointer]
+      - button "⟳ Claim status" [ref=e13] [cursor=pointer]
+      - button "$ Remittances (ERA)" [ref=e14] [cursor=pointer]
+      - button "⎘ Attachments" [ref=e15] [cursor=pointer]
+      - button "⊞ Coordination of benefits" [ref=e16] [cursor=pointer]
+      - button "⚖ Appeals" [ref=e17] [cursor=pointer]
+      - generic [ref=e18]: Directory
+      - button "⚕ Providers" [ref=e19] [cursor=pointer]
+      - button "⌖ Locations" [ref=e20] [cursor=pointer]
+      - button "⛨ Payers" [ref=e21] [cursor=pointer]
+      - button "✎ Enrollments" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]: Operations
+      - button "⇩ DocuPipe intake" [ref=e24] [cursor=pointer]
+      - button "▣ Print center" [ref=e25] [cursor=pointer]
+      - button "≣ Transactions & events" [ref=e26] [cursor=pointer]
+      - generic [ref=e27]:
+        - text: Clone · DocuPipe + Stedi
+        - text: localhost:8742
+    - main [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: Dashboard / Overview
+          - heading "Overview" [level=1] [ref=e32]
+        - textbox "Search all records" [ref=e33]:
+          - /placeholder: 🔍 Search patients, claims, payers...
+        - group "Theme" [ref=e34] [cursor=pointer]:
+          - button "Dark" [ref=e35]
+          - button "Light" [ref=e36]
+        - generic [ref=e37]: KV
+      - generic "Workflow shortcuts" [ref=e38]:
+        - button "Eligibility work 2" [ref=e39] [cursor=pointer]:
+          - generic [ref=e40]: Eligibility work
+          - generic [ref=e41]: "2"
+        - button "Claim rework 3" [ref=e42] [cursor=pointer]:
+          - generic [ref=e43]: Claim rework
+          - generic [ref=e44]: "3"
+        - button "ERA posting 1" [ref=e45] [cursor=pointer]:
+          - generic [ref=e46]: ERA posting
+          - generic [ref=e47]: "1"
+        - button "Attachments 2" [ref=e48] [cursor=pointer]:
+          - generic [ref=e49]: Attachments
+          - generic [ref=e50]: "2"
+        - button "Enrollments 2" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: Enrollments
+          - generic [ref=e53]: "2"
+        - button "DocuPipe intake +" [ref=e54] [cursor=pointer]:
+          - generic [ref=e55]: DocuPipe intake
+          - generic [ref=e56]: +
+        - button "Recent records 0" [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]: Recent records
+          - generic [ref=e59]: "0"
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - generic [ref=e63]: Charges this month
+            - generic [ref=e64]: $412,380
+            - generic [ref=e65]: ▲ 8.2% vs May
+          - generic [ref=e66]:
+            - generic [ref=e67]: Collections
+            - generic [ref=e68]: $298,114
+            - generic [ref=e69]: ▲ 5.1%
+          - generic [ref=e70]:
+            - generic [ref=e71]: Clean claim rate
+            - generic [ref=e72]: 96.4%
+            - generic [ref=e73]: ▲ 1.3 pts
+          - generic [ref=e74]:
+            - generic [ref=e75]: Days in A/R
+            - generic [ref=e76]: "31.2"
+            - generic [ref=e77]: ▼ 2.4 days
+          - generic [ref=e78]:
+            - generic [ref=e79]: Denial rate
+            - generic [ref=e80]: 4.1%
+            - generic [ref=e81]: ▼ 0.6 pts
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - heading "A/R aging by payer" [level=3] [ref=e84]
+            - generic [ref=e85]: Outstanding balances across all locations
+            - generic [ref=e86]:
+              - generic [ref=e87]: Anthem BC CA
+              - generic [ref=e90]: $84.2k
+            - generic [ref=e91]:
+              - generic [ref=e92]: UnitedHealthcare
+              - generic [ref=e95]: $66.9k
+            - generic [ref=e96]:
+              - generic [ref=e97]: Aetna
+              - generic [ref=e100]: $48.6k
+            - generic [ref=e101]:
+              - generic [ref=e102]: Cigna
+              - generic [ref=e105]: $35.6k
+            - generic [ref=e106]:
+              - generic [ref=e107]: Medicare (Noridian)
+              - generic [ref=e110]: $25.9k
+          - generic [ref=e111]:
+            - heading "Today's work queue" [level=3] [ref=e112]
+            - generic [ref=e113]: Items needing action before 5:00 PM PT
+            - table [ref=e115]:
+              - rowgroup [ref=e116]:
+                - row "Eligibility re-checks for tomorrow's surgeries 12 pending" [ref=e117]:
+                  - cell "Eligibility re-checks for tomorrow's surgeries" [ref=e118]
+                  - cell "12 pending" [ref=e119]:
+                    - generic [ref=e120]: 12 pending
+                - row "Claims rejected at clearinghouse 0 to fix" [ref=e121]:
+                  - cell "Claims rejected at clearinghouse" [ref=e122]
+                  - cell "0 to fix" [ref=e123]:
+                    - generic [ref=e124]: 0 to fix
+                - row "ERAs to post 1 new" [ref=e125]:
+                  - cell "ERAs to post" [ref=e126]
+                  - cell "1 new" [ref=e127]:
+                    - generic [ref=e128]: 1 new
+                - row "Enrollment tasks awaiting signature 2 open" [ref=e129]:
+                  - cell "Enrollment tasks awaiting signature" [ref=e130]
+                  - cell "2 open" [ref=e131]:
+                    - generic [ref=e132]: 2 open
+                - row "Attachments requested by payer (275) 1 urgent" [ref=e133]:
+                  - cell "Attachments requested by payer (275)" [ref=e134]
+                  - cell "1 urgent" [ref=e135]:
+                    - generic [ref=e136]: 1 urgent
+      - text: DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO
+  - complementary "Record detail" [ref=e137]

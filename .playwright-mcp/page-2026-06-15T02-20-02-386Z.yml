@@ -1,0 +1,233 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button "Go to dashboard overview" [ref=e4] [cursor=pointer]:
+        - generic [ref=e5]: CC
+        - generic [ref=e6]:
+          - text: Culver City Surgical
+          - generic [ref=e7]: Revenue Cycle · Stedi EDI
+      - generic [ref=e8]: Workflow
+      - button "⌂ Overview" [ref=e9] [cursor=pointer]
+      - button "✓ Eligibility" [ref=e10] [cursor=pointer]
+      - button "◎ Insurance discovery" [ref=e11] [cursor=pointer]
+      - button "⇪ Claims" [ref=e12] [cursor=pointer]
+      - button "⟳ Claim status" [ref=e13] [cursor=pointer]
+      - button "$ Remittances (ERA)" [ref=e14] [cursor=pointer]
+      - button "⎘ Attachments" [ref=e15] [cursor=pointer]
+      - button "⊞ Coordination of benefits" [ref=e16] [cursor=pointer]
+      - button "⚖ Appeals" [ref=e17] [cursor=pointer]
+      - generic [ref=e18]: Directory
+      - button "⚕ Providers" [ref=e19] [cursor=pointer]
+      - button "⌖ Locations" [ref=e20] [cursor=pointer]
+      - button "⛨ Payers" [ref=e21] [cursor=pointer]
+      - button "✎ Enrollments" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]: Operations
+      - button "⇩ DocuPipe intake" [ref=e24] [cursor=pointer]
+      - button "▣ Print center" [ref=e25] [cursor=pointer]
+      - button "≣ Transactions & events" [ref=e26] [cursor=pointer]
+      - generic [ref=e27]:
+        - text: Clone · DocuPipe + Stedi
+        - text: localhost:8742
+    - main [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: Dashboard / Eligibility
+          - heading "Eligibility" [level=1] [ref=e32]
+        - textbox "Search all records" [ref=e33]:
+          - /placeholder: 🔍 Search patients, claims, payers...
+        - group "Theme" [ref=e34] [cursor=pointer]:
+          - button "Dark" [ref=e35]
+          - button "Light" [ref=e36]
+        - generic [ref=e37]: KV
+      - generic "Workflow shortcuts" [ref=e38]:
+        - button "Eligibility work 15" [ref=e39] [cursor=pointer]:
+          - generic [ref=e40]: Eligibility work
+          - generic [ref=e41]: "15"
+        - button "Claim rework 55" [ref=e42] [cursor=pointer]:
+          - generic [ref=e43]: Claim rework
+          - generic [ref=e44]: "55"
+        - button "ERA posting 40" [ref=e45] [cursor=pointer]:
+          - generic [ref=e46]: ERA posting
+          - generic [ref=e47]: "40"
+        - button "Attachments 35" [ref=e48] [cursor=pointer]:
+          - generic [ref=e49]: Attachments
+          - generic [ref=e50]: "35"
+        - button "Enrollments 56" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: Enrollments
+          - generic [ref=e53]: "56"
+        - button "DocuPipe intake +" [ref=e54] [cursor=pointer]:
+          - generic [ref=e55]: DocuPipe intake
+          - generic [ref=e56]: +
+        - button "Recent records 0" [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]: Recent records
+          - generic [ref=e59]: "0"
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - heading "Real-time eligibility check (270/271)" [level=3] [ref=e63]
+            - generic [ref=e64]: Verify coverage before scheduling
+            - generic [ref=e65]: POST /change/medicalnetwork/eligibility/v3
+            - generic [ref=e66]: POST /change/medicalnetwork/eligibility/v3/raw-x12
+            - generic [ref=e67]:
+              - generic [ref=e68]:
+                - generic [ref=e69]: First name
+                - textbox [ref=e70]: Falcon
+              - generic [ref=e71]:
+                - generic [ref=e72]: Last name
+                - textbox [ref=e73]: Dent
+              - generic [ref=e74]:
+                - generic [ref=e75]: Member ID
+                - textbox [ref=e76]: "007007007"
+              - generic [ref=e77]:
+                - generic [ref=e78]: Patient DOB
+                - textbox [ref=e79]
+              - generic [ref=e80]:
+                - generic [ref=e81]: Payer
+                - combobox [ref=e82]:
+                  - option "Stedi Test Payer — Ameritas (AMTAS00425)" [selected]
+                  - option "Aetna (60054)"
+                  - option "UnitedHealthcare (87726)"
+              - generic [ref=e83]:
+                - generic [ref=e84]: Service type
+                - combobox [ref=e85]:
+                  - option "Health benefit plan coverage (30)" [selected]
+                  - option "Surgical (2)"
+            - button "Run eligibility check" [ref=e86] [cursor=pointer]
+          - generic [ref=e87]:
+            - 'heading "Batch eligibility: tomorrow''s schedule" [level=3] [ref=e88]'
+            - generic [ref=e89]: 38 patients queued for June 12 surgery day
+            - generic [ref=e90]: POST /eligibility-manager/batch-eligibility
+            - generic [ref=e91]: "GET /eligibility-manager/batch/{batchId}"
+            - generic [ref=e92]: "GET /eligibility-manager/batch/{batchId}/items"
+            - generic [ref=e93]: GET /eligibility-manager/polling/batch-eligibility
+            - generic [ref=e94]:
+              - generic [ref=e95]: "Batch #BE-0611"
+              - generic [ref=e98]: 26/38
+            - generic [ref=e99]: 26 active · 9 pending · 2 inactive coverage · 1 payer timeout
+        - generic [ref=e100]:
+          - heading "Eligibility checks" [level=3] [ref=e101]
+          - generic [ref=e102]: 120 checks · click any row for the full 271 benefit detail
+          - table [ref=e104]:
+            - rowgroup [ref=e105]:
+              - row "Patient Payer Plan Coverage Copay Deductible left Checked" [ref=e106]:
+                - columnheader "Patient" [ref=e107]
+                - columnheader "Payer" [ref=e108]
+                - columnheader "Plan" [ref=e109]
+                - columnheader "Coverage" [ref=e110]
+                - columnheader "Copay" [ref=e111]
+                - columnheader "Deductible left" [ref=e112]
+                - columnheader "Checked" [ref=e113]
+            - rowgroup [ref=e114]:
+              - row "Marisol Whitfield Anthem Blue Cross CA HMO Select Active $0 $2,532 Apr 13, 1:53 PM" [ref=e115] [cursor=pointer]:
+                - cell "Marisol Whitfield" [ref=e116]
+                - cell "Anthem Blue Cross CA" [ref=e117]
+                - cell "HMO Select" [ref=e118]
+                - cell "Active" [ref=e119]:
+                  - generic [ref=e120]: Active
+                - cell "$0" [ref=e121]
+                - cell "$2,532" [ref=e122]
+                - cell "Apr 13, 1:53 PM" [ref=e123]
+              - row "David Delgado Blue Shield of CA Part B Inactive - - Apr 17, 11:34 AM" [ref=e124] [cursor=pointer]:
+                - cell "David Delgado" [ref=e125]
+                - cell "Blue Shield of CA" [ref=e126]
+                - cell "Part B" [ref=e127]
+                - cell "Inactive" [ref=e128]:
+                  - generic [ref=e129]: Inactive
+                - cell "-" [ref=e130]
+                - cell "-" [ref=e131]
+                - cell "Apr 17, 11:34 AM" [ref=e132]
+              - row "Linda Brennan UnitedHealthcare HMO Select Inactive - - May 6, 9:08 AM" [ref=e133] [cursor=pointer]:
+                - cell "Linda Brennan" [ref=e134]
+                - cell "UnitedHealthcare" [ref=e135]
+                - cell "HMO Select" [ref=e136]
+                - cell "Inactive" [ref=e137]:
+                  - generic [ref=e138]: Inactive
+                - cell "-" [ref=e139]
+                - cell "-" [ref=e140]
+                - cell "May 6, 9:08 AM" [ref=e141]
+              - row "Robert Reyes Aetna POS Premier Active $500 $190 May 17, 4:48 PM" [ref=e142] [cursor=pointer]:
+                - cell "Robert Reyes" [ref=e143]
+                - cell "Aetna" [ref=e144]
+                - cell "POS Premier" [ref=e145]
+                - cell "Active" [ref=e146]:
+                  - generic [ref=e147]: Active
+                - cell "$500" [ref=e148]
+                - cell "$190" [ref=e149]
+                - cell "May 17, 4:48 PM" [ref=e150]
+              - row "Aisha Vega Cigna HDHP Bronze Active $300 $2,906 May 23, 4:28 PM" [ref=e151] [cursor=pointer]:
+                - cell "Aisha Vega" [ref=e152]
+                - cell "Cigna" [ref=e153]
+                - cell "HDHP Bronze" [ref=e154]
+                - cell "Active" [ref=e155]:
+                  - generic [ref=e156]: Active
+                - cell "$300" [ref=e157]
+                - cell "$2,906" [ref=e158]
+                - cell "May 23, 4:28 PM" [ref=e159]
+              - row "Elena Holloway Medicare (Noridian) Choice Plus Active $500 $1,138 May 8, 10:03 AM" [ref=e160] [cursor=pointer]:
+                - cell "Elena Holloway" [ref=e161]
+                - cell "Medicare (Noridian)" [ref=e162]
+                - cell "Choice Plus" [ref=e163]
+                - cell "Active" [ref=e164]:
+                  - generic [ref=e165]: Active
+                - cell "$500" [ref=e166]
+                - cell "$1,138" [ref=e167]
+                - cell "May 8, 10:03 AM" [ref=e168]
+              - row "James Abara Medi-Cal HDHP Bronze Active $300 $222 Apr 10, 1:37 PM" [ref=e169] [cursor=pointer]:
+                - cell "James Abara" [ref=e170]
+                - cell "Medi-Cal" [ref=e171]
+                - cell "HDHP Bronze" [ref=e172]
+                - cell "Active" [ref=e173]:
+                  - generic [ref=e174]: Active
+                - cell "$300" [ref=e175]
+                - cell "$222" [ref=e176]
+                - cell "Apr 10, 1:37 PM" [ref=e177]
+              - row "Patricia Moreau Kaiser Foundation HP Choice Plus Active $0 $386 May 11, 10:15 AM" [ref=e178] [cursor=pointer]:
+                - cell "Patricia Moreau" [ref=e179]
+                - cell "Kaiser Foundation HP" [ref=e180]
+                - cell "Choice Plus" [ref=e181]
+                - cell "Active" [ref=e182]:
+                  - generic [ref=e183]: Active
+                - cell "$0" [ref=e184]
+                - cell "$386" [ref=e185]
+                - cell "May 11, 10:15 AM" [ref=e186]
+              - row "Greg Whitaker Humana HDHP Bronze Active $0 $296 Apr 2, 4:56 PM" [ref=e187] [cursor=pointer]:
+                - cell "Greg Whitaker" [ref=e188]
+                - cell "Humana" [ref=e189]
+                - cell "HDHP Bronze" [ref=e190]
+                - cell "Active" [ref=e191]:
+                  - generic [ref=e192]: Active
+                - cell "$0" [ref=e193]
+                - cell "$296" [ref=e194]
+                - cell "Apr 2, 4:56 PM" [ref=e195]
+              - row "Sofia Tran Health Net CA EPO Value Active $500 $92 May 28, 7:43 AM" [ref=e196] [cursor=pointer]:
+                - cell "Sofia Tran" [ref=e197]
+                - cell "Health Net CA" [ref=e198]
+                - cell "EPO Value" [ref=e199]
+                - cell "Active" [ref=e200]:
+                  - generic [ref=e201]: Active
+                - cell "$500" [ref=e202]
+                - cell "$92" [ref=e203]
+                - cell "May 28, 7:43 AM" [ref=e204]
+              - row "Marcus Marquez Oscar Health Open Access Active $250 $681 Jun 2, 4:30 PM" [ref=e205] [cursor=pointer]:
+                - cell "Marcus Marquez" [ref=e206]
+                - cell "Oscar Health" [ref=e207]
+                - cell "Open Access" [ref=e208]
+                - cell "Active" [ref=e209]:
+                  - generic [ref=e210]: Active
+                - cell "$250" [ref=e211]
+                - cell "$681" [ref=e212]
+                - cell "Jun 2, 4:30 PM" [ref=e213]
+              - row "Hannah Castillo Tricare West Open Access Active $300 $265 May 5, 3:00 PM" [ref=e214] [cursor=pointer]:
+                - cell "Hannah Castillo" [ref=e215]
+                - cell "Tricare West" [ref=e216]
+                - cell "Open Access" [ref=e217]
+                - cell "Active" [ref=e218]:
+                  - generic [ref=e219]: Active
+                - cell "$300" [ref=e220]
+                - cell "$265" [ref=e221]
+                - cell "May 5, 3:00 PM" [ref=e222]
+          - generic [ref=e223]:
+            - button "‹ Prev" [disabled] [ref=e224]
+            - generic [ref=e225]: 1–12 of 120
+            - button "Next ›" [ref=e226] [cursor=pointer]
+  - complementary "Record detail" [ref=e227]

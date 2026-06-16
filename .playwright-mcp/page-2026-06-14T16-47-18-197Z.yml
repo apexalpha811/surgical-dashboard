@@ -1,0 +1,181 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button "Go to dashboard overview" [ref=e4] [cursor=pointer]:
+        - generic [ref=e5]: CC
+        - generic [ref=e6]:
+          - text: Culver City Surgical
+          - generic [ref=e7]: Revenue Cycle · Stedi EDI
+      - generic [ref=e8]: Workflow
+      - button "⌂ Overview" [ref=e9] [cursor=pointer]
+      - button "✓ Eligibility" [ref=e10] [cursor=pointer]
+      - button "◎ Insurance discovery" [ref=e11] [cursor=pointer]
+      - button "⇪ Claims" [ref=e12] [cursor=pointer]
+      - button "⟳ Claim status" [ref=e13] [cursor=pointer]
+      - button "$ Remittances (ERA)" [ref=e14] [cursor=pointer]
+      - button "⎘ Attachments" [ref=e15] [cursor=pointer]
+      - button "⊞ Coordination of benefits" [ref=e16] [cursor=pointer]
+      - button "⚖ Appeals" [ref=e17] [cursor=pointer]
+      - generic [ref=e18]: Directory
+      - button "⚕ Providers" [ref=e19] [cursor=pointer]
+      - button "⌖ Locations" [ref=e20] [cursor=pointer]
+      - button "⛨ Payers" [ref=e21] [cursor=pointer]
+      - button "✎ Enrollments" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]: Operations
+      - button "⇩ DocuPipe intake" [ref=e24] [cursor=pointer]
+      - button "▣ Print center" [ref=e25] [cursor=pointer]
+      - button "≣ Transactions & events" [ref=e26] [cursor=pointer]
+      - generic [ref=e27]:
+        - text: Clone · DocuPipe + Stedi
+        - text: localhost:8742
+    - main [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: Dashboard / DocuPipe intake
+          - heading "DocuPipe intake" [level=1] [ref=e32]
+        - textbox "Search all records" [ref=e33]:
+          - /placeholder: 🔍 Search patients, claims, payers...
+        - group "Theme" [ref=e34] [cursor=pointer]:
+          - button "Dark" [ref=e35]
+          - button "Light" [ref=e36]
+        - generic [ref=e37]: KV
+      - generic "Workflow shortcuts" [ref=e38]:
+        - button "Eligibility work 15" [ref=e39] [cursor=pointer]:
+          - generic [ref=e40]: Eligibility work
+          - generic [ref=e41]: "15"
+        - button "Claim rework 55" [ref=e42] [cursor=pointer]:
+          - generic [ref=e43]: Claim rework
+          - generic [ref=e44]: "55"
+        - button "ERA posting 40" [ref=e45] [cursor=pointer]:
+          - generic [ref=e46]: ERA posting
+          - generic [ref=e47]: "40"
+        - button "Attachments 35" [ref=e48] [cursor=pointer]:
+          - generic [ref=e49]: Attachments
+          - generic [ref=e50]: "35"
+        - button "Enrollments 56" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: Enrollments
+          - generic [ref=e53]: "56"
+        - button "DocuPipe intake +" [ref=e54] [cursor=pointer]:
+          - generic [ref=e55]: DocuPipe intake
+          - generic [ref=e56]: +
+        - button "Recent records 0" [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]: Recent records
+          - generic [ref=e59]: "0"
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - generic [ref=e62]: POST /api/docupipe/upload
+          - generic [ref=e63]: POST /api/docupipe/standardize
+          - generic [ref=e64]: "GET /api/docupipe/jobs/{jobId}"
+          - generic [ref=e65]: POST /api/stedi/preview
+          - generic [ref=e66]: POST /api/stedi/submit
+        - generic [ref=e67]:
+          - generic [ref=e68]:
+            - generic [ref=e69]:
+              - heading "Run intake" [level=3] [ref=e70]
+              - generic [ref=e71]: Choose a document — it is parsed and filed to the right dashboard section automatically.
+              - generic [ref=e72]: Automated intake. Selecting a file runs detection, standardization, mapping, and import on its own. The manual schema picker below is an advanced override and is not the normal path.
+              - generic [ref=e73]:
+                - generic [ref=e74]:
+                  - generic [ref=e75]: Source file
+                  - button "Choose File" [ref=e76]
+                - generic [ref=e77]:
+                  - button "Run intake" [ref=e78] [cursor=pointer]
+                  - button "Upload" [ref=e79] [cursor=pointer]
+                  - button "Standardize" [ref=e80] [cursor=pointer]
+                  - button "Preview Stedi" [ref=e81] [cursor=pointer]
+                  - button "Input to dashboard" [ref=e82] [cursor=pointer]
+              - group [ref=e83]:
+                - 'generic "Advanced: manually override the detected type (not normal)" [ref=e84] [cursor=pointer]'
+                - option "Professional Claim Intake" [selected]
+                - option "Eligibility Card Intake"
+                - option "ERA or Denial PDF"
+                - option "Claim Attachment Packet"
+                - option "Provider Enrollment Document"
+              - generic [ref=e85]:
+                - heading "Status" [level=4] [ref=e86]
+                - generic [ref=e87]:
+                  - generic [ref=e88]:
+                    - generic [ref=e89]: Mode
+                    - generic [ref=e90]: live
+                  - generic [ref=e91]:
+                    - generic [ref=e92]: Document
+                    - generic [ref=e93]: waiting
+                  - generic [ref=e94]:
+                    - generic [ref=e95]: Job
+                    - generic [ref=e96]: waiting
+                  - generic [ref=e97]:
+                    - generic [ref=e98]: Standardization
+                    - generic [ref=e99]: waiting
+                  - generic [ref=e100]:
+                    - generic [ref=e101]: Schema
+                    - generic [ref=e102]: "saved: ao7dV4Lo"
+                  - generic [ref=e103]:
+                    - generic [ref=e104]: Import
+                    - generic [ref=e105]: none
+            - generic [ref=e106]:
+              - heading "Module editor" [level=3] [ref=e107]
+              - generic [ref=e108]: Edit the selected module schema and mapping
+              - generic [ref=e109]:
+                - generic [ref=e110]:
+                  - generic [ref=e111]: Name
+                  - textbox [ref=e112]: Professional Claim Intake
+                - generic [ref=e113]:
+                  - generic [ref=e114]: Stedi target
+                  - combobox [ref=e115]:
+                    - option "Professional claim 837P" [selected]
+                    - option "Eligibility 270"
+                    - option "ERA or denial appeal"
+                    - option "Claim attachment 275"
+                    - option "Provider enrollment"
+                - generic [ref=e116]:
+                  - generic [ref=e117]: Dashboard target
+                  - textbox [ref=e118]: claims
+              - generic [ref=e119]:
+                - generic [ref=e120]: Stedi endpoint
+                - textbox [ref=e121]: /change/medicalnetwork/professionalclaims/v3/submission
+              - generic [ref=e122]:
+                - generic [ref=e123]: Guidelines
+                - textbox [ref=e124]: Extract patient, payer, provider, claim, service line, and diagnosis details from professional claim documents. Prefer printed values and keep codes exact.
+              - generic [ref=e125]:
+                - generic [ref=e126]: JSON schema
+                - textbox [ref=e127]: "{ \"$schema\": \"http://json-schema.org/draft-07/schema#\", \"description\": \"Extract ASC professional claim data for a Stedi 837P style claim draft.\", \"type\": \"object\", \"properties\": { \"documentType\": { \"type\": \"string\", \"description\": \"Document category.\", \"enum\": [ \"claim\" ] }, \"patient\": { \"type\": \"object\", \"properties\": { \"fullName\": { \"type\": \"string\", \"description\": \"Patient name exactly as shown.\" }, \"dateOfBirth\": { \"type\": \"string\", \"description\": \"Date of birth.\" }, \"memberId\": { \"type\": \"string\", \"description\": \"Subscriber/member ID.\" } } }, \"payer\": { \"type\": \"object\", \"properties\": { \"name\": { \"type\": \"string\", \"description\": \"Payer name.\" }, \"stediId\": { \"type\": \"string\", \"description\": \"Stedi payer ID.\" } } }, \"provider\": { \"type\": \"object\", \"properties\": { \"organizationName\": { \"type\": \"string\", \"description\": \"Billing organization or facility name.\" }, \"npi\": { \"type\": \"string\", \"description\": \"Provider NPI.\" }, \"taxId\": { \"type\": \"string\", \"description\": \"Tax ID or EIN.\" } } }, \"claim\": { \"type\": \"object\", \"properties\": { \"claimNumber\": { \"type\": \"string\", \"description\": \"Internal claim number or control number.\" }, \"dateOfService\": { \"type\": \"string\", \"description\": \"Primary date of service.\" }, \"totalChargeAmount\": { \"type\": \"number\", \"description\": \"Total billed amount.\" } } }, \"serviceLines\": { \"type\": \"array\", \"items\": { \"type\": \"object\", \"properties\": { \"cptCode\": { \"type\": \"string\", \"description\": \"CPT or HCPCS procedure code.\" }, \"units\": { \"type\": \"integer\", \"description\": \"Service units.\" }, \"chargeAmount\": { \"type\": \"number\", \"description\": \"Line charge amount.\" } } } }, \"diagnosisCodes\": { \"type\": \"array\", \"items\": { \"type\": \"string\", \"description\": \"ICD-10 code.\" } } } }"
+              - generic [ref=e128]:
+                - generic [ref=e129]: Field mappings
+                - textbox [ref=e130]: "[ { \"source\": \"patient.fullName\", \"dashboard\": \"claims.patient\", \"stedi\": \"subscriber\" }, { \"source\": \"provider.npi\", \"dashboard\": \"claims.providerFull\", \"stedi\": \"billingProvider.npi\" }, { \"source\": \"claim.totalChargeAmount\", \"dashboard\": \"claims.billed\", \"stedi\": \"claimInformation.claimChargeAmount\" } ]"
+              - group [ref=e131]:
+                - generic "Advanced module metadata" [ref=e132]
+                - generic [ref=e133]:
+                  - generic [ref=e134]: Available DocuPipe schemas
+                  - combobox [ref=e135]:
+                    - option "Refresh schemas to load" [selected]
+                - generic [ref=e136]:
+                  - generic [ref=e137]: DocuPipe schema ID
+                  - textbox [ref=e138]: ao7dV4Lo
+                - generic [ref=e139]: Saved schema IDs persist in this browser. On free hosting, server file edits can reset after sleep or redeploy.
+                - generic [ref=e140]:
+                  - button "Refresh schemas" [ref=e141] [cursor=pointer]
+                  - button "Save schema ID" [ref=e142] [cursor=pointer]
+                  - button "Validate schema" [ref=e143] [cursor=pointer]
+              - generic [ref=e144]:
+                - button "Save module" [ref=e145] [cursor=pointer]
+                - button "Duplicate as new" [ref=e146] [cursor=pointer]
+          - generic [ref=e147]:
+            - generic [ref=e148]:
+              - heading "Review" [level=3] [ref=e149]
+              - generic [ref=e150]: Mapped values and review flags
+            - generic [ref=e151]:
+              - heading "Imported record" [level=3] [ref=e152]
+              - generic [ref=e153]: All imported data, past and present
+              - generic [ref=e155]: No record imported yet.
+              - generic [ref=e156]:
+                - heading "Import history" [level=4] [ref=e157]
+                - generic [ref=e159]: No imported history yet.
+              - button "View all imported data" [ref=e161] [cursor=pointer]
+            - generic [ref=e162]:
+              - generic [ref=e163]:
+                - heading "DocuPipe JSON" [level=3] [ref=e164]
+                - generic [ref=e165]: "{}"
+              - generic [ref=e166]:
+                - heading "Stedi payload preview" [level=3] [ref=e167]
+                - generic [ref=e168]: "{}"
+  - complementary "Record detail" [ref=e169]

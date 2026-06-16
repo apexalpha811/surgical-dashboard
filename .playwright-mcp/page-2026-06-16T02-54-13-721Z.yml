@@ -1,0 +1,207 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button "Go to dashboard overview" [ref=e4] [cursor=pointer]:
+        - generic [ref=e5]: CC
+        - generic [ref=e6]:
+          - text: Culver City Surgical
+          - generic [ref=e7]: Revenue Cycle · Stedi EDI
+      - generic [ref=e8]: Workflow
+      - button "⌂ Overview" [ref=e9] [cursor=pointer]
+      - button "✓ Eligibility" [ref=e10] [cursor=pointer]
+      - button "◎ Insurance discovery" [ref=e11] [cursor=pointer]
+      - button "⇪ Claims" [ref=e12] [cursor=pointer]
+      - button "⟳ Claim status" [ref=e13] [cursor=pointer]
+      - button "$ Remittances (ERA)" [ref=e14] [cursor=pointer]
+      - button "⎘ Attachments" [ref=e15] [cursor=pointer]
+      - button "⊞ Coordination of benefits" [ref=e16] [cursor=pointer]
+      - button "⚖ Appeals" [ref=e17] [cursor=pointer]
+      - generic [ref=e18]: Directory
+      - button "⚕ Providers" [ref=e19] [cursor=pointer]
+      - button "⌖ Locations" [ref=e20] [cursor=pointer]
+      - button "⛨ Payers" [ref=e21] [cursor=pointer]
+      - button "✎ Enrollments" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]: Operations
+      - button "⇩ DocuPipe intake" [ref=e24] [cursor=pointer]
+      - button "▣ Print center" [ref=e25] [cursor=pointer]
+      - button "≣ Transactions & events" [ref=e26] [cursor=pointer]
+    - main [ref=e27]:
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e30]: Dashboard / Enrollments
+          - heading "Enrollments" [level=1] [ref=e31]
+        - textbox "Search all records" [ref=e32]:
+          - /placeholder: 🔍 Search patients, claims, payers...
+        - group "Theme" [ref=e33] [cursor=pointer]:
+          - button "Dark" [ref=e34]
+          - button "Light" [ref=e35]
+        - generic [ref=e36]: KV
+      - generic "Workflow shortcuts" [ref=e37]:
+        - button "Eligibility work 4" [ref=e126] [cursor=pointer]:
+          - generic [ref=e39]: Eligibility work
+          - generic [ref=e40]: "4"
+        - button "Claim rework 4" [ref=e127] [cursor=pointer]:
+          - generic [ref=e42]: Claim rework
+          - generic [ref=e43]: "4"
+        - button "ERA posting 1" [ref=e44] [cursor=pointer]:
+          - generic [ref=e45]: ERA posting
+          - generic [ref=e46]: "1"
+        - button "Attachments 4" [ref=e128] [cursor=pointer]:
+          - generic [ref=e48]: Attachments
+          - generic [ref=e49]: "4"
+        - button "Enrollments 11" [ref=e129] [cursor=pointer]:
+          - generic [ref=e51]: Enrollments
+          - generic [ref=e52]: "11"
+        - button "DocuPipe intake +" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]: DocuPipe intake
+          - generic [ref=e55]: +
+        - button "Recent records 1" [ref=e217] [cursor=pointer]:
+          - generic [ref=e57]: Recent records
+          - generic [ref=e58]: "1"
+      - text: DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - generic [ref=e61]: POST /enrollments
+          - generic [ref=e62]: GET /enrollments
+          - generic [ref=e63]: "POST /enrollments/{enrollmentId}"
+          - generic [ref=e64]: "DELETE /enrollments/{enrollmentId}"
+          - generic [ref=e65]: POST /enrollments/export
+          - generic [ref=e66]: "POST /enrollments/{enrollmentId}/documents"
+          - generic [ref=e67]: "GET /documents/{documentId}/download"
+          - generic [ref=e68]: "DELETE /documents/{documentId}"
+          - generic [ref=e69]: "POST /tasks/{taskId}"
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - heading "Payer transaction enrollments" [level=3] [ref=e72]
+            - button "+ New enrollment" [ref=e73] [cursor=pointer]
+            - button "Export all" [ref=e74] [cursor=pointer]
+          - generic [ref=e75]: "14 records · Stedi: Access Denied - This functionality is not available in Test Mode."
+          - table [ref=e77]:
+            - rowgroup [ref=e78]:
+              - row "Provider Payer Transaction Status Open task" [ref=e79]:
+                - columnheader "Provider" [ref=e80]
+                - columnheader "Payer" [ref=e81]
+                - columnheader "Transaction" [ref=e82]
+                - columnheader "Status" [ref=e83]
+                - columnheader "Open task" [ref=e84]
+            - rowgroup [ref=e85]:
+              - row "Dr. Alejandro Reyes, MD Anthem Blue Cross of CA 837P claims Submitted -" [ref=e130] [cursor=pointer]:
+                - cell "Dr. Alejandro Reyes, MD" [ref=e131]
+                - cell "Anthem Blue Cross of CA" [ref=e132]
+                - cell "837P claims" [ref=e133]
+                - cell "Submitted" [ref=e134]:
+                  - generic [ref=e135]: Submitted
+                - cell "-" [ref=e136]
+              - row "Dr. Alejandro Reyes, MD Anthem Blue Cross of CA 837P claims Submitted -" [ref=e137] [cursor=pointer]:
+                - cell "Dr. Alejandro Reyes, MD" [ref=e138]
+                - cell "Anthem Blue Cross of CA" [ref=e139]
+                - cell "837P claims" [ref=e140]
+                - cell "Submitted" [ref=e141]:
+                  - generic [ref=e142]: Submitted
+                - cell "-" [ref=e143]
+              - row "Dr. Alejandro Reyes, MD Anthem Blue Cross of CA 837P claims Submitted -" [ref=e144] [cursor=pointer]:
+                - cell "Dr. Alejandro Reyes, MD" [ref=e145]
+                - cell "Anthem Blue Cross of CA" [ref=e146]
+                - cell "837P claims" [ref=e147]
+                - cell "Submitted" [ref=e148]:
+                  - generic [ref=e149]: Submitted
+                - cell "-" [ref=e150]
+              - row "Dr. Alejandro Reyes, MD Anthem Blue Cross of CA 837P claims Draft -" [ref=e151] [cursor=pointer]:
+                - cell "Dr. Alejandro Reyes, MD" [ref=e152]
+                - cell "Anthem Blue Cross of CA" [ref=e153]
+                - cell "837P claims" [ref=e154]
+                - cell "Draft" [ref=e155]:
+                  - generic [ref=e156]: Draft
+                - cell "-" [ref=e157]
+              - row "Dr. Michael Chen, MD Anthem Blue Cross CA 837P claims Draft Complete EDI agreement" [ref=e158] [cursor=pointer]:
+                - cell "Dr. Michael Chen, MD" [ref=e159]
+                - cell "Anthem Blue Cross CA" [ref=e160]
+                - cell "837P claims" [ref=e161]
+                - cell "Draft" [ref=e162]:
+                  - generic [ref=e163]: Draft
+                - cell "Complete EDI agreement" [ref=e164]
+              - row "Dr. Michael Chen, MD Anthem Blue Cross CA 837P claims Draft Complete EDI agreement" [ref=e165] [cursor=pointer]:
+                - cell "Dr. Michael Chen, MD" [ref=e166]
+                - cell "Anthem Blue Cross CA" [ref=e167]
+                - cell "837P claims" [ref=e168]
+                - cell "Draft" [ref=e169]:
+                  - generic [ref=e170]: Draft
+                - cell "Complete EDI agreement" [ref=e171]
+              - row "Dr. Michael Chen, MD Anthem Blue Cross CA 837P claims Draft Complete EDI agreement" [ref=e172] [cursor=pointer]:
+                - cell "Dr. Michael Chen, MD" [ref=e173]
+                - cell "Anthem Blue Cross CA" [ref=e174]
+                - cell "837P claims" [ref=e175]
+                - cell "Draft" [ref=e176]:
+                  - generic [ref=e177]: Draft
+                - cell "Complete EDI agreement" [ref=e178]
+              - row "Dr. Alejandro Reyes, MD Anthem Blue Cross CA 837P claims Draft Complete EDI agreement" [ref=e179] [cursor=pointer]:
+                - cell "Dr. Alejandro Reyes, MD" [ref=e180]
+                - cell "Anthem Blue Cross CA" [ref=e181]
+                - cell "837P claims" [ref=e182]
+                - cell "Draft" [ref=e183]:
+                  - generic [ref=e184]: Draft
+                - cell "Complete EDI agreement" [ref=e185]
+              - row "Dr. Alejandro Reyes, MD Anthem Blue Cross CA 837P claims Draft Complete EDI agreement" [ref=e186] [cursor=pointer]:
+                - cell "Dr. Alejandro Reyes, MD" [ref=e187]
+                - cell "Anthem Blue Cross CA" [ref=e188]
+                - cell "837P claims" [ref=e189]
+                - cell "Draft" [ref=e190]:
+                  - generic [ref=e191]: Draft
+                - cell "Complete EDI agreement" [ref=e192]
+              - row "Dr. Alejandro Reyes, MDDEMO Anthem Blue Cross CA 270 eligibility Live -" [ref=e193] [cursor=pointer]:
+                - cell "Dr. Alejandro Reyes, MDDEMO" [ref=e194]
+                - cell "Anthem Blue Cross CA" [ref=e195]
+                - cell "270 eligibility" [ref=e196]
+                - cell "Live" [ref=e197]:
+                  - generic [ref=e198]: Live
+                - cell "-" [ref=e199]
+              - row "Dr. Sunita Patel, MDDEMO UnitedHealthcare 835 ERA Live -" [ref=e200] [cursor=pointer]:
+                - cell "Dr. Sunita Patel, MDDEMO" [ref=e201]
+                - cell "UnitedHealthcare" [ref=e202]
+                - cell "835 ERA" [ref=e203]
+                - cell "Live" [ref=e204]:
+                  - generic [ref=e205]: Live
+                - cell "-" [ref=e206]
+              - row "Dr. Michael Chen, MDDEMO Cigna 835 ERA Live -" [ref=e207] [cursor=pointer]:
+                - cell "Dr. Michael Chen, MDDEMO" [ref=e208]
+                - cell "Cigna" [ref=e209]
+                - cell "835 ERA" [ref=e210]
+                - cell "Live" [ref=e211]:
+                  - generic [ref=e212]: Live
+                - cell "-" [ref=e213]
+          - generic [ref=e121]:
+            - button "‹ Prev" [disabled] [ref=e214]
+            - generic [ref=e215]: 1–12 of 14
+            - button "Next ›" [ref=e216] [cursor=pointer]
+      - text: DEMO DEMO DEMO DEMO DEMO
+  - generic: Loaded saved dashboard data.
+  - complementary "Record detail" [ref=e125]:
+    - generic [ref=e248]:
+      - heading "Enrollment" [level=2] [ref=e249]
+      - button "Edit" [ref=e250] [cursor=pointer]
+      - button "Delete" [ref=e251] [cursor=pointer]
+      - button "Close" [ref=e252] [cursor=pointer]: ✕
+    - generic [ref=e253]: Dr. Michael Chen, MD
+    - generic [ref=e254]:
+      - term [ref=e255]: Enrollment ID
+      - definition [ref=e256]: enr_e9gqjo
+      - term [ref=e257]: Payer
+      - definition [ref=e258]: Anthem Blue Cross CA
+      - term [ref=e259]: Transaction
+      - definition [ref=e260]: 837P claims
+      - term [ref=e261]: Status
+      - definition [ref=e262]:
+        - generic [ref=e263]: Draft
+      - term [ref=e264]: Submitted
+      - definition [ref=e265]: 6/13/2026
+      - term [ref=e266]: Open task
+      - definition [ref=e267]: Complete EDI agreement
+    - generic [ref=e268]:
+      - heading "Documents" [level=4] [ref=e269]
+      - text: W-9.pdf
+      - button "Upload document" [ref=e271] [cursor=pointer]
+    - generic [ref=e272]:
+      - heading "Actions" [level=4] [ref=e273]
+      - button "Update enrollment" [ref=e274] [cursor=pointer]
+      - button "Complete task" [ref=e275] [cursor=pointer]
+      - button "Delete" [ref=e276] [cursor=pointer]

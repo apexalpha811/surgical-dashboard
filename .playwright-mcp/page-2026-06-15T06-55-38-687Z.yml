@@ -1,0 +1,162 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button "Go to dashboard overview" [ref=e4] [cursor=pointer]:
+        - generic [ref=e5]: CC
+        - generic [ref=e6]:
+          - text: Culver City Surgical
+          - generic [ref=e7]: Revenue Cycle · Stedi EDI
+      - generic [ref=e8]: Workflow
+      - button "⌂ Overview" [ref=e9] [cursor=pointer]
+      - button "✓ Eligibility" [ref=e10] [cursor=pointer]
+      - button "◎ Insurance discovery" [ref=e11] [cursor=pointer]
+      - button "⇪ Claims" [ref=e12] [cursor=pointer]
+      - button "⟳ Claim status" [ref=e13] [cursor=pointer]
+      - button "$ Remittances (ERA)" [ref=e14] [cursor=pointer]
+      - button "⎘ Attachments" [ref=e15] [cursor=pointer]
+      - button "⊞ Coordination of benefits" [ref=e16] [cursor=pointer]
+      - button "⚖ Appeals" [ref=e17] [cursor=pointer]
+      - generic [ref=e18]: Directory
+      - button "⚕ Providers" [ref=e19] [cursor=pointer]
+      - button "⌖ Locations" [ref=e20] [cursor=pointer]
+      - button "⛨ Payers" [ref=e21] [cursor=pointer]
+      - button "✎ Enrollments" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]: Operations
+      - button "⇩ DocuPipe intake" [ref=e24] [cursor=pointer]
+      - button "▣ Print center" [ref=e25] [cursor=pointer]
+      - button "≣ Transactions & events" [ref=e26] [cursor=pointer]
+      - generic [ref=e27]:
+        - text: Clone · DocuPipe + Stedi
+        - text: localhost:8742
+    - main [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: Dashboard / Claims
+          - heading "Claims" [level=1] [ref=e32]
+        - textbox "Search all records" [ref=e33]:
+          - /placeholder: 🔍 Search patients, claims, payers...
+        - group "Theme" [ref=e34] [cursor=pointer]:
+          - button "Dark" [ref=e35]
+          - button "Light" [ref=e36]
+        - generic [ref=e37]: KV
+      - generic "Workflow shortcuts" [ref=e38]:
+        - button "Eligibility work 2" [ref=e39] [cursor=pointer]:
+          - generic [ref=e40]: Eligibility work
+          - generic [ref=e41]: "2"
+        - button "Claim rework 3" [ref=e42] [cursor=pointer]:
+          - generic [ref=e43]: Claim rework
+          - generic [ref=e44]: "3"
+        - button "ERA posting 1" [ref=e45] [cursor=pointer]:
+          - generic [ref=e46]: ERA posting
+          - generic [ref=e47]: "1"
+        - button "Attachments 2" [ref=e48] [cursor=pointer]:
+          - generic [ref=e49]: Attachments
+          - generic [ref=e50]: "2"
+        - button "Enrollments 2" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: Enrollments
+          - generic [ref=e53]: "2"
+        - button "DocuPipe intake +" [ref=e54] [cursor=pointer]:
+          - generic [ref=e55]: DocuPipe intake
+          - generic [ref=e56]: +
+        - button "Recent records 0" [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]: Recent records
+          - generic [ref=e59]: "0"
+      - text: DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - generic [ref=e62]: POST /change/medicalnetwork/professionalclaims/v3/submission
+          - generic [ref=e63]: POST /change/medicalnetwork/professionalclaims/v3/raw-x12-submission
+          - generic [ref=e64]: POST /change/medicalnetwork/institutionalclaims/v1/submission
+          - generic [ref=e65]: POST /change/medicalnetwork/institutionalclaims/v1/raw-x12-submission
+          - generic [ref=e66]: "GET /export/{transactionId}/1500/pdf"
+        - generic [ref=e67]:
+          - generic [ref=e68]:
+            - generic [ref=e69]: Total claims
+            - generic [ref=e70]: "5"
+            - generic [ref=e71]: 837P · 837I
+          - generic [ref=e72]:
+            - generic [ref=e73]: Accepted / paid
+            - generic [ref=e74]: "2"
+            - generic [ref=e75]: 40%
+          - generic [ref=e76]:
+            - generic [ref=e77]: Rejected / denied
+            - generic [ref=e78]: "0"
+            - generic [ref=e79]: needs rework
+          - generic [ref=e80]:
+            - generic [ref=e81]: Pending payer
+            - generic [ref=e82]: "3"
+            - generic [ref=e83]: in adjudication
+        - generic [ref=e84]:
+          - generic [ref=e85]:
+            - heading "Claim queue" [level=3] [ref=e86]
+            - button "+ New professional claim (837P)" [ref=e87] [cursor=pointer]
+            - button "+ Institutional (837I)" [ref=e88] [cursor=pointer]
+          - generic [ref=e89]: Click any row for service lines, diagnoses, and adjudication detail
+          - table [ref=e91]:
+            - rowgroup [ref=e92]:
+              - row "Claim Patient Type Provider Location Payer Billed Status" [ref=e93]:
+                - columnheader "Claim" [ref=e94]
+                - columnheader "Patient" [ref=e95]
+                - columnheader "Type" [ref=e96]
+                - columnheader "Provider" [ref=e97]
+                - columnheader "Location" [ref=e98]
+                - columnheader "Payer" [ref=e99]
+                - columnheader "Billed" [ref=e100]
+                - columnheader "Status" [ref=e101]
+            - rowgroup [ref=e102]:
+              - row "CLM-20560DEMO Marcus Marquez 837I Dr. Reyes Culver City ASC Anthem Blue Cross CA $20,408 Paid" [ref=e103] [cursor=pointer]:
+                - cell "CLM-20560DEMO" [ref=e104]
+                - cell "Marcus Marquez" [ref=e105]
+                - cell "837I" [ref=e106]
+                - cell "Dr. Reyes" [ref=e107]
+                - cell "Culver City ASC" [ref=e108]
+                - cell "Anthem Blue Cross CA" [ref=e109]
+                - cell "$20,408" [ref=e110]
+                - cell "Paid" [ref=e111]:
+                  - generic [ref=e112]: Paid
+              - row "CLM-20559DEMO Hannah Castillo 837I Dr. Patel Marina del Rey Clinic Aetna $33,450 Pending payer" [ref=e113] [cursor=pointer]:
+                - cell "CLM-20559DEMO" [ref=e114]
+                - cell "Hannah Castillo" [ref=e115]
+                - cell "837I" [ref=e116]
+                - cell "Dr. Patel" [ref=e117]
+                - cell "Marina del Rey Clinic" [ref=e118]
+                - cell "Aetna" [ref=e119]
+                - cell "$33,450" [ref=e120]
+                - cell "Pending payer" [ref=e121]:
+                  - generic [ref=e122]: Pending payer
+              - row "CLM-20558DEMO Victor Novak 837I Dr. Chen El Segundo Imaging & Pain Medi-Cal $3,036 Pending payer" [ref=e123] [cursor=pointer]:
+                - cell "CLM-20558DEMO" [ref=e124]
+                - cell "Victor Novak" [ref=e125]
+                - cell "837I" [ref=e126]
+                - cell "Dr. Chen" [ref=e127]
+                - cell "El Segundo Imaging & Pain" [ref=e128]
+                - cell "Medi-Cal" [ref=e129]
+                - cell "$3,036" [ref=e130]
+                - cell "Pending payer" [ref=e131]:
+                  - generic [ref=e132]: Pending payer
+              - row "CLM-20557DEMO Naomi Hartman 837P Dr. Whitcomb Culver City ASC Health Net CA $11,495 Pending payer" [ref=e133] [cursor=pointer]:
+                - cell "CLM-20557DEMO" [ref=e134]
+                - cell "Naomi Hartman" [ref=e135]
+                - cell "837P" [ref=e136]
+                - cell "Dr. Whitcomb" [ref=e137]
+                - cell "Culver City ASC" [ref=e138]
+                - cell "Health Net CA" [ref=e139]
+                - cell "$11,495" [ref=e140]
+                - cell "Pending payer" [ref=e141]:
+                  - generic [ref=e142]: Pending payer
+              - row "CLM-20556DEMO Carlos Petrova 837I Dr. Tran Marina del Rey Clinic Anthem Blue Cross CA $13,628 Accepted" [ref=e143] [cursor=pointer]:
+                - cell "CLM-20556DEMO" [ref=e144]
+                - cell "Carlos Petrova" [ref=e145]
+                - cell "837I" [ref=e146]
+                - cell "Dr. Tran" [ref=e147]
+                - cell "Marina del Rey Clinic" [ref=e148]
+                - cell "Anthem Blue Cross CA" [ref=e149]
+                - cell "$13,628" [ref=e150]
+                - cell "Accepted" [ref=e151]:
+                  - generic [ref=e152]: Accepted
+          - generic [ref=e153]:
+            - button "‹ Prev" [disabled] [ref=e154]
+            - generic [ref=e155]: 1–5 of 5
+            - button "Next ›" [disabled] [ref=e156]
+      - text: DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO
+  - complementary "Record detail" [ref=e157]

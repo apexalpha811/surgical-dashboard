@@ -1,0 +1,318 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button "Go to dashboard overview" [ref=e4] [cursor=pointer]:
+        - generic [ref=e5]: CC
+        - generic [ref=e6]:
+          - text: Culver City Surgical
+          - generic [ref=e7]: Revenue Cycle · Stedi EDI
+      - generic [ref=e8]: Workflow
+      - button "⌂ Overview" [ref=e9] [cursor=pointer]
+      - button "✓ Eligibility" [ref=e10] [cursor=pointer]
+      - button "◎ Insurance discovery" [ref=e11] [cursor=pointer]
+      - button "⇪ Claims" [ref=e12] [cursor=pointer]
+      - button "⟳ Claim status" [ref=e13] [cursor=pointer]
+      - button "$ Remittances (ERA)" [ref=e14] [cursor=pointer]
+      - button "⎘ Attachments" [ref=e15] [cursor=pointer]
+      - button "⊞ Coordination of benefits" [ref=e16] [cursor=pointer]
+      - button "⚖ Appeals" [ref=e17] [cursor=pointer]
+      - generic [ref=e18]: Directory
+      - button "⚕ Providers" [ref=e19] [cursor=pointer]
+      - button "⌖ Locations" [ref=e20] [cursor=pointer]
+      - button "⛨ Payers" [ref=e21] [cursor=pointer]
+      - button "✎ Enrollments" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]: Operations
+      - button "⇩ DocuPipe intake" [ref=e24] [cursor=pointer]
+      - button "▣ Print center" [ref=e25] [cursor=pointer]
+      - button "≣ Transactions & events" [ref=e26] [cursor=pointer]
+      - generic [ref=e27]:
+        - text: Clone · DocuPipe + Stedi
+        - text: localhost:8742
+    - main [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: Dashboard / Claims
+          - heading "Claims" [level=1] [ref=e170]
+        - textbox "Search all records" [ref=e33]:
+          - /placeholder: 🔍 Search patients, claims, payers...
+        - group "Theme" [ref=e34] [cursor=pointer]:
+          - button "Dark" [ref=e35]
+          - button "Light" [ref=e36]
+        - generic [ref=e37]: KV
+      - generic "Workflow shortcuts" [ref=e38]:
+        - button "Eligibility work 15" [ref=e39] [cursor=pointer]:
+          - generic [ref=e40]: Eligibility work
+          - generic [ref=e41]: "15"
+        - button "Claim rework 55" [ref=e42] [cursor=pointer]:
+          - generic [ref=e43]: Claim rework
+          - generic [ref=e44]: "55"
+        - button "ERA posting 40" [ref=e45] [cursor=pointer]:
+          - generic [ref=e46]: ERA posting
+          - generic [ref=e47]: "40"
+        - button "Attachments 35" [ref=e48] [cursor=pointer]:
+          - generic [ref=e49]: Attachments
+          - generic [ref=e50]: "35"
+        - button "Enrollments 56" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: Enrollments
+          - generic [ref=e53]: "56"
+        - button "DocuPipe intake +" [ref=e54] [cursor=pointer]:
+          - generic [ref=e55]: DocuPipe intake
+          - generic [ref=e56]: +
+        - button "Recent records 1" [ref=e171] [cursor=pointer]:
+          - generic [ref=e58]: Recent records
+          - generic [ref=e59]: "1"
+      - generic [ref=e172]:
+        - generic [ref=e173]:
+          - generic [ref=e174]: POST /change/medicalnetwork/professionalclaims/v3/submission
+          - generic [ref=e175]: POST /change/medicalnetwork/professionalclaims/v3/raw-x12-submission
+          - generic [ref=e176]: POST /change/medicalnetwork/institutionalclaims/v1/submission
+          - generic [ref=e177]: POST /change/medicalnetwork/institutionalclaims/v1/raw-x12-submission
+          - generic [ref=e178]: "GET /export/{transactionId}/1500/pdf"
+        - generic [ref=e179]:
+          - generic [ref=e180]:
+            - generic [ref=e181]: Total claims
+            - generic [ref=e182]: "141"
+            - generic [ref=e183]: 837P · 837I
+          - generic [ref=e184]:
+            - generic [ref=e185]: Accepted / paid
+            - generic [ref=e186]: "85"
+            - generic [ref=e187]: 60%
+          - generic [ref=e188]:
+            - generic [ref=e189]: Rejected / denied
+            - generic [ref=e190]: "29"
+            - generic [ref=e191]: needs rework
+          - generic [ref=e192]:
+            - generic [ref=e193]: Pending payer
+            - generic [ref=e194]: "23"
+            - generic [ref=e195]: in adjudication
+        - generic [ref=e196]:
+          - generic [ref=e197]:
+            - heading "Claim queue" [level=3] [ref=e198]
+            - button "+ New professional claim (837P)" [ref=e199] [cursor=pointer]
+            - button "+ Institutional (837I)" [ref=e200] [cursor=pointer]
+          - generic [ref=e201]: Click any row for service lines, diagnoses, and adjudication detail
+          - table [ref=e203]:
+            - rowgroup [ref=e204]:
+              - row "Claim Patient Type Provider Location Payer Billed Status" [ref=e205]:
+                - columnheader "Claim" [ref=e206]
+                - columnheader "Patient" [ref=e207]
+                - columnheader "Type" [ref=e208]
+                - columnheader "Provider" [ref=e209]
+                - columnheader "Location" [ref=e210]
+                - columnheader "Payer" [ref=e211]
+                - columnheader "Billed" [ref=e212]
+                - columnheader "Status" [ref=e213]
+            - rowgroup [ref=e214]:
+              - row "CLM-20559 Hannah Castillo 837P Dr. Sunita Patel Marina del Rey Clinic Aetna $33,450 Pending payer" [ref=e215] [cursor=pointer]:
+                - cell "CLM-20559" [ref=e216]
+                - cell "Hannah Castillo" [ref=e217]
+                - cell "837P" [ref=e218]
+                - cell "Dr. Sunita Patel" [ref=e219]
+                - cell "Marina del Rey Clinic" [ref=e220]
+                - cell "Aetna" [ref=e221]
+                - cell "$33,450" [ref=e222]
+                - cell "Pending payer" [ref=e223]:
+                  - generic [ref=e224]: Pending payer
+              - row "CLM-20560 Marcus Marquez 837I Dr. Reyes Culver City ASC Anthem Blue Cross CA $20,408 Paid" [ref=e225] [cursor=pointer]:
+                - cell "CLM-20560" [ref=e226]
+                - cell "Marcus Marquez" [ref=e227]
+                - cell "837I" [ref=e228]
+                - cell "Dr. Reyes" [ref=e229]
+                - cell "Culver City ASC" [ref=e230]
+                - cell "Anthem Blue Cross CA" [ref=e231]
+                - cell "$20,408" [ref=e232]
+                - cell "Paid" [ref=e233]:
+                  - generic [ref=e234]: Paid
+              - row "CLM-20559 Hannah Castillo 837I Dr. Patel Marina del Rey Clinic Aetna $33,450 Pending payer" [ref=e235] [cursor=pointer]:
+                - cell "CLM-20559" [ref=e236]
+                - cell "Hannah Castillo" [ref=e237]
+                - cell "837I" [ref=e238]
+                - cell "Dr. Patel" [ref=e239]
+                - cell "Marina del Rey Clinic" [ref=e240]
+                - cell "Aetna" [ref=e241]
+                - cell "$33,450" [ref=e242]
+                - cell "Pending payer" [ref=e243]:
+                  - generic [ref=e244]: Pending payer
+              - row "CLM-20558 Victor Novak 837I Dr. Chen El Segundo Imaging & Pain Medi-Cal $3,036 Pending payer" [ref=e245] [cursor=pointer]:
+                - cell "CLM-20558" [ref=e246]
+                - cell "Victor Novak" [ref=e247]
+                - cell "837I" [ref=e248]
+                - cell "Dr. Chen" [ref=e249]
+                - cell "El Segundo Imaging & Pain" [ref=e250]
+                - cell "Medi-Cal" [ref=e251]
+                - cell "$3,036" [ref=e252]
+                - cell "Pending payer" [ref=e253]:
+                  - generic [ref=e254]: Pending payer
+              - row "CLM-20557 Naomi Hartman 837P Dr. Whitcomb Culver City ASC Health Net CA $11,495 Pending payer" [ref=e255] [cursor=pointer]:
+                - cell "CLM-20557" [ref=e256]
+                - cell "Naomi Hartman" [ref=e257]
+                - cell "837P" [ref=e258]
+                - cell "Dr. Whitcomb" [ref=e259]
+                - cell "Culver City ASC" [ref=e260]
+                - cell "Health Net CA" [ref=e261]
+                - cell "$11,495" [ref=e262]
+                - cell "Pending payer" [ref=e263]:
+                  - generic [ref=e264]: Pending payer
+              - row "CLM-20556 Carlos Petrova 837I Dr. Tran Marina del Rey Clinic Anthem Blue Cross CA $13,628 Accepted" [ref=e265] [cursor=pointer]:
+                - cell "CLM-20556" [ref=e266]
+                - cell "Carlos Petrova" [ref=e267]
+                - cell "837I" [ref=e268]
+                - cell "Dr. Tran" [ref=e269]
+                - cell "Marina del Rey Clinic" [ref=e270]
+                - cell "Anthem Blue Cross CA" [ref=e271]
+                - cell "$13,628" [ref=e272]
+                - cell "Accepted" [ref=e273]:
+                  - generic [ref=e274]: Accepted
+              - row "CLM-20555 Diane Rosenthal 837P Dr. Nunez El Segundo Imaging & Pain Aetna $15,536 Accepted" [ref=e275] [cursor=pointer]:
+                - cell "CLM-20555" [ref=e276]
+                - cell "Diane Rosenthal" [ref=e277]
+                - cell "837P" [ref=e278]
+                - cell "Dr. Nunez" [ref=e279]
+                - cell "El Segundo Imaging & Pain" [ref=e280]
+                - cell "Aetna" [ref=e281]
+                - cell "$15,536" [ref=e282]
+                - cell "Accepted" [ref=e283]:
+                  - generic [ref=e284]: Accepted
+              - row "CLM-20554 Trevor Lindqvist 837P Dr. Rosenthal Culver City ASC Medi-Cal $25,458 Pending payer" [ref=e285] [cursor=pointer]:
+                - cell "CLM-20554" [ref=e286]
+                - cell "Trevor Lindqvist" [ref=e287]
+                - cell "837P" [ref=e288]
+                - cell "Dr. Rosenthal" [ref=e289]
+                - cell "Culver City ASC" [ref=e290]
+                - cell "Medi-Cal" [ref=e291]
+                - cell "$25,458" [ref=e292]
+                - cell "Pending payer" [ref=e293]:
+                  - generic [ref=e294]: Pending payer
+              - row "CLM-20553 Yuki Park 837I Dr. Brennan Marina del Rey Clinic Health Net CA $32,516 Rejected" [ref=e295] [cursor=pointer]:
+                - cell "CLM-20553" [ref=e296]
+                - cell "Yuki Park" [ref=e297]
+                - cell "837I" [ref=e298]
+                - cell "Dr. Brennan" [ref=e299]
+                - cell "Marina del Rey Clinic" [ref=e300]
+                - cell "Health Net CA" [ref=e301]
+                - cell "$32,516" [ref=e302]
+                - cell "Rejected" [ref=e303]:
+                  - generic [ref=e304]: Rejected
+              - row "CLM-20552 Omar Okafor 837I Dr. Salazar El Segundo Imaging & Pain Anthem Blue Cross CA $1,897 Paid" [ref=e305] [cursor=pointer]:
+                - cell "CLM-20552" [ref=e306]
+                - cell "Omar Okafor" [ref=e307]
+                - cell "837I" [ref=e308]
+                - cell "Dr. Salazar" [ref=e309]
+                - cell "El Segundo Imaging & Pain" [ref=e310]
+                - cell "Anthem Blue Cross CA" [ref=e311]
+                - cell "$1,897" [ref=e312]
+                - cell "Paid" [ref=e313]:
+                  - generic [ref=e314]: Paid
+              - row "CLM-20551 Brenda Stanton 837P Dr. Whitaker Culver City ASC Aetna $10,431 Paid" [ref=e315] [cursor=pointer]:
+                - cell "CLM-20551" [ref=e316]
+                - cell "Brenda Stanton" [ref=e317]
+                - cell "837P" [ref=e318]
+                - cell "Dr. Whitaker" [ref=e319]
+                - cell "Culver City ASC" [ref=e320]
+                - cell "Aetna" [ref=e321]
+                - cell "$10,431" [ref=e322]
+                - cell "Paid" [ref=e323]:
+                  - generic [ref=e324]: Paid
+              - row "CLM-20550 Felix Ito 837I Dr. Gutierrez Marina del Rey Clinic Medi-Cal $1,136 Paid" [ref=e325] [cursor=pointer]:
+                - cell "CLM-20550" [ref=e326]
+                - cell "Felix Ito" [ref=e327]
+                - cell "837I" [ref=e328]
+                - cell "Dr. Gutierrez" [ref=e329]
+                - cell "Marina del Rey Clinic" [ref=e330]
+                - cell "Medi-Cal" [ref=e331]
+                - cell "$1,136" [ref=e332]
+                - cell "Paid" [ref=e333]:
+                  - generic [ref=e334]: Paid
+          - generic [ref=e335]:
+            - button "‹ Prev" [disabled] [ref=e336]
+            - generic [ref=e337]: 1–12 of 141
+            - button "Next ›" [ref=e338] [cursor=pointer]
+  - generic: Imported partial data to dashboard.
+  - complementary "Record detail" [ref=e169]:
+    - generic [ref=e340]:
+      - heading "CLM-20559" [level=2] [ref=e341]
+      - button "Edit" [ref=e342] [cursor=pointer]
+      - button "Delete" [ref=e343] [cursor=pointer]
+      - button "Close" [ref=e344] [cursor=pointer]: ✕
+    - generic [ref=e345]: Hannah Castillo · 837P · DOS Apr 4
+    - generic [ref=e346]:
+      - term [ref=e347]: Status
+      - definition [ref=e348]:
+        - generic [ref=e349]: Pending payer
+      - term [ref=e350]: Rendering provider
+      - definition [ref=e351]: Dr. Sunita Patel, MD
+      - term [ref=e352]: Service facility
+      - definition [ref=e353]: Marina del Rey Clinic
+      - term [ref=e354]: Payer
+      - definition [ref=e355]: Aetna
+      - term [ref=e356]: Primary payer
+      - definition [ref=e357]: Aetna
+      - term [ref=e358]: "Payer claim #"
+      - definition [ref=e359]: PC999441613
+      - term [ref=e360]: Billed
+      - definition [ref=e361]: $33,450
+      - term [ref=e362]: Paid
+      - definition [ref=e363]: "-"
+    - generic [ref=e364]:
+      - heading "Service lines" [level=4] [ref=e365]
+      - table [ref=e367]:
+        - rowgroup [ref=e368]:
+          - row "CPT Description Mod Units Charge" [ref=e369]:
+            - columnheader "CPT" [ref=e370]
+            - columnheader "Description" [ref=e371]
+            - columnheader "Mod" [ref=e372]
+            - columnheader "Units" [ref=e373]
+            - columnheader "Charge" [ref=e374]
+        - rowgroup [ref=e375]:
+          - row "29827 Arthroscopic rotator cuff repair - 1 $7,202" [ref=e376]:
+            - cell "29827" [ref=e377]
+            - cell "Arthroscopic rotator cuff repair" [ref=e378]
+            - cell "-" [ref=e379]
+            - cell "1" [ref=e380]
+            - cell "$7,202" [ref=e381]
+          - row "66984 Cataract extraction w/ IOL - 1 $3,477" [ref=e382]:
+            - cell "66984" [ref=e383]
+            - cell "Cataract extraction w/ IOL" [ref=e384]
+            - cell "-" [ref=e385]
+            - cell "1" [ref=e386]
+            - cell "$3,477" [ref=e387]
+          - row "27447 Total knee arthroplasty - 1 $21,753" [ref=e388]:
+            - cell "27447" [ref=e389]
+            - cell "Total knee arthroplasty" [ref=e390]
+            - cell "-" [ref=e391]
+            - cell "1" [ref=e392]
+            - cell "$21,753" [ref=e393]
+          - row "64483 Transforaminal epidural, lumbar - 1 $1,018" [ref=e394]:
+            - cell "64483" [ref=e395]
+            - cell "Transforaminal epidural, lumbar" [ref=e396]
+            - cell "-" [ref=e397]
+            - cell "1" [ref=e398]
+            - cell "$1,018" [ref=e399]
+    - generic [ref=e400]:
+      - heading "Diagnoses (ICD-10)" [level=4] [ref=e401]
+      - text: M75.101 K63.5
+    - generic [ref=e402]:
+      - heading "Timeline" [level=4] [ref=e403]
+      - table [ref=e405]:
+        - rowgroup [ref=e406]:
+          - row "Event When" [ref=e407]:
+            - columnheader "Event" [ref=e408]
+            - columnheader "When" [ref=e409]
+        - rowgroup [ref=e410]:
+          - row "Claim created Apr 4" [ref=e411]:
+            - cell "Claim created" [ref=e412]
+            - cell "Apr 4" [ref=e413]
+          - row "Submitted to clearinghouse Apr 4" [ref=e414]:
+            - cell "Submitted to clearinghouse" [ref=e415]
+            - cell "Apr 4" [ref=e416]
+          - row "999 acknowledgment Apr 4" [ref=e417]:
+            - cell "999 acknowledgment" [ref=e418]
+            - cell "Apr 4" [ref=e419]
+          - 'row "Payer status: Pending payer Latest" [ref=e420]':
+            - 'cell "Payer status: Pending payer" [ref=e421]'
+            - cell "Latest" [ref=e422]
+    - generic [ref=e423]:
+      - heading "Actions" [level=4] [ref=e424]
+      - button "Claim packet PDF" [ref=e425] [cursor=pointer]
+      - button "CMS-1500 PDF" [ref=e426] [cursor=pointer]
+      - button "Check status (276)" [ref=e427] [cursor=pointer]

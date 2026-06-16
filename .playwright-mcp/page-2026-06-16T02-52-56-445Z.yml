@@ -1,0 +1,128 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button "Go to dashboard overview" [ref=e4] [cursor=pointer]:
+        - generic [ref=e5]: CC
+        - generic [ref=e6]:
+          - text: Culver City Surgical
+          - generic [ref=e7]: Revenue Cycle · Stedi EDI
+      - generic [ref=e8]: Workflow
+      - button "⌂ Overview" [ref=e9] [cursor=pointer]
+      - button "✓ Eligibility" [ref=e10] [cursor=pointer]
+      - button "◎ Insurance discovery" [ref=e11] [cursor=pointer]
+      - button "⇪ Claims" [ref=e12] [cursor=pointer]
+      - button "⟳ Claim status" [ref=e13] [cursor=pointer]
+      - button "$ Remittances (ERA)" [ref=e14] [cursor=pointer]
+      - button "⎘ Attachments" [ref=e15] [cursor=pointer]
+      - button "⊞ Coordination of benefits" [ref=e16] [cursor=pointer]
+      - button "⚖ Appeals" [ref=e17] [cursor=pointer]
+      - generic [ref=e18]: Directory
+      - button "⚕ Providers" [ref=e19] [cursor=pointer]
+      - button "⌖ Locations" [ref=e20] [cursor=pointer]
+      - button "⛨ Payers" [ref=e21] [cursor=pointer]
+      - button "✎ Enrollments" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]: Operations
+      - button "⇩ DocuPipe intake" [ref=e24] [cursor=pointer]
+      - button "▣ Print center" [ref=e25] [cursor=pointer]
+      - button "≣ Transactions & events" [ref=e26] [cursor=pointer]
+    - main [ref=e27]:
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e30]: Dashboard / Enrollments
+          - heading "Enrollments" [level=1] [ref=e31]
+        - textbox "Search all records" [ref=e32]:
+          - /placeholder: 🔍 Search patients, claims, payers...
+        - group "Theme" [ref=e33] [cursor=pointer]:
+          - button "Dark" [ref=e34]
+          - button "Light" [ref=e35]
+        - generic [ref=e36]: KV
+      - generic "Workflow shortcuts" [ref=e37]:
+        - button "Eligibility work 2" [ref=e38] [cursor=pointer]:
+          - generic [ref=e39]: Eligibility work
+          - generic [ref=e40]: "2"
+        - button "Claim rework 3" [ref=e41] [cursor=pointer]:
+          - generic [ref=e42]: Claim rework
+          - generic [ref=e43]: "3"
+        - button "ERA posting 1" [ref=e44] [cursor=pointer]:
+          - generic [ref=e45]: ERA posting
+          - generic [ref=e46]: "1"
+        - button "Attachments 2" [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: Attachments
+          - generic [ref=e49]: "2"
+        - button "Enrollments 2" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]: Enrollments
+          - generic [ref=e52]: "2"
+        - button "DocuPipe intake +" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]: DocuPipe intake
+          - generic [ref=e55]: +
+        - button "Recent records 0" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: Recent records
+          - generic [ref=e58]: "0"
+      - text: DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO DEMO
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - generic [ref=e61]: POST /enrollments
+          - generic [ref=e62]: GET /enrollments
+          - generic [ref=e63]: "POST /enrollments/{enrollmentId}"
+          - generic [ref=e64]: "DELETE /enrollments/{enrollmentId}"
+          - generic [ref=e65]: POST /enrollments/export
+          - generic [ref=e66]: "POST /enrollments/{enrollmentId}/documents"
+          - generic [ref=e67]: "GET /documents/{documentId}/download"
+          - generic [ref=e68]: "DELETE /documents/{documentId}"
+          - generic [ref=e69]: "POST /tasks/{taskId}"
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - heading "Payer transaction enrollments" [level=3] [ref=e72]
+            - button "+ New enrollment" [ref=e73] [cursor=pointer]
+            - button "Export all" [ref=e74] [cursor=pointer]
+          - generic [ref=e75]: 5 transaction enrollments · click a row for detail
+          - table [ref=e77]:
+            - rowgroup [ref=e78]:
+              - row "Provider Payer Transaction Status Open task" [ref=e79]:
+                - columnheader "Provider" [ref=e80]
+                - columnheader "Payer" [ref=e81]
+                - columnheader "Transaction" [ref=e82]
+                - columnheader "Status" [ref=e83]
+                - columnheader "Open task" [ref=e84]
+            - rowgroup [ref=e85]:
+              - row "Dr. Alejandro Reyes, MDDEMO Anthem Blue Cross CA 270 eligibility Live -" [ref=e86] [cursor=pointer]:
+                - cell "Dr. Alejandro Reyes, MDDEMO" [ref=e87]
+                - cell "Anthem Blue Cross CA" [ref=e88]
+                - cell "270 eligibility" [ref=e89]
+                - cell "Live" [ref=e90]:
+                  - generic [ref=e91]: Live
+                - cell "-" [ref=e92]
+              - row "Dr. Sunita Patel, MDDEMO UnitedHealthcare 835 ERA Live -" [ref=e93] [cursor=pointer]:
+                - cell "Dr. Sunita Patel, MDDEMO" [ref=e94]
+                - cell "UnitedHealthcare" [ref=e95]
+                - cell "835 ERA" [ref=e96]
+                - cell "Live" [ref=e97]:
+                  - generic [ref=e98]: Live
+                - cell "-" [ref=e99]
+              - row "Dr. Michael Chen, MDDEMO Cigna 835 ERA Live -" [ref=e100] [cursor=pointer]:
+                - cell "Dr. Michael Chen, MDDEMO" [ref=e101]
+                - cell "Cigna" [ref=e102]
+                - cell "835 ERA" [ref=e103]
+                - cell "Live" [ref=e104]:
+                  - generic [ref=e105]: Live
+                - cell "-" [ref=e106]
+              - row "Dr. Dana Whitcomb, DODEMO Medi-Cal 837I claims Provisioning EDI agreement signature" [ref=e107] [cursor=pointer]:
+                - cell "Dr. Dana Whitcomb, DODEMO" [ref=e108]
+                - cell "Medi-Cal" [ref=e109]
+                - cell "837I claims" [ref=e110]
+                - cell "Provisioning" [ref=e111]:
+                  - generic [ref=e112]: Provisioning
+                - cell "EDI agreement signature" [ref=e113]
+              - row "Dr. David Tran, MDDEMO Humana 837P claims Submitted Awaiting payer (est. 14 days)" [ref=e114] [cursor=pointer]:
+                - cell "Dr. David Tran, MDDEMO" [ref=e115]
+                - cell "Humana" [ref=e116]
+                - cell "837P claims" [ref=e117]
+                - cell "Submitted" [ref=e118]:
+                  - generic [ref=e119]: Submitted
+                - cell "Awaiting payer (est. 14 days)" [ref=e120]
+          - generic [ref=e121]:
+            - button "‹ Prev" [disabled] [ref=e122]
+            - generic [ref=e123]: 1–5 of 5
+            - button "Next ›" [disabled] [ref=e124]
+      - text: DEMO DEMO DEMO DEMO DEMO
+  - complementary "Record detail" [ref=e125]

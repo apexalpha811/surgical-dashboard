@@ -5,6 +5,7 @@ const path = require("path");
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT || 8742);
 const MODULES_FILE = path.join(ROOT, "data", "docupipe-modules.json");
+const DASHBOARD_RECORDS_FILE = path.join(ROOT, "data", "dashboard-records.json");
 const mockDocuments = new Map();
 const mockJobs = new Map();
 const mockStandardizations = new Map();
@@ -150,7 +151,16 @@ async function saveImportRecord(body) {
 }
 
 async function readDashboardRecords() {
-  if (!hasSupabase()) return [];
+  if (!hasSupabase()) {
+    try {
+      if (!fs.existsSync(DASHBOARD_RECORDS_FILE)) return [];
+      const content = fs.readFileSync(DASHBOARD_RECORDS_FILE, "utf8");
+      const records = JSON.parse(content);
+      return Array.isArray(records) ? records : [];
+    } catch (e) {
+      return [];
+    }
+  }
   const rows = await supabaseRequest("/docupipe_imports?select=id,target,status,dashboard_record_json,created_at&order=created_at.asc&limit=1000");
   const latest = new Map();
   for (const row of (Array.isArray(rows) ? rows : [])) {
@@ -200,7 +210,25 @@ async function saveDashboardRecord(body) {
   if (!record) {
     sendConfigError("Missing dashboard record payload.");
   }
-  if (!hasSupabase()) return { mode: "fileless", saved: false, target, record };
+  if (!hasSupabase()) {
+    try {
+      let records = [];
+      if (fs.existsSync(DASHBOARD_RECORDS_FILE)) {
+        const content = fs.readFileSync(DASHBOARD_RECORDS_FILE, "utf8");
+        records = JSON.parse(content) || [];
+      }
+      const key = body.recordKey || storedDashboardRecordKey(target, record);
+      const idx = records.findIndex(r => r.target === target && r.record && (r.record.exec === key || r.record.id === key || r.record.stedi === key));
+      const item = { id: "local_" + Date.now(), target, sourceTarget: target, status: body.status || "dashboard", record: { ...record, recordKey: key }, createdAt: new Date().toISOString() };
+      if (idx >= 0) records[idx] = item;
+      else records.push(item);
+      fs.mkdirSync(path.dirname(DASHBOARD_RECORDS_FILE), { recursive: true });
+      fs.writeFileSync(DASHBOARD_RECORDS_FILE, JSON.stringify(records, null, 2));
+      return { mode: "file", saved: true, target, record };
+    } catch (e) {
+      return { mode: "file", saved: false, target, error: e.message };
+    }
+  }
   const row = {
     module_id: `dashboard:${target}`,
     document_id: "",
@@ -229,7 +257,21 @@ async function deleteDashboardRecord(body) {
   if (!recordKey) {
     sendConfigError("Missing dashboard record key.");
   }
-  if (!hasSupabase()) return { mode: "fileless", deleted: false, target, recordKey };
+  if (!hasSupabase()) {
+    try {
+      let records = [];
+      if (fs.existsSync(DASHBOARD_RECORDS_FILE)) {
+        const content = fs.readFileSync(DASHBOARD_RECORDS_FILE, "utf8");
+        records = JSON.parse(content) || [];
+      }
+      const filtered = records.filter(r => !(r.target === target && r.record && (r.record.exec === recordKey || r.record.id === recordKey || r.record.stedi === recordKey)));
+      fs.mkdirSync(path.dirname(DASHBOARD_RECORDS_FILE), { recursive: true });
+      fs.writeFileSync(DASHBOARD_RECORDS_FILE, JSON.stringify(filtered, null, 2));
+      return { mode: "file", deleted: true, target, recordKey };
+    } catch (e) {
+      return { mode: "file", deleted: false, target, recordKey, error: e.message };
+    }
+  }
   const row = {
     module_id: `dashboard:${target}`,
     document_id: "",
