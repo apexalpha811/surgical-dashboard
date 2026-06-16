@@ -202,6 +202,7 @@ async function readDashboardRecordsRaw() {
 }
 
 async function saveDashboardRecord(body) {
+  console.log('saveDashboardRecord called with:', JSON.stringify(body).substring(0, 200));
   const target = dashboardSectionForStoredTarget(body.target || body.key);
   if (!target) {
     sendConfigError("Unknown dashboard record target.");
@@ -332,6 +333,7 @@ async function supabaseRequest(pathname, options = {}) {
     body = { raw: text };
   }
   if (!response.ok) {
+    console.error(`Supabase error (${response.status}):`, body);
     const error = new Error(body.message || `Supabase request failed with ${response.status}`);
     error.statusCode = response.status;
     error.details = body;
