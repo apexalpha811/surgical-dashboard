@@ -156,6 +156,16 @@ async function handleApi(context, url) {
       authRequired: authBen ? "Y" : null
     };
     if (hasSupabase(context.env)) {
+      if (!enhanced.patientId && enhanced.patientFirstName) {
+        try {
+          const saved = await supabaseRequest(context.env, "/patients", {
+            method: "POST",
+            headers: { "Prefer": "return=representation", "Content-Type": "application/json" },
+            body: JSON.stringify([{ first_name: enhanced.patientFirstName, last_name: enhanced.patientLastName || "", dob: enhanced.patientDob || null, member_id: enhanced.member || null }])
+          });
+          if (Array.isArray(saved) && saved[0]) enhanced.patientId = saved[0].id;
+        } catch (e) { console.error("patients save failed:", e.message); }
+      }
       try {
         await supabaseRequest(context.env, "/eligibility_checks", {
           method: "POST",
