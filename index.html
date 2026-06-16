@@ -281,6 +281,20 @@ th.sort:hover{color:var(--text)}
 @media (min-width:1920px){
   html{font-size:18px}
 }
+.elig-tab-bar{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.elig-tab{background:none;border:none;border-bottom:2px solid transparent;padding:8px 14px;font:inherit;font-size:.78rem;font-weight:600;color:var(--sub);cursor:pointer;margin-bottom:-1px;transition:color .15s}
+.elig-tab.active{color:var(--lime);border-bottom-color:var(--lime)}
+.elig-tab-pane{display:none}.elig-tab-pane.active{display:block}
+.elig-banner{padding:10px 14px;border-radius:8px;font-size:.82rem;font-weight:600;margin-bottom:14px;border:1px solid var(--border)}
+.elig-banner.ok{background:var(--ok-bg);color:var(--ok)}.elig-banner.warn{background:var(--warn-bg);color:var(--warn)}.elig-banner.bad{background:var(--bad-bg);color:var(--bad)}.elig-banner.gray{background:var(--card2);color:var(--sub)}
+.elig-name-warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.76rem;margin-bottom:12px}
+.bene-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0}
+.bene-col{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px}
+.bene-col h5{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--sub);margin-bottom:10px}
+.chip-row{display:flex;gap:8px;flex-wrap:wrap}
+.queue-chip{padding:5px 12px;border-radius:999px;border:1px solid var(--border);background:var(--card2);color:var(--sub);font-size:.76rem;cursor:pointer;display:flex;gap:6px;align-items:center;transition:all .12s}
+.queue-chip:hover,.queue-chip.active-filter{background:var(--lime);color:#000;border-color:var(--lime)}
+.queue-chip b{font-size:.68rem;background:rgba(0,0,0,.12);border-radius:999px;padding:1px 6px}
 </style>
 </head>
 <body>
@@ -379,45 +393,122 @@ th.sort:hover{color:var(--text)}
 
   <!-- ========== ELIGIBILITY ========== -->
   <section class="section" id="sec-eligibility">
+    <div class="grid kpis" style="margin-bottom:20px">
+      <div class="card kpi"><div class="lbl">Total checks</div><div class="val" id="ekpi-total">0</div><div class="delta">all time</div></div>
+      <div class="card kpi"><div class="lbl">Active coverage</div><div class="val" id="ekpi-active">0</div><div class="delta ok" id="ekpi-active-pct"></div></div>
+      <div class="card kpi"><div class="lbl">Auth required</div><div class="val" id="ekpi-auth">0</div><div class="delta">hold for auth</div></div>
+      <div class="card kpi"><div class="lbl">Timeouts / errors</div><div class="val" id="ekpi-err">0</div><div class="delta">verify manually</div></div>
+    </div>
+    <div class="chip-row" style="margin-bottom:16px">
+      <button class="queue-chip active-filter" id="ef-all" onclick="filterEligibility('')">All <b id="ef-n-all">0</b></button>
+      <button class="queue-chip" id="ef-active" onclick="filterEligibility('Active')">Active <b id="ef-n-active">0</b></button>
+      <button class="queue-chip" id="ef-inactive" onclick="filterEligibility('Inactive')">Inactive <b id="ef-n-inactive">0</b></button>
+      <button class="queue-chip" id="ef-auth" onclick="filterEligibility('auth')">Auth Required <b id="ef-n-auth">0</b></button>
+      <button class="queue-chip" id="ef-timeout" onclick="filterEligibility('timeout')">Timeout <b id="ef-n-timeout">0</b></button>
+    </div>
     <div class="grid two-col" style="margin-bottom:16px">
       <div class="card">
-        <h3>Real-time eligibility check (270/271)</h3>
-        <div class="sub">Verify coverage before scheduling</div>
+        <h3>Real-time eligibility check</h3>
+        <div class="sub">270/271 benefit inquiry via Stedi</div>
         <span class="endpoint"><b>POST</b> /change/medicalnetwork/eligibility/v3</span>
-        <span class="endpoint"><b>POST</b> /change/medicalnetwork/eligibility/v3/raw-x12</span>
-        <div class="form-grid" style="margin-top:14px">
-          <div class="field"><label>First name</label><input id="el-first" value="Falcon"></div>
-          <div class="field"><label>Last name</label><input id="el-last" value="Dent"></div>
-          <div class="field"><label>Member ID</label><input id="el-member" value="007007007"></div>
-          <div class="field"><label>Patient DOB</label><input id="el-dob" value=""></div>
-          <div class="field"><label>Payer</label><select id="el-payer">
-            <option value="AMTAS00425">Stedi Test Payer — Ameritas (AMTAS00425)</option>
-            <option value="60054">Aetna (60054)</option>
-            <option value="87726">UnitedHealthcare (87726)</option>
-          </select></div>
-          <div class="field"><label>Service type</label><select id="el-svc">
-            <option value="30">Health benefit plan coverage (30)</option>
-            <option value="2">Surgical (2)</option>
-          </select></div>
-        </div>
-        <button class="btn" onclick="runEligibilityFromForm()">Run eligibility check</button>
+        <form id="elig-form" onsubmit="event.preventDefault();runEligibilityCheck()" style="margin-top:14px">
+          <div class="field" style="position:relative;margin-bottom:12px">
+            <label>Patient search (optional)</label>
+            <input id="elig-patient-q" placeholder="Search saved patients..." autocomplete="off" oninput="searchEligPatient(this.value)">
+            <div id="elig-patient-dd" class="payer-typeahead" style="display:none"></div>
+            <input type="hidden" id="elig-patient-id">
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>First name <span style="color:var(--bad)">*</span></label>
+              <input id="elig-first" required>
+            </div>
+            <div class="field">
+              <label>Last name <span style="color:var(--bad)">*</span></label>
+              <input id="elig-last" required>
+            </div>
+            <div class="field">
+              <label>Date of birth <span style="color:var(--bad)">*</span></label>
+              <input id="elig-dob" type="date" required>
+            </div>
+            <div class="field">
+              <label>Member ID <span style="color:var(--bad)">*</span></label>
+              <input id="elig-member" required>
+            </div>
+            <div class="field"><label>Group number</label><input id="elig-group"></div>
+            <div class="field" style="position:relative">
+              <label>Payer <span style="color:var(--bad)">*</span></label>
+              <input id="elig-payer-q" placeholder="Type payer name..." autocomplete="off" oninput="searchEligPayer(this.value)">
+              <div id="elig-payer-dd" class="payer-typeahead" style="display:none"></div>
+              <input type="hidden" id="elig-payer-id">
+              <input type="hidden" id="elig-payer-name">
+            </div>
+            <div class="field"><label>Relationship</label>
+              <select id="elig-rel">
+                <option value="18">Self (18)</option>
+                <option value="01">Spouse (01)</option>
+                <option value="19">Child (19)</option>
+                <option value="G8">Other (G8)</option>
+              </select>
+            </div>
+            <div class="field"><label>Location / Place of Service</label>
+              <select id="elig-loc" onchange="syncEligNpi(this)">
+                <option value="24" data-npi="1841557020">Culver City ASC (POS 24)</option>
+                <option value="11" data-npi="1992304186">Marina del Rey Clinic (POS 11)</option>
+                <option value="11b" data-npi="1577449863">El Segundo Imaging (POS 11)</option>
+              </select>
+            </div>
+            <div class="field"><label>Rendering NPI</label><input id="elig-npi" value="1841557020"></div>
+            <div class="field"><label>Date of service</label><input id="elig-dos" type="date"></div>
+            <div class="field"><label>Service type</label>
+              <select id="elig-stc">
+                <option value="30">Health benefit plan coverage (30)</option>
+                <option value="2">Surgical (2)</option>
+                <option value="47">Hospital (47)</option>
+                <option value="50">Professional physician visit (50)</option>
+                <option value="86">Emergency services (86)</option>
+              </select>
+            </div>
+          </div>
+          <div id="elig-form-err" style="display:none;background:var(--bad-bg);color:var(--bad);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.78rem;margin-bottom:10px"></div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px">
+            <button class="btn" type="submit" id="elig-submit">Run eligibility check</button>
+            <span id="elig-loading" style="display:none;color:var(--sub);font-size:.78rem">Checking with Stedi...</span>
+          </div>
+        </form>
       </div>
-      <div class="card">
-        <h3>Batch eligibility: tomorrow's schedule</h3>
-        <div class="sub">38 patients queued for June 12 surgery day</div>
+      <div class="card" id="elig-batch-panel">
+        <h3>Batch eligibility</h3>
+        <div class="sub">Submit multiple patients at once</div>
         <span class="endpoint"><b>POST</b> /eligibility-manager/batch-eligibility</span>
-        <span class="endpoint"><b>GET</b> /eligibility-manager/batch/{batchId}</span>
-        <span class="endpoint"><b>GET</b> /eligibility-manager/batch/{batchId}/items</span>
-        <span class="endpoint"><b>GET</b> /eligibility-manager/polling/batch-eligibility</span>
-        <div style="margin-top:14px" class="bar-row"><div class="bl">Batch #BE-0611</div><div class="bar-track"><div class="bar-fill" style="width:68%"></div></div><div class="bv">26/38</div></div>
-        <div class="empty-note">26 active · 9 pending · 2 inactive coverage · 1 payer timeout</div>
+        <div id="elig-batch-input-area" style="margin-top:14px">
+          <div class="field" style="margin-bottom:10px">
+            <label>Paste CSV (firstName,lastName,dob,memberId,payerId,dos,npi,pos,stc)</label>
+            <textarea id="elig-batch-csv" class="docu-code small" placeholder="John,Smith,1975-03-15,ABC123456,AMTAS00425,2026-06-20,1841557020,24,30"></textarea>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <input type="file" id="elig-batch-file" accept=".csv" style="display:none" onchange="loadBatchFile(this)">
+            <button class="btn-ghost btn-sm" onclick="document.getElementById('elig-batch-file').click()">Upload CSV</button>
+            <button class="btn-ghost btn-sm" onclick="previewBatch()">Preview</button>
+            <button class="btn btn-sm" id="elig-batch-submit" onclick="submitBatch()" disabled>Submit batch</button>
+          </div>
+          <div id="elig-batch-preview"></div>
+          <div id="elig-batch-err" style="display:none;color:var(--bad);font-size:.78rem;margin-top:8px"></div>
+        </div>
+        <div id="elig-batch-status-area" style="display:none">
+          <div id="elig-batch-summary" style="margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-ghost btn-sm" onclick="checkBatchStatus()">Check status</button>
+            <button class="btn-ghost btn-sm" onclick="resetBatchPanel()">New batch</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="card">
       <h3>Eligibility checks</h3>
       <div class="sub" id="sub-eligibility">Click any row for the full 271 benefit detail</div>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>Patient</th><th>Payer</th><th>Plan</th><th>Coverage</th><th>Copay</th><th>Deductible left</th><th>Checked</th></tr></thead>
+        <thead><tr><th>Patient</th><th>DOS</th><th>Payer</th><th>Member ID</th><th>Coverage</th><th>Plan</th><th>In-Net Copay</th><th>Deduct. Rem.</th><th>Auth</th><th>Checked</th></tr></thead>
         <tbody id="tb-eligibility"></tbody>
       </table></div>
       <div class="pager" id="pgr-eligibility"></div>
@@ -980,7 +1071,7 @@ const txns=[];
 const PER=12;
 const pillFor=s=>{const ok=['Active','Accepted','Paid','Posted','Live','Sent','Complete','Processed','Delivered'];const bad=['Inactive','Rejected','Denied','Overdue','Mapping failed','F2'];const cls=ok.includes(s)?'ok':bad.includes(s)?'bad':s==='New'?'info':'warn';return '<span class="pill '+cls+'">'+s+'</span>';};
 const T={
- eligibility:{data:eligibility,row:r=>'<td>'+r.patient+'</td><td>'+r.payer+'</td><td>'+r.plan+'</td><td>'+pillFor(r.status)+'</td><td class="money">'+(r.status==='Active'?usd(r.copay):'-')+'</td><td class="money">'+(r.status==='Active'?usd(r.dedT-r.dedM):'-')+'</td><td>'+r.date+', '+r.time+'</td>'},
+ eligibility:{data:eligibility,row:r=>'<td><b>'+safeText(r.patientFirstName&&r.patientLastName?r.patientFirstName+' '+r.patientLastName:(r.patient||''))+'</b></td><td style="font-size:.72rem">'+safeText(r.dos||r.date||'-')+'</td><td>'+safeText(r.payerName||r.payer||'-')+'</td><td class="mono">'+safeText(r.member||r.memberId||'-')+'</td><td>'+(r.status==='Active'?'<span class="pill ok">Active</span>':r.status==='Inactive'?'<span class="pill bad">Inactive</span>':r.status==='timeout'?'<span class="pill gray">Timeout</span>':'<span class="pill warn">'+safeText(r.status||'Unknown')+'</span>')+'</td><td>'+safeText(r.planName||r.plan||'-')+'</td><td class="money">'+(r.copayInNet!=null?usd(r.copayInNet):(r.copay!=null?usd(r.copay):'-'))+'</td><td class="money">'+(r.deductRemInNet!=null?usd(r.deductRemInNet):(r.dedT!=null?usd(r.dedT-(r.dedM||0)):'-'))+'</td><td>'+(r.authRequired==='Y'?'<span class="pill warn">Auth</span>':r.authRequired==='N'?'<span class="pill ok">No</span>':r.auth?'<span class="pill warn">Auth</span>':'-')+'</td><td style="font-size:.72rem;color:var(--sub)">'+(r.checkedAt?new Date(r.checkedAt).toLocaleString('en-US',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'}):(r.date||''))+'</td>'},
  discovery:{data:discovery,row:r=>'<td class="mono">'+r.id+'</td><td>'+r.patient+'</td><td>'+pillFor(r.status)+'</td><td>'+(r.status!=='Complete'?'-':r.found?'Yes':'No coverage located')+'</td><td>'+(r.payer||'-')+'</td>'},
  claims:{data:claims,row:r=>'<td class="mono">'+r.id+'</td><td>'+r.patient+'</td><td>'+r.type+'</td><td>'+r.provider+'</td><td>'+r.loc+'</td><td>'+r.payer+'</td><td class="money">'+usd(r.billed)+'</td><td>'+pillFor(r.status)+'</td>'},
  status:{data:statusChecks,row:r=>'<td class="mono">'+r.claim+'</td><td>'+r.payer+'</td><td>'+r.cat+': '+r.catDesc.split(':')[0]+'</td><td>'+(r.cat==='F1'?pillFor('Paid')+' '+(r.amt||''):r.cat==='F2'?pillFor('Denied'):pillFor('In review'))+'</td><td>'+r.checked+'</td>'},
@@ -1035,7 +1126,41 @@ const dsec=(t,inner)=>'<div class="dsec"><h4>'+t+'</h4>'+inner+'</div>';
 const mini=(heads,rows)=>'<div class="tbl-wrap"><table><thead><tr>'+heads.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
 
 const DETAIL={
- eligibility:r=>{const i=eligibility.indexOf(r);return dhead('271 eligibility response',r.patient+' · '+r.payer)+kv({'Coverage':pillFor(r.status),'Member ID':'<span class="mono">'+r.member+'</span>','Group':'<span class="mono">'+r.group+'</span>','DOB':r.dob,'Plan':r.plan,'Plan begin':r.planBegin,'Relationship':'Self (18)','Trace (TRN)':'<span class="mono">'+r.trn+'</span>','Checked':r.date+', '+r.time})+(r.status==='Active'?dsec('Benefits: plan coverage (service type 30)',mini(['Benefit','In network','Out of network'],[['Deductible (ind.)',usd(r.dedT),usd(r.dedT*2)],['Deductible met',usd(r.dedM),usd(Math.round(r.dedM*.6))],['Deductible remaining','<b>'+usd(r.dedT-r.dedM)+'</b>',usd(r.dedT*2-Math.round(r.dedM*.6))],['Out-of-pocket max',usd(r.oopT),usd(r.oopT*2)],['OOP met',usd(r.oopM),usd(Math.round(r.oopM*.5))],['Coinsurance',r.coins+'%',Math.min(50,r.coins+20)+'%']]))+dsec('Benefits: surgical (service type 2)',mini(['Benefit','Value'],[['Copay, facility (POS 24)',usd(r.copay)],['Prior authorization',r.auth?'<span class="pill warn">Required</span>':'<span class="pill ok">Not required</span>'],['Benefit limitation','None reported']]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="printEligibilityByTrn(\''+r.trn+'\')">Download 271 PDF</button> <button class="btn-ghost btn-sm" onclick="view271x12('+i+')">View raw X12</button>'):dsec('Result','<div class="empty-note">'+(r.status==='Inactive'?'Payer reports coverage terminated. Run insurance discovery to locate replacement coverage.':'Payer connection timed out (AAA*42). Retry the check or use the raw X12 endpoint.')+'</div><button class="btn-ghost btn-sm" onclick="startDiscoveryFromForm()">Run insurance discovery</button>'));},
+ eligibility:r=>{
+  const i=eligibility.indexOf(r);
+  const st=r.status||'Unknown';
+  const stCls=st==='Active'?'ok':st==='Inactive'?'bad':st==='timeout'?'gray':'warn';
+  const stLbl=st==='Active'?'Active coverage':st==='Inactive'?'Inactive / Terminated':st==='timeout'?'Payer timeout':'Manual review required';
+  const auth=r.authRequired||(r.auth?'Y':null);
+  const dedRem=r.deductRemInNet!=null?r.deductRemInNet:(r.dedT!=null?(r.dedT-(r.dedM||0)):null);
+  const oopRem=r.oopMaxRemInNet!=null?r.oopMaxRemInNet:(r.oopT!=null?(r.oopT-(r.oopM||0)):null);
+  let bannerCls='gray',bannerTxt='Verify manually with payer';
+  if(st==='Active'&&auth==='Y'){bannerCls='warn';bannerTxt='Hold for Prior Authorization';}
+  else if(st==='Active'&&(auth==='N'||!auth)&&oopRem!=null&&oopRem>500){bannerCls='warn';bannerTxt='Schedule - Collect Patient Estimate';}
+  else if(st==='Active'&&(auth==='N'||!auth)&&oopRem!=null&&oopRem<=500){bannerCls='ok';bannerTxt='Ready to Schedule';}
+  else if(st==='Active'&&!auth){bannerCls='ok';bannerTxt='Ready to Schedule - Verify auth with payer';}
+  else if(st==='Inactive'){bannerCls='bad';bannerTxt='Inactive Coverage - Do Not Schedule';}
+  const raw=r.raw271||{};
+  const benefits=Array.isArray(raw.benefitsInformation)?raw.benefitsInformation:[];
+  const nameWarn=r.subscriberNameMatch===false?'<div class="elig-name-warn">Subscriber name mismatch: verify member ID with payer</div>':'';
+  const ptName=r.patientFirstName&&r.patientLastName?r.patientFirstName+' '+r.patientLastName:(r.patient||'Patient');
+  const checkedLbl=r.checkedAt?new Date(r.checkedAt).toLocaleString('en-US'):((r.date||'')+' '+(r.time||''));
+  const codeMap={'B':'Copay','C':'Deductible','G':'OOP max','A':'Coinsurance','1':'Active coverage period'};
+  const bRow=b=>{const lbl=codeMap[b.code]||(b.name||('Code '+b.code));const amt=b.benefitAmount||b.benefitDollarAmount;const pct=b.benefitPercent;const val=amt?usd(parseFloat(amt)):pct?parseFloat(pct)+'%':(b.description||'-');return'<tr><td>'+safeText(lbl)+'</td><td class="money">'+safeText(String(val))+'</td></tr>';};
+  const inNetBens=benefits.filter(b=>b.inPlanNetworkIndicatorCode==='Y'||b.inPlanNetworkIndicatorCode==='W');
+  const outNetBens=benefits.filter(b=>b.inPlanNetworkIndicatorCode==='N');
+  const nonCov=benefits.filter(b=>b.code==='I').map(b=>b.description||b.name).filter(Boolean);
+  const payerNotes=benefits.filter(b=>b.description&&b.code!=='I').map(b=>b.description).filter(Boolean);
+  const inNetRows=inNetBens.filter(b=>['B','C','G','A','1'].includes(b.code)).map(bRow).join('');
+  const outNetRows=outNetBens.filter(b=>['B','C','G','A'].includes(b.code)).map(bRow).join('');
+  const summaryTab='<div class="elig-banner '+bannerCls+'">'+safeText(bannerTxt)+'</div>'+nameWarn+kv({'Coverage':'<span class="pill '+stCls+'">'+safeText(stLbl)+'</span>','Plan':safeText(r.planName||r.plan||'-'),'Plan start':safeText(r.planBeginDate||r.planBegin||'-'),'Member ID':'<span class="mono">'+safeText(r.member||r.memberId||'-')+'</span>','Group':'<span class="mono">'+safeText(r.group||r.groupNumber||'-')+'</span>','In-net copay':r.copayInNet!=null?usd(r.copayInNet):(r.copay!=null?usd(r.copay):'-'),'Deductible rem.':dedRem!=null?usd(dedRem):'-','OOP max rem.':oopRem!=null?usd(oopRem):'-','Auth required':auth==='Y'?'<span class="pill warn">Required</span>':auth==='N'?'<span class="pill ok">Not required</span>':'-','DOS':safeText(r.dos||r.date||'-'),'Trace (TRN)':'<span class="mono">'+safeText(r.trn||'-')+'</span>','Checked':safeText(checkedLbl)});
+  const benefitsTab='<div class="bene-grid"><div class="bene-col"><h5>In-network</h5><div class="tbl-wrap"><table>'+(inNetRows?'<tbody>'+inNetRows+'</tbody>':'<tr><td style="color:var(--sub)">No in-network detail in 271</td></tr>')+'</table></div></div><div class="bene-col"><h5>Out-of-network</h5><div class="tbl-wrap"><table>'+(outNetRows?'<tbody>'+outNetRows+'</tbody>':'<tr><td style="color:var(--sub)">No out-of-network detail in 271</td></tr>')+'</table></div></div></div>'+(nonCov.length?dsec('Non-covered',nonCov.map(s=>'<div style="font-size:.76rem;margin-bottom:4px">'+safeText(s)+'</div>').join('')):'')+'<div style="font-size:.72rem;color:var(--sub);margin-top:12px;border-top:1px solid var(--border);padding-top:10px">In-network status is not confirmed by the 271. Verify directly with the payer before scheduling.</div>';
+  const authBadge=auth==='Y'?'<span class="pill warn">Required</span>':auth==='N'?'<span class="pill ok">Not required</span>':'<span class="pill gray">Not specified</span>';
+  const authTab=kv({'Authorization required':authBadge,'Referral required':r.referralRequired||'Not specified'})+(payerNotes.length?dsec('Payer notes',payerNotes.map(n=>'<div style="font-size:.76rem;margin-bottom:6px;padding:6px 8px;background:var(--card2);border-radius:6px">'+safeText(n)+'</div>').join('')):'')+'<div style="margin-top:14px"><button class="btn-ghost btn-sm" onclick="createAuthTask('+i+')">Create auth task in work queue</button></div>';
+  const rawTab=r.raw271?'<button class="btn-ghost btn-sm" style="margin-bottom:10px" onclick="navigator.clipboard.writeText(JSON.stringify(eligibility['+i+'].raw271,null,2))">Copy JSON</button><div class="x12" style="max-height:420px;overflow-y:auto">'+safeText(JSON.stringify(r.raw271,null,2))+'</div>':'<div class="empty-note">No raw 271 stored for this record.</div>';
+  const pdfTab=r.stediEligibilityId?'<div style="margin-bottom:10px;font-size:.78rem;color:var(--sub)">Eligibility ID: <span class="mono">'+safeText(r.stediEligibilityId)+'</span></div><button class="btn-ghost btn-sm" onclick="loadEligibilityPdf(\''+safeText(r.stediEligibilityId||'')+'\')">Load PDF from Stedi</button>':'<div class="empty-note">PDF not available. This check does not have a Stedi eligibility ID on file.</div>';
+  return dhead(safeText(ptName),safeText(r.payerName||r.payer||'')+' · Member '+safeText(r.member||r.memberId||''))+'<div class="elig-tab-bar"><button class="elig-tab active" onclick="switchEligTab(event,\'summary\')">Summary</button><button class="elig-tab" onclick="switchEligTab(event,\'benefits\')">Benefits</button><button class="elig-tab" onclick="switchEligTab(event,\'auth\')">Auth &amp; Referrals</button><button class="elig-tab" onclick="switchEligTab(event,\'raw\')">Raw JSON</button><button class="elig-tab" onclick="switchEligTab(event,\'pdf\')">PDF</button></div><div id="etab-summary" class="elig-tab-pane active">'+summaryTab+'</div><div id="etab-benefits" class="elig-tab-pane">'+benefitsTab+'</div><div id="etab-auth" class="elig-tab-pane">'+authTab+'</div><div id="etab-raw" class="elig-tab-pane">'+rawTab+'</div><div id="etab-pdf" class="elig-tab-pane">'+pdfTab+'</div>'+dsec('Actions','<button class="btn-ghost btn-sm" onclick="recheckEligibility('+i+')">Re-check</button> <button class="btn-ghost btn-sm" onclick="view271x12('+i+')">View raw X12</button> <button class="btn btn-sm" onclick="goToClaimFromElig('+i+')">New claim from this check</button>');
+ },
  discovery:r=>dhead('Insurance discovery',r.patient)+kv({'Discovery ID':'<span class="mono">'+r.id+'</span>','Status':pillFor(r.status),'DOB':r.dob,'Started':r.date})+(r.status==='Complete'?dsec('Result',r.found?kv({'Coverage found':'<span class="pill ok">Yes</span>','Payer':r.payer,'Plan':r.plan,'Member ID':'<span class="mono">'+r.member+'</span>'})+'<button class="btn-ghost btn-sm" onclick="runEligibilityFromDiscovery(\''+r.id+'\')">Run full 270/271 check</button>':'<div class="empty-note">No active coverage located across the payer network. Patient flagged for self-pay workflow.</div>'):dsec('Result','<div class="empty-note">Search in progress across payer networks. Poll GET /insurance-discovery/check/v1/{discoveryId} for completion.</div>')),
  claims:r=>dhead(r.id,redIf(r,'patient',r.patient)+' · '+r.type+' · DOS '+(fieldMissing(r,'dos')?'<span class="miss">missing</span>':r.dos))+kv({'Status':pillFor(r.status)+(r.rejReason?' '+r.rejReason:'')+(r.denCode?' '+r.denCode:''),'Rendering provider':redIf(r,'provider',r.providerFull),'Service facility':redIf(r,'loc',r.loc),'Payer':redIf(r,'payer',r.payer),'Primary payer':r.primaryPayer||r.payer,'Secondary payer':r.secondaryPayer,'COB rule':r.cobRule,'COB effective':r.cobEffective,'Corrected 837':r.needsResubmission?'Ready: <span class="mono">'+(r.correctionTransactionId||'pending')+'</span>':null,'Payer claim #':redIf(r,'payerClm','<span class="mono">'+r.payerClm+'</span>'),'Billed':redIf(r,'billed','<b>'+usd(r.billed)+'</b>'),'Paid':r.paid?'<b>'+usd(r.paid)+'</b>':'-'})+dsec('Service lines',mini(['CPT','Description','Mod','Units','Charge'],r.lines.map(l=>['<span class="mono">'+l.cpt+'</span>',l.desc,l.mod||'-',l.units,usd(l.charge)])))+dsec('Diagnoses (ICD-10)',r.icds.map(c=>'<span class="tag mono">'+c+'</span>').join(' '))+dsec('Timeline',mini(['Event','When'],[['Claim created',r.dos],['Submitted to clearinghouse',r.dos],['999 acknowledgment',r.dos],[r.status==='Draft'?'Awaiting submission':'Payer status: '+r.status,'Latest']].concat(r.cobAppliedAt?[['COB payer order applied',r.cobAppliedAt]]:[])))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="printClaimPacketById(\''+r.id+'\')">Claim packet PDF</button> <button class="btn-ghost btn-sm" onclick="printCms1500ById(\''+r.id+'\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="view277ByClaim(\''+r.id+'\')">Check status (276)</button>'+(r.rejReason?' <button class="btn btn-sm" onclick="submitClaimById(\''+r.id+'\')">Fix &amp; resubmit</button>':'')),
  status:r=>{const i=statusChecks.indexOf(r);return dhead('277 claim status',r.claim+' · '+r.patient)+kv({'Payer':r.payer,'Payer claim #':'<span class="mono">'+r.payerClm+'</span>','Category':r.cat+': '+r.catDesc,'Payment':r.amt||'-','Last checked':r.checked})+dsec('Check history',mini(['Response'],r.history.map(h=>[h])))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="run276('+i+')">Run 276 now</button> <button class="btn-ghost btn-sm" onclick="view277('+i+')">View 277 report</button><div id="statusOut" style="margin-top:12px"></div>');},
@@ -1484,6 +1609,276 @@ function view277(i){const r=statusChecks[i];if(!r||!r.raw277){panel('277 report'
 function run276(i){const r=statusChecks[i];if(!r)return;const artifact=runClaimStatusLifecycle(r);refreshLiveSection('status');openDrawer('status',statusChecks.indexOf(r));artifactPanel('276 status request',artifact);}
 function view271x12(i){const r=eligibility[i];const raw=r&&r.eligibilityArtifact&&r.eligibilityArtifact.output?r.eligibilityArtifact.output:build271X12(r);drawerX12('271 raw X12',raw);}
 function view835(i){const r=eras[i];if(!r)return;const artifact=stediClient.eraReport(r);r.eraArtifact=artifact;r.transactionId=artifact.id;const raw=artifact.output||build835X12(r);drawerX12('835 electronic remittance advice',raw);}
+/* ============ ELIGIBILITY SECTION FUNCTIONS ============ */
+function switchEligTab(e,name){
+  const bar=e.target.closest('.elig-tab-bar');
+  if(bar)bar.querySelectorAll('.elig-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.elig-tab-pane').forEach(p=>p.classList.remove('active'));
+  e.target.classList.add('active');
+  const pane=document.getElementById('etab-'+name);
+  if(pane)pane.classList.add('active');
+}
+function syncEligNpi(sel){
+  const opt=sel.selectedOptions[0];
+  const npiInput=document.getElementById('elig-npi');
+  if(opt&&opt.dataset.npi&&npiInput)npiInput.value=opt.dataset.npi;
+}
+let _eligPatientDebounce,_eligPatientResults=[];
+async function searchEligPatient(q){
+  const dd=document.getElementById('elig-patient-dd');
+  if(!q||q.length<2){dd.style.display='none';_eligPatientResults=[];return;}
+  clearTimeout(_eligPatientDebounce);
+  _eligPatientDebounce=setTimeout(async()=>{
+    dd.style.display='block';
+    const loading=document.createElement('div');loading.className='pti';loading.textContent='Searching...';
+    dd.replaceChildren(loading);
+    try{
+      const res=await fetch('/api/patients?q='+encodeURIComponent(q));
+      const d=await res.json();
+      _eligPatientResults=Array.isArray(d.patients)?d.patients:[];
+      if(!_eligPatientResults.length){const el=document.createElement('div');el.className='pti';el.textContent='No saved patients — fill in below';dd.replaceChildren(el);return;}
+      dd.replaceChildren(..._eligPatientResults.map(p=>{
+        const el=document.createElement('div');el.className='pti';
+        const nm=document.createElement('div');nm.className='pti-name';nm.textContent=(p.first_name||'')+' '+(p.last_name||'');
+        const sb=document.createElement('div');sb.className='pti-sub';sb.textContent=(p.dob?'DOB: '+p.dob+' · ':'')+(p.member_id?'Member: '+p.member_id:'');
+        el.append(nm,sb);el.addEventListener('click',()=>selectEligPatient(p));return el;
+      }));
+    }catch{const el=document.createElement('div');el.className='pti';el.textContent='Patient search unavailable';dd.replaceChildren(el);}
+  },300);
+}
+function selectEligPatient(p){
+  document.getElementById('elig-patient-id').value=p.id||'';
+  document.getElementById('elig-first').value=p.first_name||'';
+  document.getElementById('elig-last').value=p.last_name||'';
+  if(p.dob)document.getElementById('elig-dob').value=p.dob;
+  if(p.member_id)document.getElementById('elig-member').value=p.member_id;
+  if(p.group_number)document.getElementById('elig-group').value=p.group_number;
+  document.getElementById('elig-patient-q').value=(p.first_name||'')+' '+(p.last_name||'');
+  document.getElementById('elig-patient-dd').style.display='none';
+}
+let _eligPayerDebounce,_eligPayerResults=[];
+async function searchEligPayer(q){
+  const dd=document.getElementById('elig-payer-dd');
+  if(!q||q.length<2){dd.style.display='none';_eligPayerResults=[];return;}
+  clearTimeout(_eligPayerDebounce);
+  _eligPayerDebounce=setTimeout(async()=>{
+    dd.style.display='block';
+    const loading=document.createElement('div');loading.className='pti';loading.textContent='Searching payers...';
+    dd.replaceChildren(loading);
+    try{
+      const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'payers',path:'/payers/search?name='+encodeURIComponent(q),method:'GET',payload:null})});
+      const d=await res.json();
+      const rawItems=(d.response&&Array.isArray(d.response.items))?d.response.items:(Array.isArray(d.response)?d.response:[]);
+      _eligPayerResults=rawItems.map(item=>{const data=item.payer||item;return{stediId:data.stediId||data.id||'',payerId:data.primaryPayerId||data.payerId||data.ediPayerId||'',name:data.displayName||data.payerName||data.name||''};});
+      if(!_eligPayerResults.length){const el=document.createElement('div');el.className='pti';el.textContent='No payers found';dd.replaceChildren(el);return;}
+      dd.replaceChildren(..._eligPayerResults.map(p=>{
+        const el=document.createElement('div');el.className='pti';
+        const nm=document.createElement('div');nm.className='pti-name';nm.textContent=p.name;
+        const sb=document.createElement('div');sb.className='pti-sub';sb.textContent=(p.payerId?'Payer ID: '+p.payerId+' · ':'')+'Stedi: '+p.stediId;
+        el.append(nm,sb);el.addEventListener('click',()=>selectEligPayerResult(p.stediId,p.payerId,p.name));return el;
+      }));
+    }catch{const el=document.createElement('div');el.className='pti';el.textContent='Payer search unavailable';dd.replaceChildren(el);}
+  },300);
+}
+function selectEligPayerResult(stediId,payerId,name){
+  document.getElementById('elig-payer-q').value=name;
+  document.getElementById('elig-payer-id').value=payerId||stediId;
+  document.getElementById('elig-payer-name').value=name;
+  document.getElementById('elig-payer-dd').style.display='none';
+  _eligPayerResults=[];
+}
+document.addEventListener('click',e=>{
+  const patQ=document.getElementById('elig-patient-q');const patDd=document.getElementById('elig-patient-dd');
+  const payQ=document.getElementById('elig-payer-q');const payDd=document.getElementById('elig-payer-dd');
+  if(patQ&&patDd&&!patQ.contains(e.target)&&!patDd.contains(e.target))patDd.style.display='none';
+  if(payQ&&payDd&&!payQ.contains(e.target)&&!payDd.contains(e.target))payDd.style.display='none';
+});
+let _eligFilter='';
+function filterEligibility(f){
+  _eligFilter=f;
+  document.querySelectorAll('.chip-row .queue-chip').forEach(c=>c.classList.remove('active-filter'));
+  const chipMap={'':'ef-all','Active':'ef-active','Inactive':'ef-inactive','auth':'ef-auth','timeout':'ef-timeout'};
+  const btn=document.getElementById(chipMap[f]||'ef-all');if(btn)btn.classList.add('active-filter');
+  if(!f){delete T.eligibility._filtered;}
+  else if(f==='auth'){T.eligibility._filtered=eligibility.filter(r=>r.authRequired==='Y'||r.auth);}
+  else if(f==='timeout'){T.eligibility._filtered=eligibility.filter(r=>r.status==='timeout'||(r.eligErrors&&r.eligErrors.length));}
+  else{T.eligibility._filtered=eligibility.filter(r=>r.status===f);}
+  T.eligibility.page=0;renderTable('eligibility');
+}
+function updateEligKpis(){
+  const total=eligibility.length,active=eligibility.filter(r=>r.status==='Active').length;
+  const authReq=eligibility.filter(r=>r.authRequired==='Y'||r.auth).length;
+  const errs=eligibility.filter(r=>r.status==='timeout'||(r.eligErrors&&r.eligErrors.length)).length;
+  const setT=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  setT('ekpi-total',total);setT('ekpi-active',active);
+  setT('ekpi-active-pct',total?Math.round(active/total*100)+'% active':'');
+  setT('ekpi-auth',authReq);setT('ekpi-err',errs);
+  setT('ef-n-all',total);setT('ef-n-active',active);
+  setT('ef-n-inactive',eligibility.filter(r=>r.status==='Inactive').length);
+  setT('ef-n-auth',authReq);setT('ef-n-timeout',errs);
+}
+async function runEligibilityCheck(){
+  const v=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
+  const payerId=v('elig-payer-id')||v('elig-payer-q');
+  const payerName=v('elig-payer-name')||v('elig-payer-q');
+  const errEl=document.getElementById('elig-form-err');
+  if(errEl)errEl.style.display='none';
+  if(!v('elig-first')||!v('elig-last')||!v('elig-member')||!v('elig-dob')||!payerId){
+    if(errEl){errEl.textContent='Fill in First name, Last name, Member ID, DOB, and Payer.';errEl.style.display='block';}
+    return;
+  }
+  const submitBtn=document.getElementById('elig-submit'),loadEl=document.getElementById('elig-loading');
+  if(submitBtn)submitBtn.disabled=true;if(loadEl)loadEl.style.display='inline';
+  const locSel=document.getElementById('elig-loc');
+  const posOpt=locSel&&locSel.selectedOptions[0];
+  const posCode=posOpt?posOpt.value.replace('b',''):'24';
+  try{
+    const resp=await fetch('/api/stedi/eligibility/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      patientId:v('elig-patient-id')||null,
+      firstName:v('elig-first'),lastName:v('elig-last'),
+      dob:v('elig-dob'),memberId:v('elig-member'),groupNumber:v('elig-group')||null,
+      payerId,payerName,npi:v('elig-npi')||'1841557020',posCode,
+      dos:v('elig-dos')||null,stc:v('elig-stc')||'30'
+    })});
+    const result=await resp.json();
+    if(!resp.ok){if(errEl){errEl.textContent=result.error||'Eligibility check failed.';errEl.style.display='block';}return;}
+    const record=result.record;
+    if(!record){if(errEl){errEl.textContent='No record returned.';errEl.style.display='block';}return;}
+    record.trn=record.trn||'TRN-'+Math.floor(Math.random()*9000000+1000000);
+    eligibility.unshift(record);T.eligibility.data=eligibility;
+    persistDashboardRecord('eligibility',record,'created');
+    updateEligKpis();filterEligibility(_eligFilter);
+    showSection('eligibility');openDrawer('eligibility',0);
+    toast((record.eligErrors&&record.eligErrors.length)?('Payer: '+record.eligErrors.join('; ')):((result.mode==='live'?'Live ':'')+'271: '+record.status+' coverage'));
+  }catch(e){if(errEl){errEl.textContent='Request failed: '+e.message;errEl.style.display='block';}}
+  finally{if(submitBtn)submitBtn.disabled=false;if(loadEl)loadEl.style.display='none';}
+}
+async function recheckEligibility(idx){
+  const r=eligibility[idx];if(!r)return;
+  const loadEl=document.getElementById('drawerOut');if(loadEl)loadEl.textContent='Re-checking with Stedi...';
+  try{
+    const resp=await fetch('/api/stedi/eligibility/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      patientId:r.patientId||null,
+      firstName:r.patientFirstName||(r.patient||'').split(' ')[0],
+      lastName:r.patientLastName||(r.patient||'').split(' ').slice(1).join(' '),
+      dob:r.patientDob||r.dob,memberId:r.member||r.memberId,groupNumber:r.group||r.groupNumber||null,
+      payerId:r.payerId,payerName:r.payerName||r.payer,
+      npi:r.npi||'1841557020',posCode:r.posCode||'24',dos:r.dos||null,stc:r.stc||'30'
+    })});
+    const result=await resp.json();
+    if(!resp.ok){if(loadEl)loadEl.textContent='Re-check failed: '+(result.error||resp.status);return;}
+    const nr=result.record;if(!nr)return;
+    nr.trn=nr.trn||r.trn;
+    eligibility[idx]=nr;T.eligibility.data=eligibility;
+    persistDashboardRecord('eligibility',nr,'updated');
+    updateEligKpis();filterEligibility(_eligFilter);
+    openDrawer('eligibility',idx);toast('Re-check: '+nr.status);
+  }catch(e){if(loadEl)loadEl.textContent='Re-check failed: '+e.message;}
+}
+let _batchRequests=[],_currentBatchId=null;
+function parseBatchCsv(csv){
+  const lines=csv.trim().split('\n').map(l=>l.trim()).filter(Boolean);
+  const h=lines[0].split(',').map(s=>s.trim().toLowerCase());
+  const isHdr=h.some(x=>['firstname','first_name','first','patient'].includes(x));
+  const rows=isHdr?lines.slice(1):lines;
+  return rows.map(line=>{
+    const c=line.split(',').map(s=>s.trim());
+    if(isHdr){const o={};h.forEach((k,i)=>{o[k]=c[i]||'';});return{firstName:o.firstname||o.first_name||o.first||'',lastName:o.lastname||o.last_name||o.last||'',dob:o.dob||'',memberId:o.memberid||o.member_id||o.member||'',payerId:o.payerid||o.payer_id||o.payer||'',dos:o.dos||'',npi:o.npi||'1841557020',posCode:o.pos||'24',stc:o.stc||'30'};}
+    return{firstName:c[0]||'',lastName:c[1]||'',dob:c[2]||'',memberId:c[3]||'',payerId:c[4]||'',dos:c[5]||'',npi:c[6]||'1841557020',posCode:c[7]||'24',stc:c[8]||'30'};
+  }).filter(r=>r.firstName&&r.lastName&&r.memberId);
+}
+function previewBatch(){
+  const csv=(document.getElementById('elig-batch-csv')||{}).value||'';
+  const errEl=document.getElementById('elig-batch-err');
+  const previewEl=document.getElementById('elig-batch-preview');
+  const submitBtn=document.getElementById('elig-batch-submit');
+  if(errEl)errEl.style.display='none';
+  if(!csv.trim()){if(errEl){errEl.textContent='Paste CSV data above.';errEl.style.display='block';}return;}
+  _batchRequests=parseBatchCsv(csv);
+  if(!_batchRequests.length){if(errEl){errEl.textContent='No valid rows found. Check CSV format.';errEl.style.display='block';}if(submitBtn)submitBtn.disabled=true;return;}
+  if(previewEl){
+    const wrap=document.createElement('div');
+    wrap.style.cssText='background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.76rem;margin-bottom:10px';
+    const h=document.createElement('div');h.style.fontWeight='600';h.textContent=_batchRequests.length+' patient'+(_batchRequests.length!==1?'s':'')+' ready to submit';
+    const s=document.createElement('div');s.style.color='var(--sub)';s.textContent='First: '+_batchRequests[0].firstName+' '+_batchRequests[0].lastName+' · Payer: '+(_batchRequests[0].payerId||'unknown');
+    wrap.append(h,s);previewEl.replaceChildren(wrap);
+  }
+  if(submitBtn)submitBtn.disabled=false;
+}
+function loadBatchFile(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{const ta=document.getElementById('elig-batch-csv');if(ta)ta.value=e.target.result;previewBatch();};
+  reader.readAsText(file);
+}
+async function submitBatch(){
+  if(!_batchRequests.length){toast('Preview the batch first.');return;}
+  const submitBtn=document.getElementById('elig-batch-submit');if(submitBtn)submitBtn.disabled=true;
+  try{
+    const resp=await fetch('/api/eligibility/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({patients:_batchRequests})});
+    const d=await resp.json();
+    if(!resp.ok){toast('Batch failed: '+(d.error||resp.status));if(submitBtn)submitBtn.disabled=false;return;}
+    _currentBatchId=(d.response&&d.response.batchId)||null;
+    document.getElementById('elig-batch-input-area').style.display='none';
+    document.getElementById('elig-batch-status-area').style.display='block';
+    const sumEl=document.getElementById('elig-batch-summary');
+    if(sumEl){
+      const p=document.createElement('div');p.style.cssText='background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.76rem';
+      const h=document.createElement('div');h.style.fontWeight='600';h.textContent='Batch submitted: '+(_currentBatchId||'pending ID');
+      const s=document.createElement('div');s.style.color='var(--sub)';s.textContent=_batchRequests.length+' patients · Click "Check status" to see results';
+      p.append(h,s);sumEl.replaceChildren(p);
+    }
+    toast('Batch submitted: '+_batchRequests.length+' patients');
+  }catch(e){toast('Batch error: '+e.message);if(submitBtn)submitBtn.disabled=false;}
+}
+async function checkBatchStatus(){
+  if(!_currentBatchId){toast('No batch ID. Submit a batch first.');return;}
+  try{
+    const resp=await fetch('/api/eligibility/batches/'+encodeURIComponent(_currentBatchId));
+    const d=await resp.json();const r=d.response||{};
+    const sumEl=document.getElementById('elig-batch-summary');
+    if(sumEl){
+      const p=document.createElement('div');p.style.cssText='background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.76rem';
+      const h=document.createElement('div');h.style.fontWeight='600';h.textContent='Batch '+(_currentBatchId||'')+' · '+((r.status||d.status)||'checking...');
+      const s=document.createElement('div');s.style.color='var(--sub)';s.textContent=(r.completeCount||0)+' complete · '+(r.activeCount||0)+' active · '+(r.inactiveCount||0)+' inactive · '+(r.errorCount||0)+' errors';
+      p.append(h,s);sumEl.replaceChildren(p);
+    }
+    toast('Batch: '+((r.status||d.status)||'unknown'));
+  }catch(e){toast('Status check failed: '+e.message);}
+}
+function resetBatchPanel(){
+  document.getElementById('elig-batch-status-area').style.display='none';
+  document.getElementById('elig-batch-input-area').style.display='block';
+  const ta=document.getElementById('elig-batch-csv');if(ta)ta.value='';
+  const pr=document.getElementById('elig-batch-preview');if(pr)pr.replaceChildren();
+  const btn=document.getElementById('elig-batch-submit');if(btn)btn.disabled=true;
+  _batchRequests=[];_currentBatchId=null;
+}
+async function createAuthTask(idx){
+  const r=eligibility[idx];if(!r)return;
+  try{
+    const resp=await fetch('/api/work_queue',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      type:'auth',
+      patientFirstName:r.patientFirstName||(r.patient||'').split(' ')[0],
+      patientLastName:r.patientLastName||(r.patient||'').split(' ').slice(1).join(' '),
+      payerId:r.payerId,payerName:r.payerName||r.payer,dos:r.dos||null,
+      reason:'Prior authorization required per 271 benefit check'
+    })});
+    const d=await resp.json();
+    toast(resp.ok?'Auth task created in work queue.':'Work queue error: '+(d.error||resp.status));
+  }catch(e){toast('Auth task error: '+e.message);}
+}
+function goToClaimFromElig(idx){
+  const r=eligibility[idx];if(!r)return;
+  closeDrawer();
+  openCreate('claims',{patient:r.patientFirstName&&r.patientLastName?r.patientFirstName+' '+r.patientLastName:(r.patient||''),payer:r.payerName||r.payer||''});
+}
+function loadEligibilityPdf(eligibilityId){toast('PDF retrieval requires Supabase Storage bucket setup. Eligibility ID: '+eligibilityId);}
+
+// Hook updateEligKpis into the dashboard record loader so KPIs refresh on page load
+(function(){const orig=loadDashboardRecords;loadDashboardRecords=async function(){await orig();updateEligKpis();};})();
+updateEligKpis();
+
 ovl.addEventListener('click',closeDrawer);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer()});
 document.addEventListener('click',e=>{const tr=e.target.closest('tr.row-click');if(tr&&tr.dataset.key)openDrawer(tr.dataset.key,+tr.dataset.i);});

@@ -657,6 +657,141 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/api/patients") {
+    if (!hasSupabase()) { sendJson(res, 200, { patients: [] }); return; }
+    const q = url.searchParams.get("q") || "";
+    const filter = q
+      ? `?or=(first_name.ilike.*${encodeURIComponent(q)}*,last_name.ilike.*${encodeURIComponent(q)}*)&limit=10`
+      : "?order=created_at.desc&limit=20";
+    let rows;
+    try { rows = await supabaseRequest("/patients" + filter); } catch { rows = []; }
+    sendJson(res, 200, { patients: Array.isArray(rows) ? rows : [] });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/patients") {
+    const body = await readJsonBody(req);
+    if (!hasSupabase()) { sendJson(res, 201, { patient: { id: "local_" + Date.now(), first_name: body.firstName, last_name: body.lastName } }); return; }
+    const rows = await supabaseRequest("/patients", {
+      method: "POST",
+      headers: { "Prefer": "return=representation" },
+      body: JSON.stringify([{ first_name: body.firstName || "", last_name: body.lastName || "", dob: body.dob || null, gender: body.gender || null, member_id: body.memberId || null, group_number: body.groupNumber || null }])
+    });
+    sendJson(res, 201, { patient: Array.isArray(rows) ? rows[0] : rows });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/stedi/eligibility/check") {
+    const body = await readJsonBody(req);
+    const result = await runEligibilityCheck(body);
+    const rec = result.record || {};
+    const rawResp = result.response || {};
+    const benefits = Array.isArray(rawResp.benefitsInformation) ? rawResp.benefitsInformation : [];
+    const authBen = benefits.find(b => b.authorizationOrReferralRequired === "Y" || String(b.code) === "AR");
+    const enhanced = {
+      ...rec,
+      patientId: body.patientId || null,
+      patientFirstName: body.firstName || "",
+      patientLastName: body.lastName || "",
+      patientDob: body.dob || rec.dob || null,
+      dos: body.dos || null,
+      stc: body.stc || "30",
+      npi: body.npi || "",
+      posCode: body.posCode || "",
+      checkedAt: new Date().toISOString(),
+      raw271: rawResp,
+      authRequired: authBen ? "Y" : null
+    };
+    if (hasSupabase()) {
+      try {
+        await supabaseRequest("/eligibility_checks", {
+          method: "POST",
+          headers: { "Prefer": "return=minimal" },
+          body: JSON.stringify([{
+            patient_id: enhanced.patientId || null,
+            patient_first_name: enhanced.patientFirstName,
+            patient_last_name: enhanced.patientLastName,
+            patient_dob: enhanced.patientDob || null,
+            payer_id: enhanced.payerId || null,
+            payer_name: enhanced.payer || null,
+            member_id: enhanced.member || null,
+            group_number: enhanced.group || null,
+            npi: enhanced.npi || null,
+            pos_code: enhanced.posCode || null,
+            dos: enhanced.dos || null,
+            stc: enhanced.stc || null,
+            status: enhanced.status || null,
+            plan_name: enhanced.plan || null,
+            copay_in_net: enhanced.copay || null,
+            deduct_rem_in_net: enhanced.dedT ? enhanced.dedT - (enhanced.dedM || 0) : null,
+            oop_max_rem_in_net: enhanced.oopT ? enhanced.oopT - (enhanced.oopM || 0) : null,
+            coins_in_net: enhanced.coins || null,
+            auth_required: enhanced.authRequired || null,
+            trn: enhanced.trn || null,
+            raw_271: rawResp,
+            checked_at: enhanced.checkedAt
+          }])
+        });
+      } catch (e) {
+        console.error("eligibility_checks save failed:", e.message);
+      }
+    }
+    sendJson(res, 200, { ...result, record: enhanced });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/eligibility/checks") {
+    if (!hasSupabase()) { sendJson(res, 200, { checks: [] }); return; }
+    let rows;
+    try { rows = await supabaseRequest("/eligibility_checks?select=*&order=checked_at.desc&limit=200"); } catch { rows = []; }
+    sendJson(res, 200, { checks: Array.isArray(rows) ? rows : [] });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/eligibility/batch") {
+    const body = await readJsonBody(req);
+    const requests = Array.isArray(body.patients) ? body.patients : (Array.isArray(body.requests) ? body.requests : []);
+    const result = await stediProxy({ base: "healthcare", path: "/eligibility-manager/batch-eligibility", method: "POST", payload: { requests } });
+    if (hasSupabase() && result.ok && result.response && result.response.batchId) {
+      try {
+        await supabaseRequest("/eligibility_batches", {
+          method: "POST",
+          headers: { "Prefer": "return=minimal" },
+          body: JSON.stringify([{ stedi_batch_id: result.response.batchId, status: "submitted", total_count: requests.length }])
+        });
+      } catch {}
+    }
+    sendJson(res, 200, result);
+    return;
+  }
+
+  const batchStatusMatch = url.pathname.match(/^\/api\/eligibility\/batches\/([^/]+)$/);
+  if (batchStatusMatch && req.method === "GET") {
+    const batchId = decodeURIComponent(batchStatusMatch[1]);
+    sendJson(res, 200, await stediProxy({ base: "healthcare", path: "/eligibility-manager/batch-eligibility/" + batchId, method: "GET", payload: null }));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/work_queue") {
+    const body = await readJsonBody(req);
+    if (!hasSupabase()) { sendJson(res, 201, { item: { id: "local_" + Date.now(), type: body.type } }); return; }
+    const rows = await supabaseRequest("/work_queue", {
+      method: "POST",
+      headers: { "Prefer": "return=representation" },
+      body: JSON.stringify([{ type: body.type || "auth", patient_first_name: body.patientFirstName || null, patient_last_name: body.patientLastName || null, payer_id: body.payerId || null, payer_name: body.payerName || null, dos: body.dos || null, reason: body.reason || null }])
+    });
+    sendJson(res, 201, { item: Array.isArray(rows) ? rows[0] : rows });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/work_queue") {
+    if (!hasSupabase()) { sendJson(res, 200, { items: [] }); return; }
+    let rows;
+    try { rows = await supabaseRequest("/work_queue?resolved=eq.false&order=created_at.desc&limit=100"); } catch { rows = []; }
+    sendJson(res, 200, { items: Array.isArray(rows) ? rows : [] });
+    return;
+  }
+
   sendJson(res, 404, { error: "Unknown API route." });
 }
 
