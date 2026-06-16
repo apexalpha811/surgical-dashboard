@@ -1081,7 +1081,7 @@ const T={
  era:{data:eras,row:r=>'<td class="mono">'+r.id+'</td><td>'+r.payer+'</td><td>'+r.n+'</td><td class="money">'+usd(r.billed)+'</td><td class="money">'+usd(r.paid)+'</td><td class="money">'+usd(r.pr)+'</td><td>'+pillFor(r.status)+'</td>'},
  attachments:{data:attachments,row:r=>'<td class="mono">'+r.claim+'</td><td>'+r.payer+'</td><td>'+r.req+'</td><td>'+r.doc+'</td><td>'+r.due+'</td><td>'+pillFor(r.status)+'</td>'},
  cob:{data:cob,row:r=>'<td>'+r.patient+'</td><td>'+r.primary+'</td><td>'+r.secondary+'</td><td>'+r.eff+'</td><td style="font-size:.72rem;color:var(--sub)">'+r.rule+'</td>'},
- providers:{data:providers,row:r=>'<td><b>'+r.name+'</b></td><td class="mono">'+r.npi+'</td><td>'+r.spec+'</td><td class="mono">95-4412087</td><td>'+(r.pend?'<span class="pill warn">'+r.pend+' pending</span> ':'')+'<span class="pill ok">'+r.live+' payers live</span></td>'},
+ providers:{data:providers,row:r=>'<td><b>'+safeText(r.name||'')+'</b></td><td class="mono">'+safeText(r.npi||'—')+'</td><td style="font-size:.78rem">'+safeText(r.spec||'—')+'</td><td class="mono">'+safeText(r.taxId||'—')+'</td><td>'+(r.pend?'<span class="pill warn">'+r.pend+' pending</span> ':'')+'<span class="pill ok">'+r.live+' live</span></td>'},
  payers:{data:payerDir,row:r=>'<td><b>'+safeText(r.name||'')+'</b>'+(r.aliases&&r.aliases[0]?'<div style="font-size:.72rem;color:var(--sub)">'+safeText(r.aliases[0])+'</div>':'')+'</td><td class="mono">'+safeText(r.stedi||'')+'</td><td class="mono">'+safeText(r.payerId||'—')+'</td><td>'+(r.elig?'<span class="pill ok">270/271</span>':'—')+'</td><td>'+(r.clm?'<span class="pill ok">837</span>':'—')+'</td><td>'+(r.era?'<span class="pill ok">835</span>':'—')+'</td><td>'+(r.enroll==='Required'?'<span class="pill warn">Required</span>':'<span class="pill ok">None</span>')+'</td><td><button class="btn-ghost btn-sm" onclick="event.stopPropagation();addPayerToEnrollments(\''+safeText(r.stedi||'')+'\')">Add to Enrollments</button></td>'},
  enrollments:{data:enrollments,row:r=>'<td><b>'+safeText(r.provider||'')+'</b></td><td class="mono" style="font-size:.76rem">'+safeText(r.providerNpi||'—')+'</td><td>'+safeText(r.payer||'')+'</td><td class="mono" style="font-size:.76rem">'+safeText(r.payerPrimaryId||r.payerStediId||'—')+'</td><td style="font-size:.76rem">'+safeText(r.txn||'—')+'</td><td>'+pillFor(r.status)+'</td><td style="font-size:.76rem">'+safeText(r.processType||'—')+'</td><td style="font-size:.76rem">'+safeText(r.submittedDate||'—')+'</td>'},
  transactions:{data:txns,row:r=>'<td class="mono">'+r.id+'</td><td>'+r.type+'</td><td>'+r.dir+'</td><td>'+r.partner+'</td><td>'+r.date+'</td><td>'+r.time+'</td><td>'+pillFor(r.status)+'</td>'}
@@ -1112,7 +1112,7 @@ async function persistDashboardRecord(key,record,status){if(!LIVE_KEYS.has(key)|
 async function persistDashboardDelete(key,record){if(!LIVE_KEYS.has(key)||!record)return;try{await dashboardApi('/api/dashboard-records/delete',{method:'POST',body:JSON.stringify({key,target:key,recordKey:dashboardRecordKey(key,record)})});}catch(error){console.warn(error);toast('Deleted locally. Supabase delete failed.');}}
 function removeLiveRecord(key,index){if(!LIVE_KEYS.has(key)||!T[key])return null;const data=key==='payers'?payerDir:T[key].data;if(index<0||index>=data.length)return null;const removed=data.splice(index,1)[0];if(key==='appeals'){const appealIndex=APPEALS_DATA.indexOf(removed);if(appealIndex>=0)APPEALS_DATA.splice(appealIndex,1);}T[key].data=data;refreshLiveSection(key);return removed;}
 async function loadDashboardRecords(){try{const result=await dashboardApi('/api/dashboard-records');(result.records||[]).forEach(item=>applyLiveRecord(item.target,item.record));if((result.records||[]).length)toast('Loaded saved dashboard data.');}catch(error){console.warn(error);}}
-async function loadEnrollmentsFromStedi(){const sub=document.getElementById('sub-enrollments');if(sub)sub.textContent='Loading enrollments from Stedi…';try{const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'enrollments',path:'/enrollments',method:'GET',payload:null})});const d=await res.json();if(!d||d.mode!=='live'||!d.ok){if(sub)sub.textContent=enrollments.length+' records · Stedi: '+(d&&d.response&&(d.response.message||d.response.error)||'mock mode or key missing');return;}const r=d.response;const items=Array.isArray(r)?r:Array.isArray(r&&r.enrollments)?r.enrollments:Array.isArray(r&&r.items)?r.items:[];const mapped=items.map(enrollmentFromStediResponse);enrollments.length=0;mapped.forEach(rec=>enrollments.push(rec));T.enrollments.data=enrollments;refreshLiveSection('enrollments');if(sub)sub.textContent=enrollments.length+' enrollment'+(enrollments.length!==1?'s':'')+' · synced from Stedi';if(!items.length&&!enrollments.length&&sub)sub.textContent='No enrollments found. Click + New Enrollment to get started.';}catch(e){if(sub)sub.textContent='Could not reach Stedi — showing local data.';console.warn('loadEnrollmentsFromStedi:',e);}}
+async function loadEnrollmentsFromStedi(){const sub=document.getElementById('sub-enrollments');if(sub)sub.textContent='Loading enrollments from Stedi…';try{const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'enrollments',path:'/enrollments',method:'GET',payload:null})});const d=await res.json();if(!d||d.mode!=='live'||!d.ok){if(sub)sub.textContent=enrollments.length+' records · Stedi: '+(d&&d.response&&(d.response.message||d.response.error)||'mock mode or key missing');return;}const r=d.response;const items=Array.isArray(r)?r:Array.isArray(r&&r.enrollments)?r.enrollments:Array.isArray(r&&r.items)?r.items:[];const mapped=items.map(enrollmentFromStediResponse);enrollments.length=0;mapped.forEach(rec=>enrollments.push(rec));T.enrollments.data=enrollments;refreshLiveSection('enrollments');if(sub)sub.textContent=enrollments.length+' enrollment'+(enrollments.length!==1?'s':'')+' · synced from Stedi';if(!items.length&&!enrollments.length&&sub)sub.textContent='No enrollments found. Click + New Enrollment to get started.';seedPayersFromEnrollments();}catch(e){if(sub)sub.textContent='Could not reach Stedi — showing local data.';console.warn('loadEnrollmentsFromStedi:',e);}}
 function enrollmentFromStediResponse(item){
   const p=item.provider&&typeof item.provider==='object'?item.provider:{};
   const c=p.contact&&typeof p.contact==='object'?p.contact:{};
@@ -1152,6 +1152,37 @@ function enrollmentFromStediResponse(item){
     history:Array.isArray(item.history)?item.history:[],
     docs:Array.isArray(item.documents)?item.documents:[]
   };
+}
+function providerFromStediResponse(item){
+  const data=item.provider&&typeof item.provider==='object'?item.provider:item;
+  const npi=data.npi||data.providerId||'';
+  const live=enrollments.filter(e=>(e.providerNpi===npi||e.provider===data.name)&&e.status==='Live').length;
+  const pend=enrollments.filter(e=>(e.providerNpi===npi||e.provider===data.name)&&e.status!=='Live').length;
+  return {name:data.name||data.providerName||'',npi,spec:data.specialty||data.taxonomyDescription||data.taxonomy||'',tax:data.taxonomy||data.taxonomyCode||'',taxId:data.taxId||'',live,pend:pend||null,_raw:data};
+}
+async function loadProvidersFromStedi(){
+  const sub=document.getElementById('sub-providers');
+  try{
+    const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'enrollments',path:'/providers',method:'GET',payload:null})});
+    const d=await res.json();
+    if(!d||d.mode!=='live'||!d.ok){if(sub)sub.textContent=providers.length+' providers · '+(d&&d.response&&(d.response.message||d.response.error)||'mock mode');return;}
+    const r=d.response;
+    const items=Array.isArray(r)?r:Array.isArray(r&&r.providers)?r.providers:Array.isArray(r&&r.items)?r.items:[];
+    const mapped=items.map(providerFromStediResponse);
+    providers.length=0;mapped.forEach(rec=>providers.push(rec));
+    T.providers.data=providers;refreshLiveSection('providers');
+    if(sub)sub.textContent=providers.length+' provider'+(providers.length!==1?'s':'')+' · synced from Stedi';
+    if(!items.length&&sub)sub.textContent='No providers found in Stedi. Click + Add Provider to register one.';
+  }catch(e){if(sub)sub.textContent='Could not reach Stedi — showing local data.';console.warn('loadProvidersFromStedi:',e);}
+}
+async function seedPayersFromEnrollments(){
+  const enrolled=enrollments.filter(e=>e.payerStediId);
+  const seen=new Set(payerDir.map(p=>p.stedi));
+  const toFetch=enrolled.filter(e=>!seen.has(e.payerStediId));
+  for(const e of toFetch){
+    try{const detail=await loadPayerDetail(e.payerStediId);addPayerToTable(detail);}
+    catch(err){console.warn('seedPayersFromEnrollments:',err);}
+  }
 }
 const posted=eras.filter(e=>e.status==='Posted'),unposted=eras.filter(e=>e.status==='New');
 document.getElementById('kpiEraN').textContent=eras.length;document.getElementById('kpiEraPosted').textContent=usd(posted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraPostedN').textContent=posted.length+' remits';document.getElementById('kpiEraUnposted').textContent=usd(unposted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraUnpostedN').textContent=unposted.length+' remits';document.getElementById('kpiEraAdj').textContent=usd(eras.reduce((a,e)=>a+e.billed-e.paid-e.pr,0)/10);
@@ -2752,6 +2783,7 @@ window.openDrawer=function(key,i){
 setTimeout(loadDashboardRecords,300);
 setTimeout(restoreOpenDrawer,650);
 setTimeout(loadEnrollmentsFromStedi,1000);
+setTimeout(loadProvidersFromStedi,1200);
 setTimeout(initPayerTypeahead,1400);
 </script>
 </body>
