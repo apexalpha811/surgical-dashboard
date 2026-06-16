@@ -293,7 +293,7 @@ function dashboardSectionForStoredTarget(target) {
   if (value === "appealsFromEra") return "appeals";
   if (value === "claimAttachment275") return "attachments";
   if (value === "providerEnrollment") return "providers";
-  if (["claims", "eligibility", "providers", "payers", "enrollments", "attachments", "appeals", "cob"].includes(value)) return value;
+  if (["claims", "eligibility", "providers", "payers", "enrollments", "attachments", "appeals", "cob", "transactions"].includes(value)) return value;
   return "";
 }
 
