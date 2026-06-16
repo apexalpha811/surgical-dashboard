@@ -161,7 +161,7 @@ async function readDashboardRecords() {
       return [];
     }
   }
-  const rows = await supabaseRequest("/docupipe_imports?select=id,target,status,dashboard_record_json,created_at&order=created_at.asc&limit=1000");
+  const rows = await supabaseRequest("/dashboard_records?select=id,target,status,dashboard_record_json,created_at&order=created_at.asc&limit=1000");
   const latest = new Map();
   for (const row of (Array.isArray(rows) ? rows : [])) {
     if (!row || !row.dashboard_record_json || typeof row.dashboard_record_json !== "object") continue;
@@ -187,7 +187,7 @@ async function readDashboardRecords() {
 
 async function readDashboardRecordsRaw() {
   if (!hasSupabase()) return [];
-  const rows = await supabaseRequest("/docupipe_imports?select=id,target,status,dashboard_record_json,created_at&order=created_at.asc&limit=1000");
+  const rows = await supabaseRequest("/dashboard_records?select=id,target,status,dashboard_record_json,created_at&order=created_at.asc&limit=1000");
   return (Array.isArray(rows) ? rows : [])
     .filter(row => row && row.dashboard_record_json && typeof row.dashboard_record_json === "object")
     .map(row => ({
@@ -240,7 +240,7 @@ async function saveDashboardRecord(body) {
     dashboard_record_json: { ...record, recordKey: String(body.recordKey || storedDashboardRecordKey(target, record)) },
     warnings: []
   };
-  const rows = await supabaseRequest("/docupipe_imports", {
+  const rows = await supabaseRequest("/dashboard_records", {
     method: "POST",
     headers: { "Prefer": "return=representation" },
     body: JSON.stringify(row)
@@ -283,7 +283,7 @@ async function deleteDashboardRecord(body) {
     dashboard_record_json: { recordKey },
     warnings: []
   };
-  const rows = await supabaseRequest("/docupipe_imports", {
+  const rows = await supabaseRequest("/dashboard_records", {
     method: "POST",
     headers: { "Prefer": "return=representation" },
     body: JSON.stringify(row)
