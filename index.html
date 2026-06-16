@@ -1182,6 +1182,7 @@ function providerFromStediResponse(item){
     city:addr.city||'',
     state:addr.state||addr.stateCode||'',
     zip:addr.zip||addr.postalCode||addr.zipCode||'',
+    id:data.providerId||data.id||npi||'',
     live,
     pend:pend||null,
     _raw:data
@@ -1195,7 +1196,17 @@ async function loadProvidersFromStedi(){
     if(!d||d.mode!=='live'||!d.ok){if(sub)sub.textContent=providers.length+' providers · '+(d&&d.response&&(d.response.message||d.response.error)||'mock mode');return;}
     const r=d.response;
     const items=Array.isArray(r)?r:Array.isArray(r&&r.providers)?r.providers:Array.isArray(r&&r.items)?r.items:[];
-    const mapped=items.map(providerFromStediResponse);
+    const detailed=await Promise.all(items.map(async item=>{
+      const pid=(item.providerId||item.id||'');
+      if(!pid)return item;
+      try{
+        const dr=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'enrollments',path:'/providers/'+pid,method:'GET',payload:null})});
+        const dd=await dr.json();
+        if(dd&&dd.ok&&dd.response&&typeof dd.response==='object')return Object.assign({},item,dd.response);
+      }catch(e){console.warn('provider detail fetch:',e);}
+      return item;
+    }));
+    const mapped=detailed.map(providerFromStediResponse);
     providers.length=0;mapped.forEach(rec=>providers.push(rec));
     T.providers.data=providers;refreshLiveSection('providers');
     if(sub)sub.textContent=providers.length+' provider'+(providers.length!==1?'s':'')+' · synced from Stedi';
