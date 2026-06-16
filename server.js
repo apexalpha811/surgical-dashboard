@@ -311,11 +311,9 @@ function storedDashboardRecordKey(target, record) {
 
 async function supabaseRequest(pathname, options = {}) {
   const authHeaders = {
-    "apikey": config.supabaseServiceRoleKey
+    "apikey": config.supabaseServiceRoleKey,
+    "Authorization": `Bearer ${config.supabaseServiceRoleKey}`
   };
-  if (!config.supabaseServiceRoleKey.startsWith("sb_secret_")) {
-    authHeaders.Authorization = `Bearer ${config.supabaseServiceRoleKey}`;
-  }
   const response = await fetch(`${config.supabaseUrl}/rest/v1${pathname}`, {
     method: options.method || "GET",
     headers: {
