@@ -817,7 +817,7 @@ th.sort:hover{color:var(--text)}
       </div>
       <div class="sub" id="sub-enrollments"></div>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>Provider</th><th>Payer</th><th>Transaction</th><th>Status</th><th>Open task</th></tr></thead>
+        <thead><tr><th>Provider</th><th>NPI</th><th>Payer</th><th>Payer ID</th><th>Transaction</th><th>Status</th><th>Process type</th><th>Submitted</th></tr></thead>
         <tbody id="tb-enrollments"></tbody>
       </table></div>
       <div class="pager" id="pgr-enrollments"></div>
@@ -1083,7 +1083,7 @@ const T={
  cob:{data:cob,row:r=>'<td>'+r.patient+'</td><td>'+r.primary+'</td><td>'+r.secondary+'</td><td>'+r.eff+'</td><td style="font-size:.72rem;color:var(--sub)">'+r.rule+'</td>'},
  providers:{data:providers,row:r=>'<td><b>'+r.name+'</b></td><td class="mono">'+r.npi+'</td><td>'+r.spec+'</td><td class="mono">95-4412087</td><td>'+(r.pend?'<span class="pill warn">'+r.pend+' pending</span> ':'')+'<span class="pill ok">'+r.live+' payers live</span></td>'},
  payers:{data:payerDir,row:r=>'<td><b>'+safeText(r.name||'')+'</b>'+(r.aliases&&r.aliases[0]?'<div style="font-size:.72rem;color:var(--sub)">'+safeText(r.aliases[0])+'</div>':'')+'</td><td class="mono">'+safeText(r.stedi||'')+'</td><td class="mono">'+safeText(r.payerId||'—')+'</td><td>'+(r.elig?'<span class="pill ok">270/271</span>':'—')+'</td><td>'+(r.clm?'<span class="pill ok">837</span>':'—')+'</td><td>'+(r.era?'<span class="pill ok">835</span>':'—')+'</td><td>'+(r.enroll==='Required'?'<span class="pill warn">Required</span>':'<span class="pill ok">None</span>')+'</td><td><button class="btn-ghost btn-sm" onclick="event.stopPropagation();addPayerToEnrollments(\''+safeText(r.stedi||'')+'\')">Add to Enrollments</button></td>'},
- enrollments:{data:enrollments,row:r=>'<td>'+r.provider+'</td><td>'+r.payer+'</td><td>'+r.txn+'</td><td>'+pillFor(r.status)+'</td><td>'+(r.task||'-')+'</td>'},
+ enrollments:{data:enrollments,row:r=>'<td><b>'+safeText(r.provider||'')+'</b></td><td class="mono" style="font-size:.76rem">'+safeText(r.providerNpi||'—')+'</td><td>'+safeText(r.payer||'')+'</td><td class="mono" style="font-size:.76rem">'+safeText(r.payerPrimaryId||r.payerStediId||'—')+'</td><td style="font-size:.76rem">'+safeText(r.txn||'—')+'</td><td>'+pillFor(r.status)+'</td><td style="font-size:.76rem">'+safeText(r.processType||'—')+'</td><td style="font-size:.76rem">'+safeText(r.submittedDate||'—')+'</td>'},
  transactions:{data:txns,row:r=>'<td class="mono">'+r.id+'</td><td>'+r.type+'</td><td>'+r.dir+'</td><td>'+r.partner+'</td><td>'+r.date+'</td><td>'+r.time+'</td><td>'+pillFor(r.status)+'</td>'}
 };
 Object.values(T).forEach(t=>t.page=0);
@@ -1114,17 +1114,42 @@ function removeLiveRecord(key,index){if(!LIVE_KEYS.has(key)||!T[key])return null
 async function loadDashboardRecords(){try{const result=await dashboardApi('/api/dashboard-records');(result.records||[]).forEach(item=>applyLiveRecord(item.target,item.record));if((result.records||[]).length)toast('Loaded saved dashboard data.');}catch(error){console.warn(error);}}
 async function loadEnrollmentsFromStedi(){const sub=document.getElementById('sub-enrollments');if(sub)sub.textContent='Loading enrollments from Stedi…';try{const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'enrollments',path:'/enrollments',method:'GET',payload:null})});const d=await res.json();if(!d||d.mode!=='live'||!d.ok){if(sub)sub.textContent=enrollments.length+' records · Stedi: '+(d&&d.response&&(d.response.message||d.response.error)||'mock mode or key missing');return;}const r=d.response;const items=Array.isArray(r)?r:Array.isArray(r&&r.enrollments)?r.enrollments:Array.isArray(r&&r.items)?r.items:[];const mapped=items.map(enrollmentFromStediResponse);enrollments.length=0;mapped.forEach(rec=>enrollments.push(rec));T.enrollments.data=enrollments;refreshLiveSection('enrollments');if(sub)sub.textContent=enrollments.length+' enrollment'+(enrollments.length!==1?'s':'')+' · synced from Stedi';if(!items.length&&!enrollments.length&&sub)sub.textContent='No enrollments found. Click + New Enrollment to get started.';}catch(e){if(sub)sub.textContent='Could not reach Stedi — showing local data.';console.warn('loadEnrollmentsFromStedi:',e);}}
 function enrollmentFromStediResponse(item){
-  const providerObj=item.provider&&typeof item.provider==='object'?item.provider:{};
-  const tpObj=item.tradingPartner&&typeof item.tradingPartner==='object'?item.tradingPartner:{};
-  const txnSets=Array.isArray(item.transactionSets)?item.transactionSets.map(t=>typeof t==='object'?(t.name||t.transactionSetIdentifier||JSON.stringify(t)):t).join(', '):null;
+  const p=item.provider&&typeof item.provider==='object'?item.provider:{};
+  const c=p.contact&&typeof p.contact==='object'?p.contact:{};
+  const addr=p.address&&typeof p.address==='object'?p.address:{};
+  const tp=item.tradingPartner&&typeof item.tradingPartner==='object'?item.tradingPartner:{};
+  const txnSets=Array.isArray(item.transactionSets)?item.transactionSets:[];
+  const txnLabel=txnSets.map(t=>typeof t==='object'?(t.name||t.transactionSetIdentifier||''):String(t)).filter(Boolean).join(', ');
+  const fmtDate=v=>{if(!v)return null;try{return new Date(v).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}catch{return String(v);}};
   return {
     id:item.enrollmentId||item.id||'enr_'+Math.random().toString(36).slice(2,8),
-    provider:providerObj.name||item.providerName||'',
-    payer:tpObj.name||item.tradingPartnerName||item.payerName||item.payer||'',
-    txn:txnSets||item.transactionType||item.txn||'',
     status:item.status||'Draft',
+    source:item.source||'API',
+    processType:item.enrollmentProcessType||null,
+    activationTimeframe:item.activationTimeframe||null,
+    contactEmail:item.contactEmail||null,
+    submittedDate:fmtDate(item.submittedDate)||item.submitted||new Date().toLocaleDateString('en-US'),
+    requestedEffectiveDate:item.requestedEffectiveDate||null,
+    aggregationPreference:item.aggregationPreference||null,
     task:item.openTask||item.nextTask||item.task||null,
-    submitted:item.submittedDate||item.submitted||new Date().toLocaleDateString('en-US'),
+    txn:txnLabel||item.transactionType||item.txn||'',
+    txnSets,
+    provider:p.name||item.providerName||'',
+    providerNpi:p.npi||item.npi||'',
+    providerTaxId:p.taxId||item.taxId||'',
+    providerFirstName:c.firstName||'',
+    providerLastName:c.lastName||'',
+    providerEmail:c.email||'',
+    providerPhone:c.phone||'',
+    providerAddress:[addr.line1,addr.line2].filter(Boolean).join(', ')||'',
+    providerCity:addr.city||'',
+    providerState:addr.state||'',
+    providerZip:addr.zip||'',
+    payer:tp.name||item.tradingPartnerName||item.payerName||item.payer||'',
+    payerStediId:tp.stediId||tp.id||'',
+    payerPrimaryId:tp.primaryPayerId||tp.payerId||'',
+    payerAliases:Array.isArray(tp.aliases)?tp.aliases:[],
+    history:Array.isArray(item.history)?item.history:[],
     docs:Array.isArray(item.documents)?item.documents:[]
   };
 }
@@ -1186,7 +1211,48 @@ const DETAIL={
  cob:r=>dhead('Coordination of benefits',r.patient)+kv({'Primary payer':r.primary,'Primary member ID':'<span class="mono">'+r.m1+'</span>','Secondary payer':r.secondary,'Secondary member ID':'<span class="mono">'+r.m2+'</span>','Effective':r.eff,'Determination rule':r.rule})+dsec('Recommended action','<div class="empty-note">Bill '+r.primary+' first. Submit the balance with the primary EOB to '+r.secondary+' as a secondary claim.</div><button class="btn-ghost btn-sm" onclick="updateCobByPatient(\''+r.patient+'\')">Update claim payer order</button>'),
  providers:r=>dhead(r.name,r.spec)+kv({'NPI':'<span class="mono">'+r.npi+'</span>','Taxonomy':'<span class="mono">'+r.tax+'</span>','Tax ID':'<span class="mono">95-4412087</span>','Billing entity':'Culver City Surgical Partners','Enrollments live':r.live+' payers','Enrollments pending':r.pend||'None'})+dsec('Credentialed locations',LOCS.map(l=>'<span class="tag">'+l+'</span>').join(' '))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="openEditCurrent()">Edit provider</button> <button class="btn-ghost btn-sm" onclick="startProviderEnrollment(\''+r.npi+'\')">New enrollment</button> <button class="btn-ghost btn-sm" style="color:var(--bad)" onclick="deleteCurrentRecord()">Delete</button>'),
  payers:r=>dhead(r.name,'Stedi payer directory')+kv({'Stedi ID':'<span class="mono">'+safeText(r.stedi||'')+'</span>','Payer ID (EDI)':safeText(r.payerId||'—'),'Aliases':r.aliases&&r.aliases.length?r.aliases.map(safeText).join(', '):'—','Coverage types':r.coverageTypes&&r.coverageTypes.length?r.coverageTypes.join(', '):'—','Operating states':r.states&&r.states.length?r.states.join(', '):'All states','Eligibility (270/271)':r.elig?'<span class="pill ok">Supported</span>':'<span class="pill bad">Not supported</span>','Claims (837)':r.clm?'<span class="pill ok">Supported</span>':'<span class="pill bad">Not supported</span>','ERA (835)':r.era?'<span class="pill ok">Supported</span>':'<span class="pill bad">Not supported</span>','Enrollment required':r.enroll==='Required'?'<span class="pill warn">Required</span>':'<span class="pill ok">Not required</span>'})+dsec('Actions','<button class="btn-ghost btn-sm" onclick="testPayerEligibility(\''+safeText(r.stedi||'')+'\')">Run test eligibility</button> <button class="btn btn-sm" onclick="addPayerToEnrollments(\''+safeText(r.stedi||'')+'\')">Start Enrollment</button>'),
- enrollments:r=>dhead('Enrollment',r.provider)+kv({'Enrollment ID':'<span class="mono">'+r.id+'</span>','Payer':r.payer,'Transaction':r.txn,'Status':pillFor(r.status),'Submitted':r.submitted,'Open task':r.task||'None'})+dsec('Documents',(r.docs&&r.docs.length?r.docs.map(d=>{const dn=typeof d==='object'?(d.fileName||d.documentId||'document'):String(d);const did=typeof d==='object'&&d.documentId?d.documentId:null;return did?'<button class="btn-ghost btn-sm" style="margin:2px" onclick="downloadEnrollmentDoc(\''+did+'\',\''+dn+'\')">'+safeText(dn)+'</button><button class="btn-ghost btn-sm" style="color:var(--bad);padding:2px 5px;margin:2px" onclick="deleteEnrollmentDoc(\''+did+'\',\''+r.id+'\')">&#215;</button>':'<span class="tag">'+safeText(dn)+'</span>';}).join(' '):'<span class="sub">No documents</span>')+'<div style="margin-top:10px"><button class="btn-ghost btn-sm" onclick="uploadEnrollmentDoc(\''+r.id+'\')">Upload document</button></div>')+dsec('Actions','<button class="btn-ghost btn-sm" onclick="updateEnrollmentById(\''+r.id+'\')">Update enrollment</button>'+(r.task?' <button class="btn btn-sm" onclick="completeEnrollmentTask(\''+r.id+'\')">Complete task</button>':'')),
+ enrollments:r=>{
+  const addrLine=[r.providerAddress,r.providerCity&&r.providerState?r.providerCity+', '+r.providerState+(r.providerZip?' '+r.providerZip:''):r.providerCity||r.providerState||''].filter(Boolean).join('\n');
+  const providerBlock='<div style="border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px">'
+    +'<div style="font-weight:600;font-size:.95rem;margin-bottom:10px">'+safeText(r.provider||'Provider')+'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:.78rem">'
+    +'<div><div style="color:var(--sub);margin-bottom:2px">NPI</div><span class="mono">'+safeText(r.providerNpi||'—')+'</span></div>'
+    +'<div><div style="color:var(--sub);margin-bottom:2px">Tax ID</div><span class="mono">EIN '+safeText(r.providerTaxId||'—')+'</span></div>'
+    +(r.providerFirstName||r.providerLastName?'<div><div style="color:var(--sub);margin-bottom:2px">First name</div>'+safeText(r.providerFirstName||'—')+'</div><div><div style="color:var(--sub);margin-bottom:2px">Last name</div>'+safeText(r.providerLastName||'—')+'</div>':'')
+    +(r.providerEmail?'<div><div style="color:var(--sub);margin-bottom:2px">Email</div><a href="mailto:'+safeText(r.providerEmail)+'">'+safeText(r.providerEmail)+'</a></div>':'')
+    +(r.providerPhone?'<div><div style="color:var(--sub);margin-bottom:2px">Phone</div>'+safeText(r.providerPhone)+'</div>':'')
+    +(addrLine?'<div style="grid-column:1/-1"><div style="color:var(--sub);margin-bottom:2px">Address</div>'+safeText(addrLine).replace(/\n/g,'<br>')+'</div>':'')
+    +'</div></div>';
+  const payerBlock='<div style="border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px">'
+    +'<div style="font-weight:600;font-size:.95rem;margin-bottom:10px">'+safeText(r.payer||'Payer')+'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:.78rem">'
+    +'<div><div style="color:var(--sub);margin-bottom:2px">Stedi payer ID</div><span class="mono">'+safeText(r.payerStediId||'—')+'</span></div>'
+    +'<div><div style="color:var(--sub);margin-bottom:2px">Primary payer ID</div><span class="mono">'+safeText(r.payerPrimaryId||'—')+'</span></div>'
+    +(r.payerAliases&&r.payerAliases.length?'<div style="grid-column:1/-1"><div style="color:var(--sub);margin-bottom:4px">Aliases</div><div style="font-size:.74rem;color:var(--sub)">'+r.payerAliases.map(safeText).join(', ')+'</div></div>':'')
+    +'</div></div>';
+  const detailsBlock=kv({
+    'Transaction':safeText(r.txn||'—'),
+    'Source':safeText(r.source||'API'),
+    'Enrollment process type':r.processType?safeText(r.processType):'—',
+    'Activation timeframe':r.activationTimeframe?safeText(r.activationTimeframe):'—',
+    'Contact email':r.contactEmail?'<a href="mailto:'+safeText(r.contactEmail)+'">'+safeText(r.contactEmail)+'</a>':'—',
+    'Date of submission':safeText(r.submittedDate||'—'),
+    'Requested effective date':safeText(r.requestedEffectiveDate||'—'),
+    'Aggregation preference':r.aggregationPreference?safeText(r.aggregationPreference.replace(/_/g,' ')):null,
+    'Open task':r.task?'<span class="pill warn">'+safeText(r.task)+'</span>':'<span class="pill ok">None</span>'
+  });
+  const historyBlock=r.history&&r.history.length
+    ?dsec('History',mini(['Status','Date'],r.history.map(h=>{const fmtDate=v=>{try{return new Date(v).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}catch{return String(v||'');}};return[pillFor(h.status||h.state||''),fmtDate(h.timestamp||h.date||h.createdAt||'')];})))
+    :'';
+  const docsBlock=dsec('Documents ('+((r.docs&&r.docs.length)||0)+')',(r.docs&&r.docs.length?r.docs.map(d=>{const dn=typeof d==='object'?(d.fileName||d.documentId||'document'):String(d);const did=typeof d==='object'&&d.documentId?d.documentId:null;return did?'<button class="btn-ghost btn-sm" style="margin:2px" onclick="downloadEnrollmentDoc(\''+did+'\',\''+dn+'\')">'+safeText(dn)+'</button><button class="btn-ghost btn-sm" style="color:var(--bad);padding:2px 5px;margin:2px" onclick="deleteEnrollmentDoc(\''+did+'\',\''+r.id+'\')">&#215;</button>':'<span class="tag">'+safeText(dn)+'</span>';}).join(' '):'<div class="empty-note">No documents attached.</div>')+'<div style="margin-top:10px"><button class="btn-ghost btn-sm" onclick="uploadEnrollmentDoc(\''+r.id+'\')">Upload document</button></div>');
+  const actionsBlock=dsec('Actions','<button class="btn-ghost btn-sm" onclick="updateEnrollmentById(\''+r.id+'\')">Update enrollment</button>'+(r.task?' <button class="btn btn-sm" onclick="completeEnrollmentTask(\''+r.id+'\')">Complete task</button>':'')+'<button class="btn-ghost btn-sm" style="color:var(--bad);margin-left:6px" onclick="deleteEnrollment(\''+r.id+'\')">Delete</button>');
+  return dhead('Enrollment · '+pillFor(r.status),safeText(r.provider||'')+' · '+safeText(r.payer||''))
+    +'<div style="margin-bottom:6px;font-size:.74rem;color:var(--sub)">ID <span class="mono">'+safeText(r.id)+'</span></div>'
+    +'<h4 style="margin:14px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)">Provider</h4>'+providerBlock
+    +'<h4 style="margin:14px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)">Payer</h4>'+payerBlock
+    +'<h4 style="margin:14px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)">Details</h4>'+detailsBlock
+    +historyBlock+docsBlock+actionsBlock;
+ },
  transactions:r=>dhead(r.id,r.type+' · '+r.dir+' · '+r.partner)+kv({'Endpoint':r.endpoint?'<span class="mono">'+r.endpoint+'</span>':'-','Status':pillFor(r.status),'Received / sent':r.date+', '+r.time,'Size':r.bytes,'ISA control #':'<span class="mono">'+r.isa+'</span>','Execution':'<span class="mono">'+r.exec+'</span>','Source claim':r.sourceClaim||'-','Description':r.description||'-'} )+dsec('Saved request/input','<div class="x12">'+safeText(transactionPayload(r,'input'))+'</div>')+dsec('Saved response/output','<div class="x12">'+safeText(transactionPayload(r,'output'))+'</div>')+dsec('Actions','<button class="btn-ghost btn-sm" onclick="downloadTxn(\''+r.id+'\',\'input\')">Download input</button> <button class="btn-ghost btn-sm" onclick="downloadTxn(\''+r.id+'\',\'output\')">Download output</button>'+(r.status!=='Processed'&&r.status!=='Delivered'?' <button class="btn btn-sm" onclick="retryTxn(\''+r.id+'\')">Retry event</button>':''))
 };
 
