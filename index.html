@@ -468,8 +468,8 @@ th.sort:hover{color:var(--text)}
                 oninput="filterStcOptions(this.value)"
                 onfocus="filterStcOptions(this.value)"
                 onblur="setTimeout(()=>{const d=document.getElementById('elig-stc-dd');if(d)d.style.display='none'},150)"
-                value="Health Benefit Plan Coverage (30)">
-              <input type="hidden" id="elig-stc" value="30">
+                value="">
+              <input type="hidden" id="elig-stc" value="">
               <div id="elig-stc-dd" class="payer-typeahead" style="display:none"></div>
             </div>
           </div>
@@ -1880,8 +1880,7 @@ function filterStcOptions(q){
     const name=document.createElement('span');
     name.style.fontSize='.82rem';
     name.textContent=s.name;
-    if(STC_PINNED.has(s.code)){const star=document.createElement('span');star.style.cssText='margin-left:auto;font-size:.65rem;color:var(--lime);flex-shrink:0';star.textContent='default';item.append(code,name,star);}
-    else{item.append(code,name);}
+    item.append(code,name);
     item.addEventListener('mousedown',e=>{e.preventDefault();selectStcOption(s.code,s.name);});
     return item;
   });
