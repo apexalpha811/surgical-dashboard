@@ -720,7 +720,7 @@ function buildEligibilityRequest(body) {
   };
 }
 
-const STEDI_PROXY_ALLOW = ["/change/medicalnetwork/", "/insurance-discovery/", "/coordination-of-benefits", "/claim-attachments/", "/enrollments", "/providers", "/payers", "/eligibility-manager/"];
+const STEDI_PROXY_ALLOW = ["/change/medicalnetwork/", "/insurance-discovery/", "/coordination-of-benefits", "/claim-attachments/", "/enrollments", "/providers", "/payers", "/eligibility-manager/", "/tasks/", "/documents/"];
 
 // Generic authenticated proxy to Stedi (see server.js for rationale). Errors are returned, not thrown.
 async function stediProxy(env, body) {

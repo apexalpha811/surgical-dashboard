@@ -1160,7 +1160,7 @@ const STEDI_PROXY_BASES = {
   enrollments: () => config.stediEnrollmentsBaseUrl,
   payers: () => config.stediPayersBaseUrl
 };
-const STEDI_PROXY_ALLOW = ["/change/medicalnetwork/", "/insurance-discovery/", "/coordination-of-benefits", "/claim-attachments/", "/enrollments", "/providers", "/payers", "/eligibility-manager/"];
+const STEDI_PROXY_ALLOW = ["/change/medicalnetwork/", "/insurance-discovery/", "/coordination-of-benefits", "/claim-attachments/", "/enrollments", "/providers", "/payers", "/eligibility-manager/", "/tasks/", "/documents/"];
 
 // Generic authenticated proxy to Stedi. Forwards a built payload to the real Stedi endpoint
 // with the server-side key. Errors (incl. sandbox "not available in Test Mode") are returned,
