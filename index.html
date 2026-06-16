@@ -462,14 +462,15 @@ th.sort:hover{color:var(--text)}
             </div>
             <div class="field"><label>Rendering NPI</label><input id="elig-npi" value="1841557020"></div>
             <div class="field"><label>Date of service</label><input id="elig-dos" type="date"></div>
-            <div class="field"><label>Service type</label>
-              <select id="elig-stc">
-                <option value="30">Health benefit plan coverage (30)</option>
-                <option value="2">Surgical (2)</option>
-                <option value="47">Hospital (47)</option>
-                <option value="50">Professional physician visit (50)</option>
-                <option value="86">Emergency services (86)</option>
-              </select>
+            <div class="field" style="position:relative;grid-column:1/-1">
+              <label>Service type</label>
+              <input id="elig-stc-q" placeholder="Search by code or name..." autocomplete="off"
+                oninput="filterStcOptions(this.value)"
+                onfocus="filterStcOptions(this.value)"
+                onblur="setTimeout(()=>{const d=document.getElementById('elig-stc-dd');if(d)d.style.display='none'},150)"
+                value="Health Benefit Plan Coverage (30)">
+              <input type="hidden" id="elig-stc" value="30">
+              <div id="elig-stc-dd" class="payer-typeahead" style="display:none"></div>
             </div>
           </div>
           <div id="elig-form-err" style="display:none;background:var(--bad-bg);color:var(--bad);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.78rem;margin-bottom:10px"></div>
@@ -1611,6 +1612,292 @@ function view277(i){const r=statusChecks[i];if(!r||!r.raw277){panel('277 report'
 function run276(i){const r=statusChecks[i];if(!r)return;const artifact=runClaimStatusLifecycle(r);refreshLiveSection('status');openDrawer('status',statusChecks.indexOf(r));artifactPanel('276 status request',artifact);}
 function view271x12(i){const r=eligibility[i];const raw=r&&r.eligibilityArtifact&&r.eligibilityArtifact.output?r.eligibilityArtifact.output:build271X12(r);drawerX12('271 raw X12',raw);}
 function view835(i){const r=eras[i];if(!r)return;const artifact=stediClient.eraReport(r);r.eraArtifact=artifact;r.transactionId=artifact.id;const raw=artifact.output||build835X12(r);drawerX12('835 electronic remittance advice',raw);}
+/* ============ SERVICE TYPE CODES (X12 270/271) ============ */
+const STC_PINNED=new Set(['30','2','47','96','86']);
+const STC_CODES=[
+  {code:'30',name:'Health Benefit Plan Coverage'},
+  {code:'2',name:'Surgical'},
+  {code:'47',name:'Hospital'},
+  {code:'96',name:'Professional (Physician) Visit - Office'},
+  {code:'86',name:'Emergency Services'},
+  {code:'1',name:'Medical Care'},
+  {code:'3',name:'Consultation'},
+  {code:'4',name:'Diagnostic X-Ray'},
+  {code:'5',name:'Diagnostic Lab'},
+  {code:'6',name:'Radiation Therapy'},
+  {code:'7',name:'Anesthesia'},
+  {code:'8',name:'Surgical Assistance'},
+  {code:'9',name:'Other Medical'},
+  {code:'10',name:'Blood Charges'},
+  {code:'11',name:'Used Durable Medical Equipment'},
+  {code:'12',name:'Durable Medical Equipment Purchase'},
+  {code:'13',name:'Ambulatory Service Facility'},
+  {code:'14',name:'Renal Supplies in the Home'},
+  {code:'15',name:'Alternate Method Dialysis'},
+  {code:'16',name:'Chronic Renal Disease (CRD) Equipment'},
+  {code:'17',name:'Pre-Admission Testing'},
+  {code:'18',name:'Durable Medical Equipment Rental'},
+  {code:'19',name:'Pneumonia Vaccine'},
+  {code:'20',name:'Second Surgical Opinion'},
+  {code:'21',name:'Third Surgical Opinion'},
+  {code:'22',name:'Social Work'},
+  {code:'23',name:'Diagnostic Dental'},
+  {code:'24',name:'Periodontics'},
+  {code:'25',name:'Restorative'},
+  {code:'26',name:'Endodontics'},
+  {code:'27',name:'Maxillofacial Prosthetics'},
+  {code:'28',name:'Adjunctive Dental Services'},
+  {code:'32',name:'Plan Waiting Period'},
+  {code:'33',name:'Chiropractic'},
+  {code:'34',name:'Chiropractic Office Visits'},
+  {code:'35',name:'Dental Care'},
+  {code:'36',name:'Dental Crowns'},
+  {code:'37',name:'Dental Accident'},
+  {code:'38',name:'Orthodontia'},
+  {code:'39',name:'Prosthodontics'},
+  {code:'40',name:'Oral Surgery'},
+  {code:'41',name:'Routine (Preventive) Dental'},
+  {code:'42',name:'Home Health Care'},
+  {code:'43',name:'Home Health Prescriptions'},
+  {code:'44',name:'Home Health Visits'},
+  {code:'45',name:'Hospice'},
+  {code:'46',name:'Respite Care'},
+  {code:'48',name:'Hospital - Inpatient'},
+  {code:'49',name:'Hospital - Room and Board'},
+  {code:'50',name:'Hospital - Outpatient'},
+  {code:'51',name:'Hospital - Emergency Accident'},
+  {code:'52',name:'Hospital - Emergency Medical'},
+  {code:'53',name:'Hospital - Ambulatory Surgical'},
+  {code:'54',name:'Long Term Care'},
+  {code:'55',name:'Major Medical'},
+  {code:'56',name:'Medically Related Transportation'},
+  {code:'57',name:'Air Transportation'},
+  {code:'58',name:'Cabulance'},
+  {code:'59',name:'Licensed Ambulance'},
+  {code:'60',name:'General Benefits'},
+  {code:'61',name:'In-Vitro Fertilization'},
+  {code:'62',name:'MRI/CAT Scan'},
+  {code:'63',name:'Donor Procedures'},
+  {code:'64',name:'Acupuncture'},
+  {code:'65',name:'Newborn Care'},
+  {code:'66',name:'Pathology'},
+  {code:'67',name:'Smoking Cessation'},
+  {code:'68',name:'Well Baby Care'},
+  {code:'69',name:'Maternity'},
+  {code:'70',name:'Transplants'},
+  {code:'71',name:'Audiology Exam'},
+  {code:'72',name:'Inhalation Therapy'},
+  {code:'73',name:'Diagnostic Medical'},
+  {code:'74',name:'Private Duty Nursing'},
+  {code:'75',name:'Prosthetic Device'},
+  {code:'76',name:'Dialysis'},
+  {code:'77',name:'Otological Exam'},
+  {code:'78',name:'Chemotherapy'},
+  {code:'79',name:'Allergy Testing'},
+  {code:'80',name:'Immunizations'},
+  {code:'81',name:'Routine Physical'},
+  {code:'82',name:'Family Planning'},
+  {code:'83',name:'Infertility'},
+  {code:'84',name:'Abortion'},
+  {code:'85',name:'AIDS'},
+  {code:'87',name:'Cancer'},
+  {code:'88',name:'Pharmacy'},
+  {code:'89',name:'Free Standing Prescription Drug'},
+  {code:'90',name:'Mail Order Prescription Drug'},
+  {code:'91',name:'Brand Name Prescription Drug'},
+  {code:'92',name:'Generic Prescription Drug'},
+  {code:'93',name:'Podiatry'},
+  {code:'94',name:'Podiatry - Office Visits'},
+  {code:'95',name:'Podiatry - Nursing Home Visits'},
+  {code:'97',name:'Professional (Physician) Visit - Inpatient'},
+  {code:'98',name:'Professional (Physician) Visit - Outpatient'},
+  {code:'99',name:'Professional (Physician) Visit - Nursing Home'},
+  {code:'A0',name:'Professional (Physician) Visit - Skilled Nursing Facility'},
+  {code:'A1',name:'Professional (Physician) Visit - Assisted Living Facility'},
+  {code:'A2',name:'Professional (Physician) Visit - Psychiatric Facility'},
+  {code:'A3',name:'Professional (Physician) Visit - Psychiatric Inpatient'},
+  {code:'A4',name:'Psychiatric'},
+  {code:'A5',name:'Psychiatric - Room and Board'},
+  {code:'A6',name:'Psychotherapy'},
+  {code:'A7',name:'Psychiatric - Outpatient'},
+  {code:'A8',name:'Psychiatric Testing'},
+  {code:'A9',name:'Rehabilitation'},
+  {code:'AA',name:'Rehabilitation - Room and Board'},
+  {code:'AB',name:'Rehabilitation - Outpatient'},
+  {code:'AC',name:'Rehabilitation - Partial Hospitalization'},
+  {code:'AD',name:'Occupational Therapy'},
+  {code:'AE',name:'Physical Therapy'},
+  {code:'AF',name:'Speech Therapy'},
+  {code:'AG',name:'Skilled Nursing Care'},
+  {code:'AH',name:'Skilled Nursing Care - Room and Board'},
+  {code:'AI',name:'Substance Abuse'},
+  {code:'AJ',name:'Substance Abuse - Room and Board'},
+  {code:'AK',name:'Substance Abuse - Outpatient Services'},
+  {code:'AL',name:'Vision (Optometry)'},
+  {code:'AM',name:'Frames'},
+  {code:'AN',name:'Routine Exam'},
+  {code:'AO',name:'Lenses'},
+  {code:'AP',name:'Nonmedically Necessary Physical'},
+  {code:'AQ',name:'Experimental Drug Therapy'},
+  {code:'AR',name:'Basic Restorative (Dental)'},
+  {code:'AS',name:'Orthodontics'},
+  {code:'AT',name:'Maintenance'},
+  {code:'AU',name:'Anesthesia'},
+  {code:'AV',name:'No Fault Insurance - Including Auto Accident'},
+  {code:'AW',name:"Workers' Compensation"},
+  {code:'AX',name:'Clinic - Hospital Based or Independent Renal Dialysis Center'},
+  {code:'AY',name:'Special Facility or Medical Services Reported Separately'},
+  {code:'AZ',name:'Psychiatric - Inpatient'},
+  {code:'BB',name:'Partial Hospitalization - Psychiatric'},
+  {code:'BD',name:'ABA Therapy'},
+  {code:'BH',name:'Behavioral Health Care'},
+  {code:'BI',name:'Newborn Care - Inpatient'},
+  {code:'BL',name:'Biological'},
+  {code:'BN',name:'Residential Psychiatric Treatment'},
+  {code:'BT',name:'Doula - Antepartum'},
+  {code:'BU',name:'Doula - Labor and Delivery'},
+  {code:'BV',name:'Doula - Postpartum'},
+  {code:'BW',name:'Orthopedic'},
+  {code:'BX',name:'Cardiac Rehabilitation'},
+  {code:'BY',name:'Physician Visit - Office - Sick'},
+  {code:'BZ',name:'Medical Nutrition Therapy'},
+  {code:'CB',name:'Cognitive Therapy'},
+  {code:'CC',name:'Massage Therapy'},
+  {code:'CD',name:'Pulmonary Rehabilitation'},
+  {code:'CE',name:'Renal Patient Education'},
+  {code:'CF',name:'Transplant Related Expenses'},
+  {code:'CG',name:'Optical Vision'},
+  {code:'CH',name:'Contact Lenses'},
+  {code:'CI',name:'Medicare Risk'},
+  {code:'CK',name:'Immunosuppressives'},
+  {code:'CL',name:'Screen X-Ray'},
+  {code:'CN',name:'Colonoscopy'},
+  {code:'CO',name:'Cataract Lens'},
+  {code:'CR',name:'Cardiac Rehabilitation'},
+  {code:'CS',name:'Preventive Services'},
+  {code:'CT',name:'Emergency Room'},
+  {code:'CU',name:'Urgent Care'},
+  {code:'CV',name:'Cardiovascular Therapy'},
+  {code:'CW',name:'Mammography'},
+  {code:'CX',name:'Diabetes'},
+  {code:'CY',name:'Emergency Medical Transportation'},
+  {code:'DB',name:'Diabetic Supplies'},
+  {code:'DC',name:'Diabetic Education'},
+  {code:'DD',name:'Preventive Dental'},
+  {code:'DG',name:'Dermatology'},
+  {code:'DM',name:'Durable Medical Equipment'},
+  {code:'DT',name:'Dietician Services'},
+  {code:'DW',name:'Home Infusion'},
+  {code:'E3',name:'Dental - Accident Only'},
+  {code:'EA',name:'Medical Equipment and Supply'},
+  {code:'EB',name:'Medical Equipment Rental'},
+  {code:'ED',name:'MRI Scan'},
+  {code:'EF',name:'Elective Surgery'},
+  {code:'EG',name:'Elective C-Section Surgery'},
+  {code:'EH',name:'Obesity Surgery'},
+  {code:'EI',name:'Assisted Reproduction'},
+  {code:'EJ',name:'Voluntary Abortion'},
+  {code:'EK',name:'Non-Elective C-Section Surgery'},
+  {code:'EL',name:'Therapeutic Abortion'},
+  {code:'EM',name:'Maternity - Delivery'},
+  {code:'FP',name:'Family Planning'},
+  {code:'GF',name:'General Fees Only'},
+  {code:'GN',name:'Gender Non-Conforming Treatment'},
+  {code:'GY',name:'Gynecological'},
+  {code:'GZ',name:'Infertility'},
+  {code:'HD',name:'Hearing Aids'},
+  {code:'HH',name:'Home Health Care'},
+  {code:'HT',name:'Hormone Therapy'},
+  {code:'IC',name:'Immunizations/Vaccinations'},
+  {code:'IN',name:'Infusion Therapy'},
+  {code:'LC',name:'Long Term Care'},
+  {code:'LD',name:'Long Term Care Hospital'},
+  {code:'LE',name:'Long Term Psychiatric'},
+  {code:'LI',name:'Lithotripsy'},
+  {code:'LR',name:'Licensed Practical Nurse'},
+  {code:'MA',name:'Medical Aid'},
+  {code:'MC',name:'Medical Care - Preventive'},
+  {code:'MH',name:'Mental Health'},
+  {code:'MP',name:'Medical Pharmacy'},
+  {code:'NC',name:'Neonatal Care'},
+  {code:'OB',name:'Orthotics and Prosthetics'},
+  {code:'OC',name:'Outpatient Consultation'},
+  {code:'OH',name:'Oral Health'},
+  {code:'ON',name:'Chemotherapy'},
+  {code:'OP',name:'Outpatient Hospital - Psychiatric'},
+  {code:'OS',name:'Other Surgery'},
+  {code:'OT',name:'Occupational Therapy'},
+  {code:'OV',name:'Office Visits'},
+  {code:'PE',name:'Pediatric'},
+  {code:'PH',name:'Pharmacy'},
+  {code:'PM',name:'Psychiatric - Mental or Nervous Health'},
+  {code:'PN',name:'Professional Service'},
+  {code:'PO',name:'Podiatric'},
+  {code:'PR',name:'Preventive Care'},
+  {code:'PS',name:'Psychiatric Outpatient'},
+  {code:'PT',name:'Physical Therapy'},
+  {code:'RB',name:'Rehabilitation - Day Care (Psychiatric)'},
+  {code:'RC',name:'Renal Care'},
+  {code:'RD',name:'Renal Dialysis'},
+  {code:'RE',name:'Rehabilitation'},
+  {code:'RH',name:'Rehabilitation - Psychiatric'},
+  {code:'RI',name:'Renal Dialysis - Home'},
+  {code:'SA',name:'Substance Abuse'},
+  {code:'SB',name:'Substance Abuse - Residential Treatment'},
+  {code:'SC',name:'Skilled Nursing Care'},
+  {code:'SD',name:'Speech Therapy'},
+  {code:'SF',name:'Skilled Nursing Facility (Inpatient)'},
+  {code:'SG',name:'Short Term Hospital'},
+  {code:'SH',name:'Short Term Care'},
+  {code:'SK',name:'Skilled Nursing'},
+  {code:'TB',name:'Tuberculosis'},
+  {code:'TC',name:'Transitional Care'},
+  {code:'TD',name:'Transplant Donor'},
+  {code:'TN',name:'Technical Component'},
+  {code:'UC',name:'Urgent Care'},
+  {code:'UD',name:'Urological'},
+  {code:'VA',name:'Vision Ancillary'},
+  {code:'VL',name:'Vision - Lens'},
+  {code:'WO',name:'Well-Baby Care'},
+  {code:'ZZ',name:'Mutually Defined'},
+];
+function filterStcOptions(q){
+  const dd=document.getElementById('elig-stc-dd');if(!dd)return;
+  const term=(q||'').trim().toLowerCase();
+  const pinned=STC_CODES.filter(s=>STC_PINNED.has(s.code));
+  const rest=STC_CODES.filter(s=>!STC_PINNED.has(s.code));
+  let matches;
+  if(!term){matches=[...pinned,...rest];}
+  else{matches=STC_CODES.filter(s=>s.code.toLowerCase().startsWith(term)||s.name.toLowerCase().includes(term));}
+  const items=matches.slice(0,60).map(s=>{
+    const item=document.createElement('div');
+    item.className='payer-result';
+    item.style.cssText='padding:7px 12px;cursor:pointer;display:flex;gap:10px;align-items:center';
+    const code=document.createElement('span');
+    code.className='mono';
+    code.style.cssText='font-size:.7rem;color:var(--sub);min-width:26px;flex-shrink:0';
+    code.textContent=s.code;
+    const name=document.createElement('span');
+    name.style.fontSize='.82rem';
+    name.textContent=s.name;
+    if(STC_PINNED.has(s.code)){const star=document.createElement('span');star.style.cssText='margin-left:auto;font-size:.65rem;color:var(--lime);flex-shrink:0';star.textContent='default';item.append(code,name,star);}
+    else{item.append(code,name);}
+    item.addEventListener('mousedown',e=>{e.preventDefault();selectStcOption(s.code,s.name);});
+    return item;
+  });
+  if(items.length){dd.replaceChildren(...items);}
+  else{const empty=document.createElement('div');empty.style.cssText='padding:10px 12px;color:var(--sub);font-size:.8rem';empty.textContent='No matching service type';dd.replaceChildren(empty);}
+  dd.style.display='block';
+}
+function selectStcOption(code,name){
+  const q=document.getElementById('elig-stc-q');
+  const hidden=document.getElementById('elig-stc');
+  const dd=document.getElementById('elig-stc-dd');
+  if(q)q.value=name+' ('+code+')';
+  if(hidden)hidden.value=code;
+  if(dd)dd.style.display='none';
+}
+
 /* ============ ELIGIBILITY SECTION FUNCTIONS ============ */
 function switchEligTab(e,name){
   const bar=e.target.closest('.elig-tab-bar');
