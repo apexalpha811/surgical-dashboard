@@ -1777,7 +1777,7 @@ async function recheckEligibility(idx){
     openDrawer('eligibility',idx);toast('Re-check: '+nr.status);
   }catch(e){if(loadEl)loadEl.textContent='Re-check failed: '+e.message;}
 }
-let _batchRequests=[],_currentBatchId=null;
+let _batchRequests=[],_currentBatchId=localStorage.getItem('ccs-batch-id')||null;
 function parseBatchCsv(csv){
   const lines=csv.trim().split('\n').map(l=>l.trim()).filter(Boolean);
   const h=lines[0].split(',').map(s=>s.trim().toLowerCase());
@@ -1820,28 +1820,57 @@ async function submitBatch(){
     const resp=await fetch('/api/eligibility/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({patients:_batchRequests})});
     const d=await resp.json();
     if(!resp.ok){toast('Batch failed: '+(d.error||resp.status));if(submitBtn)submitBtn.disabled=false;return;}
-    _currentBatchId=(d.response&&d.response.batchId)||null;
+    _currentBatchId=(d.response&&d.response.batchId)||('batch_'+Date.now());
+    localStorage.setItem('ccs-batch-id',_currentBatchId);
+    const now=new Date().toISOString();
+    _batchRequests.forEach(p=>{
+      const rec={patientFirstName:p.firstName,patientLastName:p.lastName,patientDob:p.dob||null,
+        payerId:p.payerId,payerName:p.payerName||p.payerId||'',member:p.memberId,
+        dos:p.dos||null,npi:p.npi||'',posCode:p.posCode||'',stc:p.stc||'',
+        status:'Batch submitted',checkedAt:now,batchId:_currentBatchId};
+      eligibility.unshift(rec);
+      persistDashboardRecord('eligibility',rec,'created');
+    });
+    T.eligibility.data=eligibility;updateEligKpis();filterEligibility(_eligFilter);
     document.getElementById('elig-batch-input-area').style.display='none';
     document.getElementById('elig-batch-status-area').style.display='block';
     const sumEl=document.getElementById('elig-batch-summary');
     if(sumEl){
       const p=document.createElement('div');p.style.cssText='background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.76rem';
-      const h=document.createElement('div');h.style.fontWeight='600';h.textContent='Batch submitted: '+(_currentBatchId||'pending ID');
-      const s=document.createElement('div');s.style.color='var(--sub)';s.textContent=_batchRequests.length+' patients · Click "Check status" to see results';
+      const h=document.createElement('div');h.style.fontWeight='600';h.textContent='Batch submitted: '+_currentBatchId;
+      const s=document.createElement('div');s.style.color='var(--sub)';s.textContent=_batchRequests.length+' patients saved to results table · Click "Check status" to update outcomes';
       p.append(h,s);sumEl.replaceChildren(p);
     }
     toast('Batch submitted: '+_batchRequests.length+' patients');
   }catch(e){toast('Batch error: '+e.message);if(submitBtn)submitBtn.disabled=false;}
 }
 async function checkBatchStatus(){
+  if(!_currentBatchId)_currentBatchId=localStorage.getItem('ccs-batch-id')||null;
   if(!_currentBatchId){toast('No batch ID. Submit a batch first.');return;}
   try{
     const resp=await fetch('/api/eligibility/batches/'+encodeURIComponent(_currentBatchId));
     const d=await resp.json();const r=d.response||{};
+    const results=r.results||r.checks||r.eligibilityChecks||[];
+    if(results.length){
+      results.forEach(res=>{
+        const rawStatus=res.status||res.coverageStatus||'';
+        const status=rawStatus.toLowerCase()==='active'?'Active':rawStatus.toLowerCase()==='inactive'?'Inactive':rawStatus||'Unknown';
+        const memberId=res.memberId||res.member||(res.subscriber&&res.subscriber.memberId)||'';
+        const idx=eligibility.findIndex(e=>e.batchId===_currentBatchId&&e.member===memberId);
+        if(idx>=0){
+          eligibility[idx].status=status;
+          eligibility[idx].planName=res.planName||res.plan||eligibility[idx].planName||'';
+          eligibility[idx].copayInNet=res.copay!=null?res.copay:eligibility[idx].copayInNet;
+          eligibility[idx].authRequired=res.authRequired||eligibility[idx].authRequired;
+          persistDashboardRecord('eligibility',eligibility[idx],'updated');
+        }
+      });
+      T.eligibility.data=eligibility;updateEligKpis();filterEligibility(_eligFilter);
+    }
     const sumEl=document.getElementById('elig-batch-summary');
     if(sumEl){
       const p=document.createElement('div');p.style.cssText='background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.76rem';
-      const h=document.createElement('div');h.style.fontWeight='600';h.textContent='Batch '+(_currentBatchId||'')+' · '+((r.status||d.status)||'checking...');
+      const h=document.createElement('div');h.style.fontWeight='600';h.textContent='Batch '+_currentBatchId+' · '+((r.status||d.status)||'checking...');
       const s=document.createElement('div');s.style.color='var(--sub)';s.textContent=(r.completeCount||0)+' complete · '+(r.activeCount||0)+' active · '+(r.inactiveCount||0)+' inactive · '+(r.errorCount||0)+' errors';
       p.append(h,s);sumEl.replaceChildren(p);
     }
@@ -1849,6 +1878,7 @@ async function checkBatchStatus(){
   }catch(e){toast('Status check failed: '+e.message);}
 }
 function resetBatchPanel(){
+  localStorage.removeItem('ccs-batch-id');
   document.getElementById('elig-batch-status-area').style.display='none';
   document.getElementById('elig-batch-input-area').style.display='block';
   const ta=document.getElementById('elig-batch-csv');if(ta)ta.value='';
