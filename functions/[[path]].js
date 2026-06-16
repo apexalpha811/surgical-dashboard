@@ -726,7 +726,7 @@ function dashboardSectionForStoredTarget(target) {
   if (value === "appealsFromEra") return "appeals";
   if (value === "claimAttachment275") return "attachments";
   if (value === "providerEnrollment") return "providers";
-  if (["claims", "eligibility", "providers", "payers", "enrollments", "attachments", "appeals", "cob"].includes(value)) return value;
+  if (["claims", "eligibility", "providers", "payers", "enrollments", "attachments", "appeals", "cob", "transactions"].includes(value)) return value;
   return "";
 }
 
@@ -740,6 +740,7 @@ function storedDashboardRecordKey(target, record) {
   if (target === "attachments") return String(record.ctrl || [record.claim, record.doc, record.payer].filter(Boolean).join("|"));
   if (target === "appeals") return String(record.id || record.claimNumber || [record.patientName, record.payer].filter(Boolean).join("|"));
   if (target === "cob") return String([record.patient, record.primary, record.secondary].filter(Boolean).join("|"));
+  if (target === "transactions") return String(record.exec || record.id || "");
   return "";
 }
 

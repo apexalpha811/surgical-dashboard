@@ -307,6 +307,7 @@ function storedDashboardRecordKey(target, record) {
   if (target === "attachments") return String(record.ctrl || [record.claim, record.doc, record.payer].filter(Boolean).join("|"));
   if (target === "appeals") return String(record.id || record.claimNumber || [record.patientName, record.payer].filter(Boolean).join("|"));
   if (target === "cob") return String([record.patient, record.primary, record.secondary].filter(Boolean).join("|"));
+  if (target === "transactions") return String(record.exec || record.id || "");
   return "";
 }
 
