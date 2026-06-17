@@ -618,6 +618,11 @@ th.sort:hover{color:var(--text)}
     <div class="card">
       <h3>Remittance inbox</h3>
       <div class="sub" id="sub-era">Click any row for claim payments and CAS adjustment detail</div>
+      <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="eraImportId" placeholder="Paste Stedi transaction ID from portal URL…" style="flex:1;min-width:260px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;background:var(--card);color:var(--text)">
+        <button class="btn-ghost btn-sm" onclick="importEraById()">Import ERA</button>
+        <button class="btn-ghost btn-sm" onclick="loadErasFromStedi()">Refresh from Stedi</button>
+      </div>
       <div class="tbl-wrap"><table>
         <thead><tr><th>Check / EFT</th><th>Payer</th><th>Claims</th><th>Billed</th><th>Paid</th><th>Patient resp.</th><th>Status</th></tr></thead>
         <tbody id="tb-era"></tbody>
@@ -1283,10 +1288,41 @@ async function loadErasFromStedi(){
     eras.length=0;mapped.forEach(rec=>eras.push(rec));
     T.era.data=eras;refreshLiveSection('era');updateEraKpis();
     if(sub)sub.textContent=eras.length+' ERA'+(eras.length!==1?'s':'')+' · synced from Stedi';
-    if(!mapped.length&&sub)sub.textContent='No 835 ERA transactions found in Stedi.';
+    if(!mapped.length&&sub)sub.textContent='No 835 ERAs found via listing — paste a transaction ID above to import one directly.';
   }catch(e){
-    if(sub)sub.textContent='Could not reach Stedi — showing local data.';
+    if(sub)sub.textContent='Auto-list unavailable · paste a Stedi transaction ID above to import an ERA directly.';
     console.warn('loadErasFromStedi:',e);
+  }
+}
+async function importEraById(){
+  const inp=document.getElementById('eraImportId');
+  const raw=(inp?inp.value:'').trim();
+  // Accept full portal URL or bare transaction ID
+  const tid=raw.match(/transactions\/([a-f0-9\-]{30,})/i)?.[1]||raw;
+  if(!tid){toast('Paste a Stedi transaction ID or portal URL first.');return;}
+  const sub=document.getElementById('sub-era');
+  if(sub)sub.textContent='Fetching ERA '+tid+'…';
+  try{
+    const dr=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({base:'healthcare',path:'/change/medicalnetwork/reports/v2/'+encodeURIComponent(tid)+'/835',method:'GET',payload:null})});
+    const dd=await dr.json();
+    if(!dd||dd.mode!=='live'||!dd.ok){
+      const msg=dd&&dd.response&&(dd.response.message||dd.response.error)||'Check the transaction ID and try again.';
+      if(sub)sub.textContent='Import failed: '+msg;
+      toast('ERA import failed — '+msg);return;
+    }
+    const rec=eraFromStediResponse(Object.assign({transactionId:tid},dd.response));
+    const existing=eras.findIndex(e=>e.transactionId===tid||e.id===tid);
+    if(existing>=0)eras[existing]=rec;else eras.unshift(rec);
+    T.era.data=eras;refreshLiveSection('era');updateEraKpis();
+    persistDashboardRecord('era',rec,'imported');
+    if(inp)inp.value='';
+    if(sub)sub.textContent=eras.length+' ERA'+(eras.length!==1?'s':'')+' · last imported from Stedi';
+    toast('ERA imported: '+rec.payer+' · '+rec.date);
+    focusRecord('era',eras.indexOf(rec));
+  }catch(e){
+    if(sub)sub.textContent='Import error — see console.';
+    console.warn('importEraById:',e);
   }
 }
 async function seedPayersFromEnrollments(){
