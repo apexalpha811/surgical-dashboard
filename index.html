@@ -217,6 +217,20 @@ tr.row-click:hover td{background:var(--card2)}
 .loc-meta{font-size:.74rem;color:var(--sub);line-height:1.6}
 .menu-btn{display:none}
 
+/* ---------- ERA workspace ---------- */
+.era-enroll-banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--lime-soft);border:1px solid rgba(182,200,0,.35);border-radius:var(--radius);padding:10px 16px;margin-bottom:16px;font-size:.76rem;font-weight:600}
+.era-enroll-banner .warn-badge{background:var(--warn-bg);color:var(--warn);border-radius:999px;padding:2px 8px;font-size:.66rem;font-weight:700;margin-left:4px}
+.era-filter-bar{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.era-filter-bar input[type="date"],.era-filter-bar input[type="text"],.era-filter-bar input:not([type]),.era-filter-bar select{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-family:inherit;font-size:.76rem;min-width:0}
+.era-filter-bar select{appearance:none;-webkit-appearance:none;padding-right:24px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.era-filter-sep{width:1px;height:22px;background:var(--border);flex-shrink:0;margin:0 2px}
+.recon-card{margin-top:16px}
+.era-tab-bar{display:flex;gap:4px;border-bottom:1px solid var(--border);margin:10px 0 0;padding-bottom:0}
+.era-tab{background:none;border:none;border-bottom:2px solid transparent;padding:8px 14px;font-family:inherit;font-size:.74rem;font-weight:600;color:var(--sub);cursor:pointer;margin-bottom:-1px}
+.era-tab.active{color:var(--text);border-bottom-color:var(--lime)}
+.era-tab-pane{display:none;padding-top:12px}
+.era-tab-pane.active{display:block}
+
 /* ---------- Appeals ---------- */
 .btn-ai{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:999px;border:none;background:#7C3AED;color:#fff;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer}
 .btn-ai:hover{background:#6D28D9}
@@ -603,31 +617,85 @@ th.sort:hover{color:var(--text)}
     </div>
   </section>
 
-  <!-- ========== ERA / REMITTANCES ========== -->
+  <!-- ========== ERA / 835 CLAIMS WORKSPACE ========== -->
   <section class="section" id="sec-era">
     <div class="chip-row">
       <span class="endpoint"><b>GET</b> /change/medicalnetwork/reports/v2/{transactionId}/835</span>
       <span class="endpoint"><b>GET</b> /electronic-remittance-advice/{transactionId}/pdf</span>
+      <span class="endpoint"><b>GET</b> /transactions/{transactionId}/input</span>
+      <span class="endpoint"><b>GET</b> /transactions/{transactionId}/output</span>
+      <span class="endpoint"><b>GET</b> /change/medicalnetwork/reports/v2/{transactionId}/277</span>
     </div>
+
+    <!-- Enrollment banner -->
+    <div id="era-enroll-banner" class="era-enroll-banner" style="display:none"></div>
+
+    <!-- 5 KPI cards -->
     <div class="grid kpis">
       <div class="card kpi"><div class="lbl">ERAs received</div><div class="val" id="kpiEraN">…</div><div class="delta">835 transactions</div></div>
-      <div class="card kpi"><div class="lbl">Posted</div><div class="val" id="kpiEraPosted">…</div><div class="delta up" id="kpiEraPostedN"></div></div>
-      <div class="card kpi"><div class="lbl">Unposted</div><div class="val" id="kpiEraUnposted">…</div><div class="delta down" id="kpiEraUnpostedN"></div></div>
-      <div class="card kpi"><div class="lbl">Adjustments</div><div class="val" id="kpiEraAdj">…</div><div class="delta">CO + PR</div></div>
+      <div class="card kpi"><div class="lbl">Posted</div><div class="val" id="kpiEraPostedN2">0</div><div class="delta up" id="kpiEraPostedLbl"></div></div>
+      <div class="card kpi"><div class="lbl">Unposted</div><div class="val" id="kpiEraUnpostedN2">0</div><div class="delta down" id="kpiEraUnpostedLbl"></div></div>
+      <div class="card kpi"><div class="lbl">Total paid</div><div class="val" id="kpiEraTotalPaid">…</div><div class="delta">claim payments</div></div>
+      <div class="card kpi"><div class="lbl">Exceptions</div><div class="val" id="kpiEraExcept">0</div><div class="delta" id="kpiEraExceptLbl" style="color:var(--bad)">duplicates / flags</div></div>
     </div>
+
+    <!-- Sticky filter bar -->
+    <div class="era-filter-bar" id="era-filter-bar">
+      <input type="date" id="eraFilterDateFrom" onchange="applyEraFilters()" title="Payment date from">
+      <span style="color:var(--sub);font-size:.76rem;flex-shrink:0">to</span>
+      <input type="date" id="eraFilterDateTo" onchange="applyEraFilters()" title="Payment date to">
+      <div class="era-filter-sep"></div>
+      <select id="eraFilterStatus" onchange="applyEraFilters()" style="min-width:130px">
+        <option value="All">All statuses</option>
+        <option value="Posted">Posted</option>
+        <option value="Unposted">Unposted</option>
+        <option value="Exception">Exception</option>
+      </select>
+      <select id="eraFilterMethod" onchange="applyEraFilters()" style="min-width:110px">
+        <option value="All">All methods</option>
+        <option value="EFT">EFT / ACH</option>
+        <option value="CHK">Check</option>
+      </select>
+      <input id="eraFilterSearch" type="text" placeholder="PCN, trace no., patient…" oninput="applyEraFilters()" style="flex:1;min-width:160px">
+      <button class="btn-ghost btn-sm" onclick="clearEraFilters()">Clear</button>
+      <div class="era-filter-sep"></div>
+      <input id="eraImportId" type="text" placeholder="Stedi transaction ID or URL…" style="flex:1;min-width:190px">
+      <button class="btn-ghost btn-sm" onclick="importEraById()">Import ERA</button>
+      <button class="btn-ghost btn-sm" onclick="loadErasFromStedi()">Refresh</button>
+    </div>
+
+    <!-- Main 835 claim-level table -->
     <div class="card">
-      <h3>Remittance inbox</h3>
-      <div class="sub" id="sub-era">Click any row for claim payments and CAS adjustment detail</div>
-      <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input id="eraImportId" placeholder="Paste Stedi transaction ID from portal URL…" style="flex:1;min-width:260px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;background:var(--card);color:var(--text)">
-        <button class="btn-ghost btn-sm" onclick="importEraById()">Import ERA</button>
-        <button class="btn-ghost btn-sm" onclick="loadErasFromStedi()">Refresh from Stedi</button>
-      </div>
+      <h3>835 ERA Claims</h3>
+      <div class="sub" id="sub-era">One row per claim within each ERA — click for CAS adjustments and line-level detail</div>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>Check / EFT</th><th>Payer</th><th>Claims</th><th>Billed</th><th>Paid</th><th>Patient resp.</th><th>Status</th></tr></thead>
+        <thead><tr>
+          <th>PCN / Claim ID</th><th>Patient</th><th>Payer</th><th>Trace No.</th>
+          <th>Pay Date</th><th>Method</th><th class="money">Billed</th>
+          <th class="money">Paid</th><th class="money">Pt. Resp.</th>
+          <th class="money">Adj. (CAS)</th><th>CARC</th><th>Posting</th><th>ERA PDF</th>
+        </tr></thead>
         <tbody id="tb-era"></tbody>
       </table></div>
       <div class="pager" id="pgr-era"></div>
+      <div id="era-empty" class="empty-note" style="display:none">No ERAs received yet. ERAs appear here once a payer transmits an 835 for an accepted claim.</div>
+    </div>
+
+    <!-- Reconciliation queue -->
+    <div class="card recon-card">
+      <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="toggleReconQueue()">
+        <h3 style="margin:0;flex:1">Reconciliation Queue</h3>
+        <span id="recon-count" class="pill warn" style="display:none">0</span>
+        <span id="recon-chevron" style="color:var(--sub);font-size:.82rem;flex-shrink:0">&#9660;</span>
+      </div>
+      <div id="recon-body" style="margin-top:14px">
+        <div class="sub" style="margin-bottom:10px">Accepted claims with no matching 835 ERA yet</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Claim ID</th><th>Patient</th><th>Payer</th><th>DOS</th><th class="money">Billed</th><th>Days Since Accept.</th><th>Status</th></tr></thead>
+          <tbody id="tb-recon"></tbody>
+        </table></div>
+        <div id="recon-empty" class="empty-note">All accepted claims have a matching ERA.</div>
+      </div>
     </div>
   </section>
 
@@ -1071,6 +1139,9 @@ const discovery=[];
 const claims=[];
 const statusChecks=[];
 const eras=[];
+const eraClaims=[];  // flattened claim-level rows from 835 JSON
+let eraFilteredClaims=[];
+const eraFilters={dateFrom:'',dateTo:'',status:'All',method:'All',search:''};
 const attachments=[];
 const cob=[];
 const payerDir=[];
@@ -1085,7 +1156,7 @@ const T={
  discovery:{data:discovery,row:r=>'<td class="mono">'+r.id+'</td><td>'+r.patient+'</td><td>'+pillFor(r.status)+'</td><td>'+(r.status!=='Complete'?'-':r.found?'Yes':'No coverage located')+'</td><td>'+(r.payer||'-')+'</td>'},
  claims:{data:claims,row:r=>'<td class="mono">'+r.id+'</td><td>'+r.patient+'</td><td>'+r.type+'</td><td>'+r.provider+'</td><td>'+r.loc+'</td><td>'+r.payer+'</td><td class="money">'+usd(r.billed)+'</td><td>'+pillFor(r.status)+'</td>'},
  status:{data:statusChecks,row:r=>'<td class="mono">'+r.claim+'</td><td>'+r.payer+'</td><td>'+r.cat+': '+r.catDesc.split(':')[0]+'</td><td>'+(r.cat==='F1'?pillFor('Paid')+' '+(r.amt||''):r.cat==='F2'?pillFor('Denied'):pillFor('In review'))+'</td><td>'+r.checked+'</td>'},
- era:{data:eras,row:r=>'<td class="mono">'+r.id+'</td><td>'+r.payer+'</td><td>'+r.n+'</td><td class="money">'+usd(r.billed)+'</td><td class="money">'+usd(r.paid)+'</td><td class="money">'+usd(r.pr)+'</td><td>'+pillFor(r.status)+'</td>'},
+ era:{data:eraClaims,row:r=>{const stCls=r.status==='Posted'?'ok':r.status==='Exception'?'bad':'warn';const stLbl=r.status==='New'?'Unposted':r.status;const carc=r.carcs?'<span class="tag mono" style="font-size:.6rem;padding:2px 7px">'+safeText(r.carcs.slice(0,24)+(r.carcs.length>24?'…':''))+'</span>':'—';const pdfBtn=r.transactionId?'<button class="btn-ghost btn-sm" style="padding:3px 8px;font-size:.62rem" onclick="event.stopPropagation();openEraPdf(\''+safeText(r.transactionId)+'\')">PDF</button>':'—';return'<td class="mono" style="font-size:.7rem">'+safeText(r.pcn||'—')+'</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+safeText(r.patient||'—')+'</td><td style="font-size:.76rem">'+safeText(r.payer||'—')+'</td><td class="mono" style="font-size:.7rem">'+safeText(r.traceNo||'—')+'</td><td style="font-size:.76rem;white-space:nowrap">'+safeText(r.payDate||'—')+'</td><td style="font-size:.74rem">'+safeText(r.method||'—')+'</td><td class="money">'+usd(r.billed)+'</td><td class="money" style="color:var(--ok)">'+usd(r.paid)+'</td><td class="money">'+usd(r.pr)+'</td><td class="money" style="color:var(--esc)">'+usd(r.adj)+'</td><td>'+carc+'</td><td><span class="pill '+stCls+'">'+stLbl+'</span></td><td>'+pdfBtn+'</td>';}},
  attachments:{data:attachments,row:r=>'<td class="mono">'+r.claim+'</td><td>'+r.payer+'</td><td>'+r.req+'</td><td>'+r.doc+'</td><td>'+r.due+'</td><td>'+pillFor(r.status)+'</td>'},
  cob:{data:cob,row:r=>'<td>'+r.patient+'</td><td>'+r.primary+'</td><td>'+r.secondary+'</td><td>'+r.eff+'</td><td style="font-size:.72rem;color:var(--sub)">'+r.rule+'</td>'},
  providers:{data:providers,row:r=>'<td><b>'+safeText(r.name||'')+'</b></td><td class="mono">'+safeText(r.npi||'—')+'</td><td style="font-size:.78rem">'+safeText(r.spec||'—')+'</td><td class="mono">'+safeText(r.taxId||'—')+'</td><td>'+(r.pend?'<span class="pill warn">'+r.pend+' pending</span> ':'')+'<span class="pill ok">'+r.live+' live</span></td>'},
@@ -1233,71 +1304,118 @@ async function loadProvidersFromStedi(){
     if(!items.length&&sub)sub.textContent='No providers found in Stedi. Click + Add Provider to register one.';
   }catch(e){if(sub)sub.textContent='Could not reach Stedi — showing local data.';console.warn('loadProvidersFromStedi:',e);}
 }
+/* ---- ERA parsing helpers ---- */
+const _eraNum=v=>{const n=Number(String(v||0).replace(/[$,]/g,''));return isFinite(n)?n:0;};
+const _eraFmtDate=v=>{if(!v)return'';try{const d=new Date(v);if(isNaN(d))return String(v);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch{return String(v);}};
+const _eraIsoDate=raw=>{if(!raw)return'';if(raw.match(/^\d{8}$/))return raw.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3');return raw.slice(0,10)||'';};
+const _eraPayer=item=>{const pi=item.payerIdentification&&typeof item.payerIdentification==='object'?item.payerIdentification:{};const name=(item.sender&&(item.sender.name||item.sender.organizationName))||pi.organizationName||pi.name||item.payerName||item.tradingPartnerName||'';const id=(item.sender&&(item.sender.id||item.sender.identifier))||pi.identifier||pi.id||item.payerId||item.tradingPartnerId||'';const m=PAYERS.find(([,pid])=>pid===id||pid===name);return{name:m?m[0]:(name||id||'—'),id};};
+const _eraPtName=p=>{if(!p||typeof p!=='object')return'';const pn=p.patientName||p;const f=pn.firstName||pn.first||'';const l=pn.lastName||pn.last||'';return[f,l].filter(Boolean).join(' ')||pn.name||pn.organizationName||'';};
+const _carcLabel=code=>({'1':'Deductible','2':'Coinsurance','3':'Co-pay','4':'COB','5':'Prior-filing','6':'Non-covered','16':'Lacking info','18':'Duplicate','45':'Exceeds fee schedule','97':'Payment in another','119':'Benefit max','197':'Auth required','204':'Not covered'}[String(code||'')]||'');
+
+function _eraClaimsFromTxn(txnArr,transactionId,payerName,traceNo,payDateIso,methodCode,methodLabel){
+  const rows=[];let claimIdx=0;
+  for(const txn of (Array.isArray(txnArr)?txnArr:[])){
+    const detailList=Array.isArray(txn.detailInfo)?txn.detailInfo:[];
+    for(const det of detailList){
+      const payInfoList=Array.isArray(det.paymentInfo)?det.paymentInfo:(det.paymentInfo?[det.paymentInfo]:[]);
+      for(const pi of payInfoList){
+        const cp=pi.claimPaymentInfo&&typeof pi.claimPaymentInfo==='object'?pi.claimPaymentInfo:pi;
+        const pcn=cp.patientControlNumber||cp.patientControlNum||cp.claimNumber||cp.claimId||'';
+        const payerCtrl=cp.payerClaimControlNumber||cp.payerClmCtrlNum||'';
+        const billed=_eraNum(cp.totalClaimChargeAmount||cp.totalChargeAmount||cp.billed||0);
+        const paid=_eraNum(cp.claimPaymentAmount||cp.paymentAmount||cp.paid||0);
+        const pr=_eraNum(cp.patientResponsibilityAmount||cp.patientResponsibility||cp.pr||0);
+        const adjArr=Array.isArray(pi.claimAdjustments)?pi.claimAdjustments:(Array.isArray(cp.claimAdjustments)?cp.claimAdjustments:[]);
+        let adj=0;const carcs=[];
+        for(const a of adjArr){for(let k=1;k<=6;k++){const am=a['adjustmentAmount'+k];const rc=a['adjustmentReasonCode'+k];if(am!=null)adj+=_eraNum(am);if(rc&&!carcs.includes(String(rc)))carcs.push(String(rc));}}
+        const patient=_eraPtName(pi.patientName||cp.patientName)||_eraPtName(pi.patient||cp.patient)||'';
+        const lines=Array.isArray(pi.serviceLines)?pi.serviceLines.map(sl=>{const sp=sl.servicePayment||sl;const co_amt=Array.isArray(sl.claimAdjustments)?sl.claimAdjustments.filter(a=>a.claimAdjustmentGroupCode==='CO').reduce((s,a)=>s+_eraNum(a.adjustmentAmount1||0)+_eraNum(a.adjustmentAmount2||0),0):0;const pr_amt=Array.isArray(sl.claimAdjustments)?sl.claimAdjustments.filter(a=>a.claimAdjustmentGroupCode==='PR').reduce((s,a)=>s+_eraNum(a.adjustmentAmount1||0)+_eraNum(a.adjustmentAmount2||0),0):0;return{dos:sp.serviceDate||sl.serviceDate||'',cpt:sp.procedureCode||sl.procedureCode||'',billed:_eraNum(sp.lineItemChargeAmount||sl.lineItemChargeAmount||0),allowed:_eraNum(sp.lineItemAllowedAmount||sl.lineItemAllowedAmount||0),paid:_eraNum(sp.lineItemPaymentAmount||sl.lineItemPaymentAmount||0),co:co_amt,pr:pr_amt};}):[];
+        rows.push({rowId:transactionId+':'+claimIdx,transactionId,eraId:transactionId,pcn,payerClaimCtrl:payerCtrl,patient,payer:payerName,traceNo,payDate:_eraFmtDate(_eraIsoDate(payDateIso)),payDateRaw:_eraIsoDate(payDateIso),method:methodLabel,methodCode,billed,paid,pr,adj:Math.abs(adj),carcs:carcs.map(c=>c+(_carcLabel(c)?' ('+_carcLabel(c)+')':'')).join(', '),status:'New',exception:false,adjustments:adjArr,lines,renderingProvider:pi.renderingProvider||cp.renderingProvider||null,raw:pi});
+        claimIdx++;
+      }
+    }
+  }
+  return rows;
+}
+
 function eraFromStediResponse(item){
-  const num=v=>{const n=Number(String(v||0).replace(/[$,]/g,''));return isFinite(n)?n:0;};
-  const fmtDate=v=>{if(!v)return'';try{const d=new Date(v);if(isNaN(d))return String(v);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch{return String(v);}};
-  // Payer: Stedi 835 puts payer in sender or payerIdentification
-  const pi=item.payerIdentification&&typeof item.payerIdentification==='object'?item.payerIdentification:{};
-  const senderName=(item.sender&&(item.sender.name||item.sender.organizationName))||pi.organizationName||pi.name||item.payerName||item.tradingPartnerName||'';
-  const senderId=(item.sender&&(item.sender.id||item.sender.identifier))||pi.identifier||pi.id||item.payerId||item.tradingPartnerId||'';
-  const payerMatch=PAYERS.find(([,id])=>id===senderId||id===senderName);
-  const payer=payerMatch?payerMatch[0]:(senderName||senderId||'—');
+  const {name:payer,id:payerSenderId}=_eraPayer(item);
   const fi=item.financialInformation&&typeof item.financialInformation==='object'?item.financialInformation:{};
-  const paid=num(fi.totalActualProviderPaymentAmount||item.totalAmount||item.paymentAmount||item.paid||0);
+  const paid=_eraNum(fi.totalActualProviderPaymentAmount||item.totalAmount||item.paymentAmount||item.paid||0);
   const method=fi.paymentMethodCode||item.paymentMethod||'EFT';
   const methodLabel={'CHK':'CHK (Check)','ACH':'ACH (EFT)','NON':'NON (Non-payment)'}[method]||method;
-  const payDateRaw=fi.paymentDate||'';
-  const payDateIso=payDateRaw.match(/^\d{8}$/)?payDateRaw.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3'):payDateRaw;
-  const date=fmtDate(payDateIso)||fmtDate(item.createdAt||item.processedAt||'');
-  const rawClaims=Array.isArray(item.claimPaymentInformation)?item.claimPaymentInformation:Array.isArray(item.claims)?item.claims:[];
-  const pays=rawClaims.map(c=>{
-    const cp=c.claimPaymentInfo||c;
-    return{claim:cp.patientControlNumber||cp.claimId||cp.claimNumber||'—',billed:num(cp.totalClaimChargeAmount||cp.billed||0),allowed:num(cp.claimPaymentAmount||cp.allowed||0),paid:num(cp.claimPaymentAmount||cp.paid||0),pr:num(cp.patientResponsibility||cp.pr||0)};
-  });
-  const billed=pays.length?pays.reduce((s,p)=>s+p.billed,0):(paid||0);
-  const pr=pays.reduce((s,p)=>s+p.pr,0);
-  return{id:item.transactionId||item.id||'ERA-'+Math.random().toString(36).slice(2,8),transactionId:item.transactionId||item.id||'',payer,payerSenderId:senderId,date,status:item.status==='posted'?'Posted':'New',method:methodLabel,n:rawClaims.length||item.claimCount||1,billed,paid,pr,pays};
+  const payDateIso=fi.paymentDate||'';
+  const date=_eraFmtDate(_eraIsoDate(payDateIso))||_eraFmtDate(item.createdAt||item.processedAt||'');
+  const trn=fi.paymentTraceNumber||fi.traceNumber||item.traceNumber||item.trn||'';
+  const txnArr=Array.isArray(item.transactions)?item.transactions:[];
+  const claimRows=_eraClaimsFromTxn(txnArr,item.transactionId||item.id||'',payer,trn,payDateIso,method,methodLabel);
+  const n=claimRows.length||item.claimCount||1;
+  return{_835:item,id:item.transactionId||item.id||'ERA-'+Math.random().toString(36).slice(2,8),transactionId:item.transactionId||item.id||'',payer,payerSenderId,date,status:item.status==='posted'?'Posted':'New',method:methodLabel,methodCode:method,traceNo:trn,payDateIso,n,billed:claimRows.reduce((s,r)=>s+r.billed,0)||paid,paid:claimRows.reduce((s,r)=>s+r.paid,0)||paid,pr:claimRows.reduce((s,r)=>s+r.pr,0),pays:claimRows,claimRows};
 }
+
+function _mergeEraIntoArrays(eraRec){
+  const xi=eras.findIndex(e=>e.transactionId===eraRec.transactionId&&e.transactionId);
+  if(xi>=0)eras[xi]=eraRec;else eras.unshift(eraRec);
+  eraRec.claimRows.forEach(cr=>{const ci=eraClaims.findIndex(r=>r.rowId===cr.rowId);if(ci>=0)eraClaims[ci]=cr;else eraClaims.unshift(cr);});
+}
+
+function applyEraFilters(){
+  eraFilters.dateFrom=document.getElementById('eraFilterDateFrom')?.value||'';
+  eraFilters.dateTo=document.getElementById('eraFilterDateTo')?.value||'';
+  eraFilters.status=document.getElementById('eraFilterStatus')?.value||'All';
+  eraFilters.method=document.getElementById('eraFilterMethod')?.value||'All';
+  eraFilters.search=(document.getElementById('eraFilterSearch')?.value||'').trim().toLowerCase();
+  let rows=eraClaims.slice();
+  if(eraFilters.dateFrom)rows=rows.filter(r=>r.payDateRaw>=eraFilters.dateFrom);
+  if(eraFilters.dateTo)rows=rows.filter(r=>r.payDateRaw<=eraFilters.dateTo);
+  if(eraFilters.status!=='All'){if(eraFilters.status==='Unposted')rows=rows.filter(r=>r.status==='New');else rows=rows.filter(r=>r.status===eraFilters.status);}
+  if(eraFilters.method!=='All')rows=rows.filter(r=>r.methodCode===eraFilters.method||(eraFilters.method==='EFT'&&r.methodCode==='ACH'));
+  if(eraFilters.search)rows=rows.filter(r=>(r.pcn+r.traceNo+r.patient+r.payer+r.carcs).toLowerCase().includes(eraFilters.search));
+  eraFilteredClaims=rows;T.era.data=eraFilteredClaims;T.era.page=0;
+  refreshLiveSection('era');
+  const empty=document.getElementById('era-empty');if(empty)empty.style.display=eraFilteredClaims.length?'none':'block';
+  buildReconQueue();
+}
+
+function clearEraFilters(){
+  ['eraFilterDateFrom','eraFilterDateTo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['eraFilterStatus','eraFilterMethod'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='All';});
+  const s=document.getElementById('eraFilterSearch');if(s)s.value='';
+  Object.assign(eraFilters,{dateFrom:'',dateTo:'',status:'All',method:'All',search:''});
+  applyEraFilters();
+}
+
 async function loadErasFromStedi(){
   const sub=document.getElementById('sub-era');
   if(sub)sub.textContent='Loading ERA from Stedi…';
   try{
-    // List all ERA reports — endpoint mirrors the detail path without transactionId or /835
     const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({base:'healthcare',path:'/change/medicalnetwork/reports/v2',method:'GET',payload:null})});
     const d=await res.json();
     if(!d||d.mode!=='live'||!d.ok){
-      if(sub)sub.textContent=eras.length+' ERA records · Stedi: '+(d&&d.response&&(d.response.message||d.response.error)||'mock mode or key missing');
+      if(sub)sub.textContent=eraClaims.length+' claim rows · Stedi: '+(d&&d.response&&(d.response.message||d.response.error)||'mock mode or key missing');
       return;
     }
     const r=d.response;
     const items=Array.isArray(r)?r:Array.isArray(r&&r.reports)?r.reports:Array.isArray(r&&r.items)?r.items:Array.isArray(r&&r.data)?r.data:[];
     const era835s=items.filter(it=>!it.reportType||it.reportType==='835'||it.transactionSetType==='835'||it.transactionSetIdentifier==='835');
-    // Fetch full 835 JSON for each to get claim payment breakdown (cap at 20)
     const withDetail=await Promise.all(era835s.slice(0,20).map(async it=>{
       const tid=it.transactionId||it.id;if(!tid)return it;
-      try{
-        const dr=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({base:'healthcare',path:'/change/medicalnetwork/reports/v2/'+encodeURIComponent(tid)+'/835',method:'GET',payload:null})});
-        const dd=await dr.json();
-        if(dd&&dd.ok&&dd.response&&typeof dd.response==='object')return Object.assign({},it,dd.response);
-      }catch{}
+      try{const dr=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'healthcare',path:'/change/medicalnetwork/reports/v2/'+encodeURIComponent(tid)+'/835',method:'GET',payload:null})});const dd=await dr.json();if(dd&&dd.ok&&dd.response&&typeof dd.response==='object')return Object.assign({transactionId:tid},it,dd.response);}catch{}
       return it;
     }));
-    const mapped=withDetail.map(eraFromStediResponse);
-    eras.length=0;mapped.forEach(rec=>eras.push(rec));
-    T.era.data=eras;refreshLiveSection('era');updateEraKpis();
-    if(sub)sub.textContent=eras.length+' ERA'+(eras.length!==1?'s':'')+' · synced from Stedi';
-    if(!mapped.length&&sub)sub.textContent='No 835 ERAs found via listing — paste a transaction ID above to import one directly.';
-  }catch(e){
-    if(sub)sub.textContent='Auto-list unavailable · paste a Stedi transaction ID above to import an ERA directly.';
-    console.warn('loadErasFromStedi:',e);
-  }
+    eras.length=0;eraClaims.length=0;
+    withDetail.forEach(it=>_mergeEraIntoArrays(eraFromStediResponse(it)));
+    applyEraFilters();updateEraKpis();buildEraEnrollmentBanner();
+    const s=eraClaims.length,e=eras.length;
+    if(sub)sub.textContent=s+' claim row'+(s!==1?'s':'')+' across '+e+' ERA'+(e!==1?'s':'')+' · synced from Stedi';
+    if(!eras.length&&sub)sub.textContent='No 835 ERAs found via listing — paste a transaction ID above to import directly.';
+  }catch(e){if(sub)sub.textContent='Auto-list unavailable · paste a Stedi transaction ID above to import an ERA directly.';console.warn('loadErasFromStedi:',e);}
 }
+
 async function importEraById(){
   const inp=document.getElementById('eraImportId');
   const raw=(inp?inp.value:'').trim();
-  // Accept full portal URL or bare transaction ID
   const tid=raw.match(/transactions\/([a-f0-9\-]{30,})/i)?.[1]||raw;
   if(!tid){toast('Paste a Stedi transaction ID or portal URL first.');return;}
   const sub=document.getElementById('sub-era');
@@ -1306,24 +1424,131 @@ async function importEraById(){
     const dr=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({base:'healthcare',path:'/change/medicalnetwork/reports/v2/'+encodeURIComponent(tid)+'/835',method:'GET',payload:null})});
     const dd=await dr.json();
-    if(!dd||dd.mode!=='live'||!dd.ok){
-      const msg=dd&&dd.response&&(dd.response.message||dd.response.error)||'Check the transaction ID and try again.';
-      if(sub)sub.textContent='Import failed: '+msg;
-      toast('ERA import failed — '+msg);return;
-    }
-    const rec=eraFromStediResponse(Object.assign({transactionId:tid},dd.response));
-    const existing=eras.findIndex(e=>e.transactionId===tid||e.id===tid);
-    if(existing>=0)eras[existing]=rec;else eras.unshift(rec);
-    T.era.data=eras;refreshLiveSection('era');updateEraKpis();
-    persistDashboardRecord('era',rec,'imported');
+    if(!dd||dd.mode!=='live'||!dd.ok){const msg=dd&&dd.response&&(dd.response.message||dd.response.error)||'Check the transaction ID and try again.';if(sub)sub.textContent='Import failed: '+msg;toast('ERA import failed — '+msg);return;}
+    const eraRec=eraFromStediResponse(Object.assign({transactionId:tid},dd.response));
+    _mergeEraIntoArrays(eraRec);
+    applyEraFilters();updateEraKpis();buildEraEnrollmentBanner();
+    persistDashboardRecord('era',{transactionId:tid,payer:eraRec.payer,date:eraRec.date,paid:eraRec.paid,n:eraRec.n},'imported');
     if(inp)inp.value='';
-    if(sub)sub.textContent=eras.length+' ERA'+(eras.length!==1?'s':'')+' · last imported from Stedi';
-    toast('ERA imported: '+rec.payer+' · '+rec.date);
-    focusRecord('era',eras.indexOf(rec));
-  }catch(e){
-    if(sub)sub.textContent='Import error — see console.';
-    console.warn('importEraById:',e);
-  }
+    const s=eraClaims.length,e=eras.length;
+    if(sub)sub.textContent=s+' claim row'+(s!==1?'s':'')+' across '+e+' ERA'+(e!==1?'s':'')+' · last imported from Stedi';
+    toast('ERA imported: '+eraRec.payer+' · '+eraRec.date+' · '+eraRec.claimRows.length+' claim'+(eraRec.claimRows.length!==1?'s':''));
+    if(eraRec.claimRows.length){const idx=eraFilteredClaims.findIndex(r=>r.transactionId===tid);if(idx>=0)focusRecord('era',idx);}
+  }catch(e){if(sub)sub.textContent='Import error — see console.';console.warn('importEraById:',e);}
+}
+
+function openEraPdf(transactionId){
+  if(!transactionId){toast('No transaction ID attached to this record.');return;}
+  window.open('/api/stedi/era-pdf?transactionId='+encodeURIComponent(transactionId),'_blank');
+}
+
+async function viewTxnInput(transactionId){
+  if(!transactionId)return;
+  const d=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({base:'healthcare',path:'/transactions/'+encodeURIComponent(transactionId)+'/input',method:'GET',payload:null})}).then(r=>r.json()).catch(()=>null);
+  if(d&&d.ok)panel('Transaction input',JSON.stringify(d.response,null,2));
+  else toast('Could not load transaction input.');
+}
+
+async function viewTxnOutput(transactionId){
+  if(!transactionId)return;
+  const d=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({base:'healthcare',path:'/transactions/'+encodeURIComponent(transactionId)+'/output',method:'GET',payload:null})}).then(r=>r.json()).catch(()=>null);
+  if(d&&d.ok)panel('Transaction output',JSON.stringify(d.response,null,2));
+  else toast('Could not load transaction output.');
+}
+
+function markEraClaimPosted(rowId){
+  const row=eraClaims.find(r=>r.rowId===rowId);if(!row)return;
+  row.status='Posted';applyEraFilters();updateEraKpis();closeDrawer();
+  toast('Claim marked posted.');
+}
+
+function flagEraException(rowId){
+  const row=eraClaims.find(r=>r.rowId===rowId);if(!row)return;
+  row.status='Exception';row.exception=true;applyEraFilters();updateEraKpis();closeDrawer();
+  toast('Claim flagged as exception.');
+}
+
+function toggleReconQueue(){
+  const body=document.getElementById('recon-body');
+  const chev=document.getElementById('recon-chevron');
+  if(!body)return;
+  const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  if(chev)chev.textContent=open?'▶':'▼';
+}
+
+function buildEraEnrollmentBanner(){
+  const banner=document.getElementById('era-enroll-banner');
+  if(!banner)return;
+  const enrolled=enrollments.filter(e=>{const sets=Array.isArray(e.txnSets)?e.txnSets:[];return sets.some(x=>(typeof x==='string'?x:(x.transactionType||x.transactionSetIdentifier||x.name||'')).toUpperCase().includes('835'));});
+  if(!enrolled.length){banner.style.display='none';return;}
+  const payerNames=[...new Set(enrolled.map(e=>e.payer||e.payerName||'').filter(Boolean))];
+  const eraPayerSet=new Set(eraClaims.map(r=>r.payer));
+  const claimPayerSet=new Set(claims.map(c=>c.payer).filter(Boolean));
+  const missing=[...claimPayerSet].filter(p=>!eraPayerSet.has(p));
+  banner.style.display='flex';
+  while(banner.firstChild)banner.removeChild(banner.firstChild);
+  const lbl=document.createElement('span');
+  lbl.style.cssText='color:var(--accent-text);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;flex-shrink:0';
+  lbl.textContent='ERA Enrollment Active';
+  banner.appendChild(lbl);
+  const names=document.createElement('span');
+  names.style.color='var(--sub)';
+  names.textContent=payerNames.slice(0,4).join(', ')+(payerNames.length>4?' +'+(payerNames.length-4)+' more':'');
+  banner.appendChild(names);
+  const count=document.createElement('span');
+  count.style.cssText='color:var(--sub);flex-shrink:0';
+  count.textContent=payerNames.length+' payer'+(payerNames.length!==1?'s':'')+' enrolled';
+  banner.appendChild(count);
+  missing.slice(0,3).forEach(p=>{
+    const badge=document.createElement('span');
+    badge.className='warn-badge';
+    badge.textContent=p+' — no ERA yet';
+    banner.appendChild(badge);
+  });
+}
+
+function buildReconQueue(){
+  const tb=document.getElementById('tb-recon');
+  const emptyEl=document.getElementById('recon-empty');
+  const countEl=document.getElementById('recon-count');
+  if(!tb)return;
+  const acceptedStatuses=['Accepted','Paid','Approved'];
+  const eraPcnSet=new Set(eraClaims.map(r=>r.pcn).filter(Boolean));
+  const eraCtrlSet=new Set(eraClaims.map(r=>r.payerClaimCtrl).filter(Boolean));
+  const now=Date.now();
+  const unmatched=claims.filter(c=>{
+    if(!acceptedStatuses.some(s=>c.status&&c.status.includes(s)))return false;
+    const pcn=c.id||c.patientControlNumber||'';
+    return!eraPcnSet.has(pcn)&&!eraCtrlSet.has(pcn);
+  });
+  if(countEl){countEl.textContent=String(unmatched.length);countEl.style.display=unmatched.length?'inline-block':'none';}
+  while(tb.firstChild)tb.removeChild(tb.firstChild);
+  if(!unmatched.length){if(emptyEl)emptyEl.style.display='block';return;}
+  if(emptyEl)emptyEl.style.display='none';
+  unmatched.slice(0,50).forEach(c=>{
+    const dos=c.dos||c.date||'';
+    const dosMs=dos?new Date(dos).getTime():NaN;
+    const days=!isNaN(dosMs)?Math.floor((now-dosMs)/86400000):null;
+    const tr=document.createElement('tr');
+    const cells=[
+      c.id||'—',c.patient||'—',c.payer||'—',dos||'—',
+      usd(c.billed||0),days!=null?days+' days':'—',c.status||'Pending'
+    ];
+    cells.forEach((val,i)=>{
+      const td=document.createElement('td');
+      if(i===0){td.className='mono';td.style.fontSize='.7rem';}
+      if(i===3||i===5){td.style.fontSize='.76rem';}
+      if(i===4){td.className='money';}
+      if(i===5){td.style.textAlign='center';}
+      if(i===6){td.appendChild(Object.assign(document.createElement('span'),{className:'pill '+(c.status==='Accepted'?'ok':c.status==='Paid'?'ok':'warn'),textContent:val}));}
+      else td.textContent=val;
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
 }
 async function seedPayersFromEnrollments(){
   const seen=new Set(payerDir.map(p=>p.stedi||p.name));
@@ -1370,7 +1595,27 @@ async function seedPayersFromEnrollments(){
     }
   }
 }
-function updateEraKpis(){const posted=eras.filter(e=>e.status==='Posted'),unposted=eras.filter(e=>e.status==='New');document.getElementById('kpiEraN').textContent=eras.length;document.getElementById('kpiEraPosted').textContent=usd(posted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraPostedN').textContent=posted.length+' remits';document.getElementById('kpiEraUnposted').textContent=usd(unposted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraUnpostedN').textContent=unposted.length+' remits';document.getElementById('kpiEraAdj').textContent=usd(eras.reduce((a,e)=>a+e.billed-e.paid-e.pr,0)/10);document.getElementById('kpiRejQueue').textContent=claims.filter(c=>['Rejected','Denied'].includes(c.status)).length+' to fix';document.getElementById('kpiEraQueue').textContent=unposted.length+' new';document.getElementById('kpiAttQueue').textContent=attachments.filter(a=>a.status==='Overdue').length+' urgent';}
+function updateEraKpis(){
+  const posted=eraClaims.filter(r=>r.status==='Posted');
+  const unposted=eraClaims.filter(r=>r.status==='New');
+  const exceptions=eraClaims.filter(r=>r.status==='Exception'||r.exception);
+  const totalPaid=eraClaims.reduce((s,r)=>s+r.paid,0);
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('kpiEraN',eras.length);
+  set('kpiEraPostedN2',posted.length);
+  set('kpiEraPostedLbl',usd(posted.reduce((s,r)=>s+r.paid,0))+' paid');
+  set('kpiEraUnpostedN2',unposted.length);
+  set('kpiEraUnpostedLbl',usd(unposted.reduce((s,r)=>s+r.paid,0))+' pending');
+  set('kpiEraTotalPaid',usd(totalPaid));
+  set('kpiEraExcept',exceptions.length);
+  set('kpiEraExceptLbl',exceptions.length?exceptions.length+' need review':'duplicates / flags');
+  // downstream ribbon
+  set('kpiRejQueue',claims.filter(c=>['Rejected','Denied'].includes(c.status)).length+' to fix');
+  set('kpiEraQueue',unposted.length+' new');
+  set('kpiAttQueue',attachments.filter(a=>a.status==='Overdue').length+' urgent');
+  // ribbon ERA count
+  const ribbon=document.getElementById('ribbonEra');if(ribbon)ribbon.textContent=unposted.length;
+}
 updateEraKpis();
 ['locClm1','locClm2','locClm3'].forEach((id,i)=>{document.getElementById(id).textContent=claims.filter(c=>c.loc===LOCS[i]).length+' claims'});
 
@@ -1484,7 +1729,22 @@ const DETAIL={
     +timelineBlock+actionsBlock;
  },
  status:r=>{const i=statusChecks.indexOf(r);return dhead('277 claim status',r.claim+' · '+r.patient)+kv({'Payer':r.payer,'Payer claim #':'<span class="mono">'+r.payerClm+'</span>','Category':r.cat+': '+r.catDesc,'Payment':r.amt||'-','Last checked':r.checked})+dsec('Check history',mini(['Response'],r.history.map(h=>[h])))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="run276('+i+')">Run 276 now</button> <button class="btn-ghost btn-sm" onclick="view277('+i+')">View 277 report</button><div id="statusOut" style="margin-top:12px"></div>');},
- era:r=>{const i=eras.indexOf(r);return dhead(r.id,r.payer+' · '+r.date)+kv({'Status':pillFor(r.status),'Payment method':r.method,'Claims on remit':r.n,'Total billed':usd(r.billed),'Total paid':'<b>'+usd(r.paid)+'</b>','Patient responsibility':usd(r.pr)})+dsec('Claim payments',mini(['Claim','Billed','Allowed','Paid','Pt resp'],r.pays.map(p=>['<span class="mono">'+p.claim+'</span>',usd(p.billed),usd(p.allowed),usd(p.paid),usd(p.pr)])))+dsec('Adjustment groups (CAS)',mini(['Code','Meaning','Amount'],[['CO-45','Charge exceeds fee schedule',usd(r.billed-r.paid-r.pr)],['PR-1','Deductible',usd(Math.round(r.pr*.55))],['PR-2','Coinsurance',usd(Math.round(r.pr*.45))]]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="printEraById(\''+r.id+'\')">ERA PDF</button> <button class="btn-ghost btn-sm" onclick="view835('+i+')">View 835 report</button>'+(r.status==='New'?' <button class="btn btn-sm" onclick="postEraById(\''+r.id+'\')">Post to PM system</button>':''));},
+ era:r=>{
+  const tid=safeText(r.transactionId||'');
+  const rid=safeText(r.rowId||r.transactionId||'');
+  const stCls=r.status==='Posted'?'ok':r.status==='Exception'?'bad':'warn';
+  const stLbl=r.status==='New'?'Unposted':r.status;
+  const kvMeta=kv({'PCN / Claim ID':'<span class="mono">'+safeText(r.pcn||'—')+'</span>','Payer claim ctrl':'<span class="mono">'+safeText(r.payerClaimCtrl||'—')+'</span>','Patient':safeText(r.patient||'—'),'Payer':safeText(r.payer||'—'),'Trace No. (TRN02)':'<span class="mono">'+safeText(r.traceNo||'—')+'</span>','Payment date':safeText(r.payDate||'—'),'Payment method':safeText(r.method||'—'),'Posting status':'<span class="pill '+stCls+'">'+stLbl+'</span>','Billed':'<b>'+usd(r.billed)+'</b>','Paid':'<b style="color:var(--ok)">'+usd(r.paid)+'</b>','Pt. responsibility':usd(r.pr),'Total adj. (CAS)':usd(r.adj),'Transaction ID':tid?'<span class="mono" style="font-size:.66rem">'+tid+'</span>':'—'});
+  let linesSection='';
+  if(r.lines&&r.lines.length){linesSection=dsec('Service lines',mini(['DOS','CPT','Billed','Allowed','Paid','CO adj.','PR adj.'],r.lines.map(l=>['<span style="font-size:.7rem">'+safeText(l.dos||'—')+'</span>','<span class="mono">'+safeText(l.cpt||'—')+'</span>',usd(l.billed||0),usd(l.allowed||0),'<b>'+usd(l.paid||0)+'</b>',usd(l.co||0),usd(l.pr||0)])));}
+  let casSection='';
+  const adjArr=r.adjustments||[];
+  if(adjArr.length){const casRows=[];for(const adj of adjArr){const grp=safeText(adj.claimAdjustmentGroupCode||adj.groupCode||'');for(let k=1;k<=6;k++){const rc=adj['adjustmentReasonCode'+k]||adj['reasonCode'+k];const ra=adj['adjustmentReason'+k]||'';const am=adj['adjustmentAmount'+k];if(rc||am!=null){casRows.push([safeText(grp),'<span class="mono">'+safeText(String(rc||'—'))+'</span>',safeText(ra||_carcLabel(rc)||'—'),usd(_eraNum(am||0))]);}}}if(casRows.length)casSection=dsec('CAS adjustments',mini(['Group','Reason code','Description','Amount'],casRows));}
+  const remarkSrc=r.raw&&(r.raw.outpatientAdjudicationInformation||r.raw.inpatientAdjudicationInformation);
+  const remarkSection=remarkSrc?dsec('Adjudication notes','<div class="x12" style="max-height:180px;overflow-y:auto;font-size:.68rem">'+safeText(JSON.stringify(remarkSrc,null,2))+'</div>'):'';
+  const actionsSection=dsec('Actions','<div style="display:flex;gap:8px;flex-wrap:wrap">'+(r.status!=='Posted'?'<button class="btn btn-sm" onclick="markEraClaimPosted(\''+rid+'\')">Mark Posted</button>':'')+(r.status!=='Exception'?' <button class="btn-ghost btn-sm" onclick="flagEraException(\''+rid+'\')">Flag Exception</button>':'')+(tid?' <button class="btn-ghost btn-sm" onclick="openEraPdf(\''+tid+'\')">View ERA PDF</button>':'')+(tid?' <button class="btn-ghost btn-sm" onclick="viewTxnInput(\''+tid+'\')">Txn Input</button>':'')+(tid?' <button class="btn-ghost btn-sm" onclick="viewTxnOutput(\''+tid+'\')">Txn Output</button>':'')+'</div>');
+  return dhead(safeText(r.pcn||r.rowId||'Claim'),safeText(r.patient||'')+' · '+safeText(r.payer||''))+kvMeta+linesSection+casSection+remarkSection+actionsSection;
+ },
  attachments:r=>dhead('275 attachment',r.claim+' · '+r.payer)+kv({'Status':pillFor(r.status),'Document type':r.doc,'Requested':r.req,'Due':r.due,'Control # (PWK)':'<span class="mono">'+r.ctrl+'</span>','Pages':r.pages})+dsec('Actions',(r.status==='Awaiting upload'||r.status==='Overdue'?'<button class="btn btn-sm" onclick="uploadAttachmentByCtrl(\''+r.ctrl+'\')">Upload document</button> ':'')+'<button class="btn-ghost btn-sm" onclick="panel(\'Request detail\',\''+r.payer+' requested a '+r.doc+' (control '+r.ctrl+', due '+r.due+').\')">View request</button>'),
  cob:r=>dhead('Coordination of benefits',r.patient)+kv({'Primary payer':r.primary,'Primary member ID':'<span class="mono">'+r.m1+'</span>','Secondary payer':r.secondary,'Secondary member ID':'<span class="mono">'+r.m2+'</span>','Effective':r.eff,'Determination rule':r.rule})+dsec('Recommended action','<div class="empty-note">Bill '+r.primary+' first. Submit the balance with the primary EOB to '+r.secondary+' as a secondary claim.</div><button class="btn-ghost btn-sm" onclick="updateCobByPatient(\''+r.patient+'\')">Update claim payer order</button>'),
  providers:r=>{

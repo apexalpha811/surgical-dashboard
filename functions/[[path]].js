@@ -89,6 +89,10 @@ async function handleApi(context, url) {
     return json(await stediProxy(context.env, await readJsonBody(request)));
   }
 
+  if (request.method === "GET" && url.pathname === "/api/stedi/era-pdf") {
+    return eraPdfProxy(context.env, url.searchParams.get("transactionId") || "");
+  }
+
   if (request.method === "POST" && url.pathname === "/api/imports") {
     return json(await saveImportRecord(context.env, await readJsonBody(request)), 201);
   }
@@ -856,6 +860,25 @@ function buildEligibilityRequest(body) {
     },
     encounter: { serviceTypeCodes: stcs }
   };
+}
+
+async function eraPdfProxy(env, transactionId) {
+  if (!transactionId) return new Response("Missing transactionId", { status: 400 });
+  const cfg = config(env);
+  if (!isLive(env) || !cfg.stediApiKey) {
+    return new Response("ERA PDF not available in mock mode.", { status: 503, headers: { "Content-Type": "text/plain" } });
+  }
+  const url = `${cfg.stediHealthcareBaseUrl}/electronic-remittance-advice/${encodeURIComponent(transactionId)}/pdf`;
+  const res = await fetch(url, { headers: { ...stediHeaders(env), "Accept": "application/pdf" } });
+  const body = await res.arrayBuffer();
+  return new Response(body, {
+    status: res.status,
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename="era-${transactionId}.pdf"`,
+      "Cache-Control": "private, max-age=300"
+    }
+  });
 }
 
 const STEDI_PROXY_ALLOW = ["/change/medicalnetwork/", "/insurance-discovery/", "/coordination-of-benefits", "/claim-attachments/", "/enrollments", "/providers", "/payers", "/eligibility-manager/", "/tasks/", "/documents/", "/transactions"];
