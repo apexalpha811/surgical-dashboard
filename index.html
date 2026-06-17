@@ -1306,15 +1306,23 @@ async function loadProvidersFromStedi(){
 }
 /* ---- ERA parsing helpers ---- */
 const _eraNum=v=>{const n=Number(String(v||0).replace(/[$,]/g,''));return isFinite(n)?n:0;};
-const _eraFmtDate=v=>{if(!v)return'';try{const d=new Date(v);if(isNaN(d))return String(v);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch{return String(v);}};
+const _eraFmtDate=v=>{if(!v)return'';try{const s=String(v);const iso=s.match(/^\d{4}-\d{2}-\d{2}$/)?s+'T12:00:00':s;const d=new Date(iso);if(isNaN(d))return s;return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'America/Los_Angeles'});}catch{return String(v);}};
 const _eraIsoDate=raw=>{if(!raw)return'';if(raw.match(/^\d{8}$/))return raw.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3');return raw.slice(0,10)||'';};
-const _eraPayer=item=>{const pi=item.payerIdentification&&typeof item.payerIdentification==='object'?item.payerIdentification:{};const name=(item.sender&&(item.sender.name||item.sender.organizationName))||pi.organizationName||pi.name||item.payerName||item.tradingPartnerName||'';const id=(item.sender&&(item.sender.id||item.sender.identifier))||pi.identifier||pi.id||item.payerId||item.tradingPartnerId||'';const m=PAYERS.find(([,pid])=>pid===id||pid===name);return{name:m?m[0]:(name||id||'—'),id};};
+const _eraPayer=item=>{const pi=item.payerIdentification&&typeof item.payerIdentification==='object'?item.payerIdentification:{};const pp=item.payer&&typeof item.payer==='object'?item.payer:{};const name=(item.sender&&(item.sender.name||item.sender.organizationName))||pi.organizationName||pi.name||pp.name||pp.organizationName||item.payerName||item.tradingPartnerName||'';const id=(item.sender&&(item.sender.id||item.sender.identifier))||pi.identifier||pi.id||pp.payerIdentificationNumber||pp.identifier||item.payerId||item.tradingPartnerId||'';const m=PAYERS.find(([,pid])=>pid===id||pid===name);return{name:m?m[0]:(name||id||'—'),id};};
 const _eraPtName=p=>{if(!p||typeof p!=='object')return'';const pn=p.patientName||p;const f=pn.firstName||pn.first||'';const l=pn.lastName||pn.last||'';return[f,l].filter(Boolean).join(' ')||pn.name||pn.organizationName||'';};
 const _carcLabel=code=>({'1':'Deductible','2':'Coinsurance','3':'Co-pay','4':'COB','5':'Prior-filing','6':'Non-covered','16':'Lacking info','18':'Duplicate','45':'Exceeds fee schedule','97':'Payment in another','119':'Benefit max','197':'Auth required','204':'Not covered'}[String(code||'')]||'');
 
 function _eraClaimsFromTxn(txnArr,transactionId,payerName,traceNo,payDateIso,methodCode,methodLabel){
   const rows=[];let claimIdx=0;
+  const _ML={'CHK':'CHK (Check)','ACH':'ACH (EFT)','NON':'NON (Non-payment)'};
   for(const txn of (Array.isArray(txnArr)?txnArr:[])){
+    const _tfi=txn.financialInformation&&typeof txn.financialInformation==='object'?txn.financialInformation:{};
+    const _tp=_eraPayer(txn);
+    const _txnPayer=_tp.name&&_tp.name!=='—'?_tp.name:payerName;
+    const _txnDate=_tfi.paymentDate||_tfi.checkIssueOrEFTEffectiveDate||payDateIso;
+    const _txnMethod=_tfi.paymentMethodCode||methodCode;
+    const _txnMethodLbl=_ML[_txnMethod]||_txnMethod||methodLabel;
+    const _txnTrace=_tfi.paymentTraceNumber||_tfi.traceNumber||(txn.paymentAndRemitReassociationDetails&&txn.paymentAndRemitReassociationDetails.checkOrEFTTraceNumber)||traceNo;
     const detailList=Array.isArray(txn.detailInfo)?txn.detailInfo:[];
     for(const det of detailList){
       const payInfoList=Array.isArray(det.paymentInfo)?det.paymentInfo:(det.paymentInfo?[det.paymentInfo]:[]);
@@ -1330,7 +1338,7 @@ function _eraClaimsFromTxn(txnArr,transactionId,payerName,traceNo,payDateIso,met
         for(const a of adjArr){for(let k=1;k<=6;k++){const am=a['adjustmentAmount'+k];const rc=a['adjustmentReasonCode'+k];if(am!=null)adj+=_eraNum(am);if(rc&&!carcs.includes(String(rc)))carcs.push(String(rc));}}
         const patient=_eraPtName(pi.patientName||cp.patientName)||_eraPtName(pi.patient||cp.patient)||'';
         const lines=Array.isArray(pi.serviceLines)?pi.serviceLines.map(sl=>{const sp=sl.servicePayment||sl;const co_amt=Array.isArray(sl.claimAdjustments)?sl.claimAdjustments.filter(a=>a.claimAdjustmentGroupCode==='CO').reduce((s,a)=>s+_eraNum(a.adjustmentAmount1||0)+_eraNum(a.adjustmentAmount2||0),0):0;const pr_amt=Array.isArray(sl.claimAdjustments)?sl.claimAdjustments.filter(a=>a.claimAdjustmentGroupCode==='PR').reduce((s,a)=>s+_eraNum(a.adjustmentAmount1||0)+_eraNum(a.adjustmentAmount2||0),0):0;return{dos:sp.serviceDate||sl.serviceDate||'',cpt:sp.procedureCode||sl.procedureCode||'',billed:_eraNum(sp.lineItemChargeAmount||sl.lineItemChargeAmount||0),allowed:_eraNum(sp.lineItemAllowedAmount||sl.lineItemAllowedAmount||0),paid:_eraNum(sp.lineItemPaymentAmount||sl.lineItemPaymentAmount||0),co:co_amt,pr:pr_amt};}):[];
-        rows.push({rowId:transactionId+':'+claimIdx,transactionId,eraId:transactionId,pcn,payerClaimCtrl:payerCtrl,patient,payer:payerName,traceNo,payDate:_eraFmtDate(_eraIsoDate(payDateIso)),payDateRaw:_eraIsoDate(payDateIso),method:methodLabel,methodCode,billed,paid,pr,adj:Math.abs(adj),carcs:carcs.map(c=>c+(_carcLabel(c)?' ('+_carcLabel(c)+')':'')).join(', '),status:'New',exception:false,adjustments:adjArr,lines,renderingProvider:pi.renderingProvider||cp.renderingProvider||null,raw:pi});
+        rows.push({rowId:transactionId+':'+claimIdx,transactionId,eraId:transactionId,pcn,payerClaimCtrl:payerCtrl,patient,payer:_txnPayer,traceNo:_txnTrace,payDate:_eraFmtDate(_eraIsoDate(_txnDate)),payDateRaw:_eraIsoDate(_txnDate),method:_txnMethodLbl,methodCode:_txnMethod,billed,paid,pr,adj:Math.abs(adj),carcs:carcs.map(c=>c+(_carcLabel(c)?' ('+_carcLabel(c)+')':'')).join(', '),status:'New',exception:false,adjustments:adjArr,lines,renderingProvider:pi.renderingProvider||cp.renderingProvider||null,raw:pi});
         claimIdx++;
       }
     }
@@ -1339,15 +1347,16 @@ function _eraClaimsFromTxn(txnArr,transactionId,payerName,traceNo,payDateIso,met
 }
 
 function eraFromStediResponse(item){
-  const {name:payer,id:payerSenderId}=_eraPayer(item);
-  const fi=item.financialInformation&&typeof item.financialInformation==='object'?item.financialInformation:{};
+  const txnArr=Array.isArray(item.transactions)?item.transactions:[];
+  const txn0=txnArr[0]||{};
+  const {name:payer,id:payerSenderId}=_eraPayer(txn0);
+  const fi=(txn0.financialInformation&&typeof txn0.financialInformation==='object'?txn0.financialInformation:null)||(item.financialInformation&&typeof item.financialInformation==='object'?item.financialInformation:null)||{};
   const paid=_eraNum(fi.totalActualProviderPaymentAmount||item.totalAmount||item.paymentAmount||item.paid||0);
   const method=fi.paymentMethodCode||item.paymentMethod||'EFT';
   const methodLabel={'CHK':'CHK (Check)','ACH':'ACH (EFT)','NON':'NON (Non-payment)'}[method]||method;
-  const payDateIso=fi.paymentDate||'';
+  const payDateIso=fi.paymentDate||fi.checkIssueOrEFTEffectiveDate||'';
   const date=_eraFmtDate(_eraIsoDate(payDateIso))||_eraFmtDate(item.createdAt||item.processedAt||'');
-  const trn=fi.paymentTraceNumber||fi.traceNumber||item.traceNumber||item.trn||'';
-  const txnArr=Array.isArray(item.transactions)?item.transactions:[];
+  const trn=fi.paymentTraceNumber||fi.traceNumber||(txn0.paymentAndRemitReassociationDetails&&txn0.paymentAndRemitReassociationDetails.checkOrEFTTraceNumber)||item.traceNumber||item.trn||'';
   const claimRows=_eraClaimsFromTxn(txnArr,item.transactionId||item.id||'',payer,trn,payDateIso,method,methodLabel);
   const n=claimRows.length||item.claimCount||1;
   return{_835:item,id:item.transactionId||item.id||'ERA-'+Math.random().toString(36).slice(2,8),transactionId:item.transactionId||item.id||'',payer,payerSenderId,date,status:item.status==='posted'?'Posted':'New',method:methodLabel,methodCode:method,traceNo:trn,payDateIso,n,billed:claimRows.reduce((s,r)=>s+r.billed,0)||paid,paid:claimRows.reduce((s,r)=>s+r.paid,0)||paid,pr:claimRows.reduce((s,r)=>s+r.pr,0),pays:claimRows,claimRows};
