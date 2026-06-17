@@ -332,7 +332,7 @@ th.sort:hover{color:var(--text)}
 </aside>
 
 <!-- ================= MAIN ================= -->
-<main class="main">
+<main class="main" id="appMain" style="opacity:0;transition:opacity .25s ease">
   <div class="topbar">
     <button class="menu-btn" id="menuBtn" aria-label="Menu">≡</button>
     <div>
@@ -1106,7 +1106,8 @@ updateClaimKpis();
 const LIVE_KEYS=new Set(['claims','eligibility','providers','payers','enrollments','attachments','appeals','cob','transactions']);
 function dashboardRecordKey(key,record){if(!record)return'';if(key==='claims')return record.id||record.payerClm||record.patient;if(key==='eligibility')return record.trn||[record.patient,record.member,record.payer].join('|');if(key==='providers')return record.npi||record.name;if(key==='payers')return record.stedi||record.name;if(key==='enrollments')return record.id||[record.provider,record.payer,record.txn].join('|');if(key==='attachments')return record.ctrl||[record.claim,record.doc,record.payer].join('|');if(key==='appeals')return record.id||record.claimNumber||[record.patientName,record.payer].join('|');if(key==='cob')return[record.patient,record.primary,record.secondary].join('|');if(key==='transactions')return record.exec||record.id||'';return JSON.stringify(record);}
 function refreshLiveSection(key){if(key==='appeals'){if(typeof renderAppealStats==='function')renderAppealStats();if(typeof renderAppealsTable==='function')renderAppealsTable();updateRibbonCounts();return;}if(key==='payers')payersMaster=payerDir.slice();if(key==='claims')updateClaimKpis();if(T[key]){T[key].data=key==='payers'?payerDir:T[key].data;T[key].page=0;renderTable(key);}const sub=document.getElementById('sub-'+key);if(sub&&T[key])sub.textContent=T[key].data.length+' saved records · click a row for detail';updateRibbonCounts();}
-function applyLiveRecord(key,record){if(!LIVE_KEYS.has(key)||!T[key]||!record)return;if(key==='enrollments'&&_stediEnrollmentsDone)return;const data=key==='payers'?payerDir:T[key].data;const id=dashboardRecordKey(key,record);const index=data.findIndex(item=>dashboardRecordKey(key,item)===id);if(index>=0)data[index]=record;else data.unshift(record);T[key].data=data;refreshLiveSection(key);}
+const STEDI_SOURCE_KEYS=new Set(['providers','enrollments']);
+function applyLiveRecord(key,record){if(!LIVE_KEYS.has(key)||!T[key]||!record)return;if(STEDI_SOURCE_KEYS.has(key))return;const data=key==='payers'?payerDir:T[key].data;const id=dashboardRecordKey(key,record);const index=data.findIndex(item=>dashboardRecordKey(key,item)===id);if(index>=0)data[index]=record;else data.unshift(record);T[key].data=data;refreshLiveSection(key);}
 async function dashboardApi(path,options){const response=await fetch(path,{headers:{'Content-Type':'application/json','Accept':'application/json'},...(options||{})});const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.error||payload.message||('Request failed with '+response.status));return payload;}
 async function persistDashboardRecord(key,record,status){if(!LIVE_KEYS.has(key)||!record)return;try{await dashboardApi('/api/dashboard-records',{method:'POST',body:JSON.stringify({key,target:key,record,recordKey:dashboardRecordKey(key,record),status:status||'dashboard'})});}catch(error){console.warn(error);toast('Saved locally. Supabase save failed.');}}
 async function persistDashboardDelete(key,record){if(!LIVE_KEYS.has(key)||!record)return;try{await dashboardApi('/api/dashboard-records/delete',{method:'POST',body:JSON.stringify({key,target:key,recordKey:dashboardRecordKey(key,record)})});}catch(error){console.warn(error);toast('Deleted locally. Supabase delete failed.');}}
@@ -3113,11 +3114,13 @@ window.openDrawer=function(key,i){
   if(head&&closeBtn&&!head.querySelector('.edit-btn')) closeBtn.insertAdjacentHTML('beforebegin','<button class="btn-ghost btn-sm edit-btn" onclick="openEditCurrent()">Edit</button><button class="btn-ghost btn-sm delete-btn" style="color:var(--bad)" onclick="deleteCurrentRecord()">Delete</button>');
  }
 };
-setTimeout(loadDashboardRecords,300);
-setTimeout(restoreOpenDrawer,650);
-setTimeout(loadEnrollmentsFromStedi,1000);
-setTimeout(loadProvidersFromStedi,1200);
-setTimeout(initPayerTypeahead,1400);
+(async function bootDashboard(){
+ await loadDashboardRecords();
+ await Promise.all([loadEnrollmentsFromStedi(),loadProvidersFromStedi()]);
+ initPayerTypeahead();
+ const m=document.getElementById('appMain');if(m)m.style.opacity='1';
+ restoreOpenDrawer();
+})();
 </script>
 </body>
 </html>
