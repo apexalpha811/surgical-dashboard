@@ -1313,27 +1313,67 @@ const DETAIL={
  },
  discovery:r=>dhead('Insurance discovery',r.patient)+kv({'Discovery ID':'<span class="mono">'+r.id+'</span>','Status':pillFor(r.status),'DOB':r.dob,'Started':r.date})+(r.status==='Complete'?dsec('Result',r.found?kv({'Coverage found':'<span class="pill ok">Yes</span>','Payer':r.payer,'Plan':r.plan,'Member ID':'<span class="mono">'+r.member+'</span>'})+'<button class="btn-ghost btn-sm" onclick="runEligibilityFromDiscovery(\''+r.id+'\')">Run full 270/271 check</button>':'<div class="empty-note">No active coverage located across the payer network. Patient flagged for self-pay workflow.</div>'):dsec('Result','<div class="empty-note">Search in progress across payer networks. Poll GET /insurance-discovery/check/v1/{discoveryId} for completion.</div>')),
  claims:r=>{
-  const patientBlock='<div style="border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:.78rem">'
-    +'<div><div style="color:var(--sub);margin-bottom:2px">Patient name (Box 2)</div>'+safeText(r.patient||'—')+'</div>'
-    +'<div><div style="color:var(--sub);margin-bottom:2px">Date of birth (Box 3)</div>'+safeText(r.patientDob||'—')+'</div>'
-    +'<div><div style="color:var(--sub);margin-bottom:2px">Sex (Box 3)</div>'+safeText(r.patientSex||'—')+'</div>'
-    +'<div><div style="color:var(--sub);margin-bottom:2px">Relationship to insured (Box 6)</div>'+safeText(r.patientRelationship||'—')+'</div>'
-    +'<div><div style="color:var(--sub);margin-bottom:2px">Member ID (Box 1a)</div><span class="mono">'+safeText(r.memberId||'—')+'</span></div>'
-    +'<div><div style="color:var(--sub);margin-bottom:2px">Group number (Box 11)</div><span class="mono">'+safeText(r.groupNumber||'—')+'</span></div>'
-    +(r.insurancePlan?'<div style="grid-column:1/-1"><div style="color:var(--sub);margin-bottom:2px">Insurance plan (Box 11c)</div>'+safeText(r.insurancePlan)+'</div>':'')
-    +'<div><div style="color:var(--sub);margin-bottom:2px">Patient account # (Box 26)</div><span class="mono">'+safeText(r.patientAccount||'—')+'</span></div>'
-    +'</div></div>';
-  const billingBlock=kv({'Status':pillFor(r.status)+(r.rejReason?' '+r.rejReason:'')+(r.denCode?' '+r.denCode:''),'Rendering provider (Box 24J)':redIf(r,'provider',r.providerFull||r.provider),'Service facility (Box 32)':redIf(r,'loc',r.loc),'Payer (Box 11d)':redIf(r,'payer',r.payer),'Payer claim # (Box 28)':r.payerClm?'<span class="mono">'+safeText(r.payerClm)+'</span>':null,'Primary payer':r.primaryPayer||null,'Secondary payer':r.secondaryPayer||null,'COB rule':r.cobRule||null,'Referring provider (Box 17)':r.referringProvider||null,'Referring NPI (Box 17b)':r.referringNpi?'<span class="mono">'+safeText(r.referringNpi)+'</span>':null,'Prior auth # (Box 23)':r.priorAuth?'<span class="mono">'+safeText(r.priorAuth)+'</span>':null,'Accept assignment (Box 27)':r.acceptAssignment||null,'Total charge (Box 28)':redIf(r,'billed','<b>'+usd(r.billed)+'</b>'),'Amount paid':r.paid?'<b>'+usd(r.paid)+'</b>':'-','Corrected 837':r.needsResubmission?'Ready: <span class="mono">'+(r.correctionTransactionId||'pending')+'</span>':null});
-  const linesBlock=dsec('Service lines (Box 24)',mini(['CPT','Description','Mod','POS','Units','Charge'],r.lines.map(l=>['<span class="mono">'+safeText(l.cpt)+'</span>',safeText(l.desc),safeText(l.mod||'—'),safeText(l.pos||'—'),l.units,usd(l.charge)])));
+  const sh='<h4 style="margin:14px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)">';
+  const gw='<div style="border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:.78rem">';
+  const gc='</div></div>';
+  const df=(label,val,mono)=>'<div><div style="color:var(--sub);margin-bottom:2px">'+label+'</div>'+(mono?'<span class="mono">':'')+(val?safeText(val):'—')+(mono?'</span>':'')+'</div>';
+  const dfw=(label,val)=>'<div style="grid-column:1/-1"><div style="color:var(--sub);margin-bottom:2px">'+label+'</div>'+(val?safeText(val):'—')+'</div>';
+  const patientAddr=[r.patientAddress,r.patientCity,r.patientState,r.patientZip].filter(Boolean).join(', ');
+  const insuredAddr=[r.insuredAddress,r.insuredCity,r.insuredState,r.insuredZip].filter(Boolean).join(', ');
+  const fcMap={CI:'Commercial',MB:'Medicare Part B',MC:'Medicaid',CH:'CHAMPUS/TRICARE',VA:'Veterans Affairs',OF:'Other federal program',BL:'Blue Cross/Blue Shield',HM:'HMO',ZZ:'Unknown'};
+  const patientBlock=gw
+    +df('Insurance type (Box 1)',fcMap[r.claimFilingCode]||r.claimFilingCode||'—')
+    +df("Insured's ID / Member ID (Box 1a)",r.memberId,true)
+    +df('Patient name (Box 2)',r.patient)
+    +df('Date of birth (Box 3)',r.patientDob)
+    +df('Sex (Box 3)',r.patientSex)
+    +df("Insured's name (Box 4)",r.subscriberName||'Same as patient')
+    +(patientAddr?dfw('Patient address (Box 5)',patientAddr+(r.patientPhone?' · '+r.patientPhone:'')):'')
+    +df('Relationship to insured (Box 6)',r.patientRelationship)
+    +(insuredAddr?dfw("Insured's address (Box 7)",insuredAddr+(r.insuredPhone?' · '+r.insuredPhone:'')):'')
+    +df('Patient account # (Box 26)',r.patientAccount,true)
+    +gc;
+  const hasOtherInsured=r.otherInsuredName||r.otherInsuredPolicy||r.otherInsuredPlan;
+  const hasCond=r.condEmployment==='Yes'||r.condAutoAccident==='Yes'||r.condOtherAccident==='Yes'||r.claimCodes;
+  const insuranceBlock=gw
+    +df('Group number (Box 11)',r.groupNumber,true)
+    +df("Insured's DOB (Box 11a)",r.insuredDob)
+    +df("Insured's sex (Box 11a)",r.insuredSex)
+    +df('Other claim ID (Box 11b)',r.otherClaimId,true)
+    +df('Insurance plan (Box 11c)',r.insurancePlan)
+    +df('Payer (Box 11d)',r.payer)
+    +(hasOtherInsured?df("Other insured's name (Box 9)",r.otherInsuredName)+df("Other insured's policy (Box 9a)",r.otherInsuredPolicy,true)+df("Other insured's plan (Box 9d)",r.otherInsuredPlan):'')
+    +(hasCond?df('Employment related (Box 10a)',r.condEmployment)+df('Auto accident (Box 10b)',r.condAutoAccident+(r.condAutoState?' · '+r.condAutoState:''))+df('Other accident (Box 10c)',r.condOtherAccident)+(r.claimCodes?df('Claim codes (Box 10d)',r.claimCodes):''):'')
+    +gc;
+  const clinicalBlock=gw
+    +(r.dateOfIllness?df('Illness/injury date (Box 14)',r.dateOfIllness):'')
+    +(r.illnessQualifier?df('Qualifier (Box 14)',r.illnessQualifier):'')
+    +(r.otherDate?df('Other date (Box 15)',r.otherDate)+df('Qualifier (Box 15)',r.otherDateQualifier):'')
+    +(r.unableToWorkFrom?dfw('Unable to work (Box 16)',r.unableToWorkFrom+' to '+(r.unableToWorkTo||'')):'')
+    +df('Referring provider (Box 17)',r.referringProvider)
+    +(r.referringIdQualifier?df('Ref. ID qualifier (Box 17a)',r.referringIdQualifier)+df('Ref. other ID (Box 17a)',r.referringOtherId,true):'')
+    +df('Referring NPI (Box 17b)',r.referringNpi,true)
+    +(r.hospFrom?dfw('Hospitalization (Box 18)',r.hospFrom+' to '+(r.hospTo||'')):'')
+    +(r.additionalClaimInfo?dfw('Additional info (Box 19)',r.additionalClaimInfo):'')
+    +df('Outside lab (Box 20)',r.outsideLab)
+    +(r.outsideLab==='Yes'?df('Outside lab charges (Box 20)',r.outsideLabCharges):'')
+    +(r.resubmissionCode?df('Resubmission code (Box 22)',r.resubmissionCode)+df('Original ref # (Box 22)',r.originalRefNumber,true):'')
+    +df('Prior auth # (Box 23)',r.priorAuth,true)
+    +gc;
   const dxBlock=dsec('Diagnoses ICD-10 (Box 21)',r.icds.map(c=>'<span class="tag mono">'+safeText(c)+'</span>').join(' '));
+  const linesBlock=dsec('Service lines (Box 24)',mini(['CPT','Description','Mod','POS','EMG','Dx Ptr','Units','Charge'],r.lines.map(l=>['<span class="mono">'+safeText(l.cpt)+'</span>',safeText(l.desc),safeText(l.mod||'—'),safeText(l.pos||'—'),safeText(l.emg||'No'),safeText(l.dxPointers||'1'),l.units,usd(l.charge)])));
+  const billingBlock=kv({'Status':pillFor(r.status)+(r.rejReason?' '+r.rejReason:'')+(r.denCode?' '+r.denCode:''),'Billing provider (Box 33)':r.providerFull||r.provider||null,'Service facility (Box 32)':redIf(r,'loc',r.loc),'Payer (Box 11d)':redIf(r,'payer',r.payer),'Payer claim # (Box 28)':r.payerClm?'<span class="mono">'+safeText(r.payerClm)+'</span>':null,'Primary payer':r.primaryPayer||null,'Secondary payer':r.secondaryPayer||null,'COB rule':r.cobRule||null,'Accept assignment (Box 27)':r.acceptAssignment||null,'Total charge (Box 28)':redIf(r,'billed','<b>'+usd(r.billed)+'</b>'),'Amount paid (Box 29)':r.amountPaid||null,'Amount paid from payer':r.paid?'<b>'+usd(r.paid)+'</b>':'-','Corrected 837':r.needsResubmission?'Ready: <span class="mono">'+(r.correctionTransactionId||'pending')+'</span>':null});
   const tlRows=[['Claim created',r.dos]];if(r.status!=='Draft'){tlRows.push(['Submitted to clearinghouse',r.submittedAt||r.dos]);tlRows.push(['999 acknowledgment',r.submittedAt||r.dos]);}if(r.cobAppliedAt)tlRows.push(['COB payer order applied',r.cobAppliedAt]);tlRows.push([r.status==='Draft'?'Awaiting submission':'Payer status: '+r.status,'Latest']);
   const timelineBlock=dsec('Timeline',mini(['Event','When'],tlRows));
   const stediActions='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn-ghost btn-sm" onclick="submitClaimToStedi(\''+r.id+'\')">Submit</button><button class="btn-ghost btn-sm" onclick="submitClaimById(\''+r.id+'\')">Resubmit</button></div>';
   const actionsBlock=dsec('Actions','<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-ghost btn-sm" onclick="printClaimPacketById(\''+r.id+'\')">Claim packet PDF</button> <button class="btn-ghost btn-sm" onclick="printCms1500ById(\''+r.id+'\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="view277ByClaim(\''+r.id+'\')">Check status (276)</button></div>'+stediActions);
   return dhead(r.id,safeText(r.patient||'')+' · '+r.type+' · DOS '+(fieldMissing(r,'dos')?'<span class="miss">missing</span>':safeText(r.dos||'')))
-    +'<h4 style="margin:14px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)">Patient</h4>'+patientBlock
-    +'<h4 style="margin:14px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)">Billing</h4>'+billingBlock
-    +linesBlock+dxBlock+timelineBlock+actionsBlock;
+    +sh+'Patient</h4>'+patientBlock
+    +sh+'Insurance</h4>'+insuranceBlock
+    +sh+'Clinical</h4>'+clinicalBlock
+    +dxBlock+linesBlock
+    +sh+'Billing</h4>'+billingBlock
+    +timelineBlock+actionsBlock;
  },
  status:r=>{const i=statusChecks.indexOf(r);return dhead('277 claim status',r.claim+' · '+r.patient)+kv({'Payer':r.payer,'Payer claim #':'<span class="mono">'+r.payerClm+'</span>','Category':r.cat+': '+r.catDesc,'Payment':r.amt||'-','Last checked':r.checked})+dsec('Check history',mini(['Response'],r.history.map(h=>[h])))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="run276('+i+')">Run 276 now</button> <button class="btn-ghost btn-sm" onclick="view277('+i+')">View 277 report</button><div id="statusOut" style="margin-top:12px"></div>');},
  era:r=>{const i=eras.indexOf(r);return dhead(r.id,r.payer+' · '+r.date)+kv({'Status':pillFor(r.status),'Payment method':r.method,'Claims on remit':r.n,'Total billed':usd(r.billed),'Total paid':'<b>'+usd(r.paid)+'</b>','Patient responsibility':usd(r.pr)})+dsec('Claim payments',mini(['Claim','Billed','Allowed','Paid','Pt resp'],r.pays.map(p=>['<span class="mono">'+p.claim+'</span>',usd(p.billed),usd(p.allowed),usd(p.paid),usd(p.pr)])))+dsec('Adjustment groups (CAS)',mini(['Code','Meaning','Amount'],[['CO-45','Charge exceeds fee schedule',usd(r.billed-r.paid-r.pr)],['PR-1','Deductible',usd(Math.round(r.pr*.55))],['PR-2','Coinsurance',usd(Math.round(r.pr*.45))]]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="printEraById(\''+r.id+'\')">ERA PDF</button> <button class="btn-ghost btn-sm" onclick="view835('+i+')">View 835 report</button>'+(r.status==='New'?' <button class="btn btn-sm" onclick="postEraById(\''+r.id+'\')">Post to PM system</button>':''));},
