@@ -1117,7 +1117,9 @@ function enrollmentFromStediResponse(item){
   const p=item.provider&&typeof item.provider==='object'?item.provider:{};
   const c=p.contact&&typeof p.contact==='object'?p.contact:{};
   const addr=p.address&&typeof p.address==='object'?p.address:{};
-  const tp=item.tradingPartner&&typeof item.tradingPartner==='object'?item.tradingPartner:item.payer&&typeof item.payer==='object'?item.payer:{};
+  const tpPayer=item.payer&&typeof item.payer==='object'?item.payer:{};
+  const tpPartner=item.tradingPartner&&typeof item.tradingPartner==='object'?item.tradingPartner:{};
+  const tp=Object.assign({},tpPayer,tpPartner);
   const txnSets=Array.isArray(item.transactionSets)?item.transactionSets:[];
   const txnLabel=txnSets.map(t=>typeof t==='object'?(t.name||t.transactionSetIdentifier||''):String(t)).filter(Boolean).join(', ');
   const fmtDate=v=>{if(!v)return null;try{return new Date(v).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}catch{return String(v);}};
@@ -1214,12 +1216,21 @@ async function loadProvidersFromStedi(){
   }catch(e){if(sub)sub.textContent='Could not reach Stedi — showing local data.';console.warn('loadProvidersFromStedi:',e);}
 }
 async function seedPayersFromEnrollments(){
-  const enrolled=enrollments.filter(e=>e.payerStediId);
   const seen=new Set(payerDir.map(p=>p.stedi));
-  const toFetch=enrolled.filter(e=>!seen.has(e.payerStediId));
-  for(const e of toFetch){
-    try{const detail=await loadPayerDetail(e.payerStediId);addPayerToTable(detail);}
-    catch(err){console.warn('seedPayersFromEnrollments:',err);}
+  for(const e of enrollments){
+    if(!e.payer&&!e.payerStediId)continue;
+    if(e.payerStediId&&!seen.has(e.payerStediId)){
+      try{const detail=await loadPayerDetail(e.payerStediId);addPayerToTable(detail);seen.add(detail.stedi||e.payerStediId);}
+      catch(err){console.warn('seedPayersFromEnrollments:',err);}
+    } else if(!e.payerStediId&&e.payer){
+      try{
+        const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({base:'payers',path:'/payers/search?name='+encodeURIComponent(e.payer),method:'GET',payload:null})});
+        const d=await res.json();
+        const items=(d.response&&Array.isArray(d.response.items))?d.response.items:(Array.isArray(d.response)?d.response:[]);
+        if(items[0]){const detail=payerFromStediResponse(items[0]);if(detail.stedi&&!seen.has(detail.stedi)){addPayerToTable(detail);seen.add(detail.stedi);}}
+      }catch(err){console.warn('seedPayersFromEnrollments name fallback:',err);}
+    }
   }
 }
 const posted=eras.filter(e=>e.status==='Posted'),unposted=eras.filter(e=>e.status==='New');
@@ -2689,7 +2700,28 @@ function filterPayers(recordArtifact){
 }
 /* Live payer typeahead + directory */
 let _payerDebounce,_payerResults=[],_payerFocusIdx=-1;
-function payerFromStediResponse(item){const data=item.payer||item;const txns=data.transactionTypes||data.transactions||[];const txnStr=x=>typeof x==='string'?x:(x.transactionType||x.type||'');const hasTxn=t=>txns.some(x=>txnStr(x).toUpperCase().includes(t));const enrollReq=data.enrollmentRequired===true||txns.some(x=>typeof x==='object'&&x.enrollmentRequired===true);return{id:data.stediId||data.id||'pyr_'+Math.random().toString(36).slice(2,8),stedi:data.stediId||data.id||'',name:data.displayName||data.payerName||data.name||'',payerId:data.primaryPayerId||data.payerId||data.ediPayerId||'',aliases:Array.isArray(data.aliases)?data.aliases:[],elig:hasTxn('270')||hasTxn('271')||data.eligibility===true,clm:hasTxn('837')||data.claims===true,era:hasTxn('835')||data.era===true,enroll:enrollReq?'Required':'None',coverageTypes:Array.isArray(data.coverageTypes)?data.coverageTypes:[],states:Array.isArray(data.states)?data.states:[],_raw:data};}
+function payerFromStediResponse(item){
+  const data=item.payer||item;
+  const txns=data.transactionTypes||data.transactions||data.supportedTransactions||data.supported||[];
+  const txnStr=x=>typeof x==='string'?x:(x.transactionType||x.transactionSetIdentifier||x.type||x.code||'');
+  const hasTxn=t=>txns.some(x=>txnStr(x).toUpperCase().includes(t));
+  const enrollReq=data.enrollmentRequired===true||String(data.enrollmentRequired).toLowerCase()==='true'
+    ||txns.some(x=>typeof x==='object'&&(x.enrollmentRequired===true||x.requiresEnrollment===true));
+  return{
+    id:data.stediId||data.stediPayerId||data.id||'pyr_'+Math.random().toString(36).slice(2,8),
+    stedi:data.stediId||data.stediPayerId||data.id||'',
+    name:data.displayName||data.payerName||data.name||'',
+    payerId:data.primaryPayerId||data.payerPrimaryId||data.payerId||data.ediPayerId||data.primaryId||'',
+    aliases:Array.isArray(data.aliases)?data.aliases:[],
+    elig:hasTxn('270')||hasTxn('271')||data.eligibility===true||data.supportsEligibility===true,
+    clm:hasTxn('837')||data.claims===true||data.supportsClaims===true,
+    era:hasTxn('835')||data.era===true||data.supportsEra===true||data.remittance===true,
+    enroll:enrollReq?'Required':'None',
+    coverageTypes:Array.isArray(data.coverageTypes)?data.coverageTypes:[],
+    states:Array.isArray(data.states)?data.states:[],
+    _raw:data
+  };
+}
 function initPayerTypeahead(){const inp=document.getElementById('payerSearchInput');const drop=document.getElementById('payerTypeahead');if(!inp||!drop)return;inp.removeEventListener('input',filterPayers);inp.setAttribute('autocomplete','off');inp.setAttribute('aria-autocomplete','list');inp.setAttribute('aria-controls','payerTypeahead');inp.addEventListener('input',function(){clearTimeout(_payerDebounce);const q=this.value.trim();if(q.length<2){drop.hidden=true;_payerResults=[];return;}_payerDebounce=setTimeout(()=>livePayerSearch(q),300);});inp.addEventListener('keydown',function(e){if(!_payerResults.length)return;if(e.key==='ArrowDown'){e.preventDefault();_payerFocusIdx=Math.min(_payerFocusIdx+1,_payerResults.length-1);highlightPayerDropdownItem();}else if(e.key==='ArrowUp'){e.preventDefault();_payerFocusIdx=Math.max(_payerFocusIdx-1,0);highlightPayerDropdownItem();}else if(e.key==='Enter'&&_payerFocusIdx>=0){e.preventDefault();selectPayer(_payerResults[_payerFocusIdx].stedi,_payerResults[_payerFocusIdx].name);}else if(e.key==='Escape'){drop.hidden=true;_payerFocusIdx=-1;}});document.addEventListener('click',function(e){if(!inp.contains(e.target)&&!drop.contains(e.target))drop.hidden=true;});}
 async function livePayerSearch(query){const drop=document.getElementById('payerTypeahead');const sub=document.getElementById('sub-payers');_payerFocusIdx=-1;const spinner=document.createElement('div');spinner.className='pti';spinner.textContent='Searching…';drop.replaceChildren(spinner);drop.hidden=false;try{const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'payers',path:'/payers/search?name='+encodeURIComponent(query),method:'GET',payload:null})});const d=await res.json();const rawItems=(d.response&&Array.isArray(d.response.items))?d.response.items:(Array.isArray(d.response)?d.response:[]);_payerResults=rawItems.map(payerFromStediResponse);if(!_payerResults.length){const el=document.createElement('div');el.className='pti';el.textContent='No payers found for "'+query+'"';drop.replaceChildren(el);return;}drop.replaceChildren(..._payerResults.map((p)=>{const el=document.createElement('div');el.className='pti';el.setAttribute('role','option');const nm=document.createElement('div');nm.className='pti-name';nm.textContent=p.name;const sb=document.createElement('div');sb.className='pti-sub';sb.textContent=(p.payerId?'Payer ID: '+p.payerId+' · ':'')+'Stedi: '+p.stedi;el.append(nm,sb);el.addEventListener('click',()=>selectPayer(p.stedi,p.name));return el;}));if(sub)sub.textContent=_payerResults.length+' result'+(rawItems.length!==1?'s':'')+' for "'+query+'" — select to add to table';}catch(e){const el=document.createElement('div');el.className='pti';el.textContent='Could not reach Stedi — check connection.';drop.replaceChildren(el);}}
 function highlightPayerDropdownItem(){const drop=document.getElementById('payerTypeahead');Array.from(drop.children).forEach((el,i)=>el.classList.toggle('focused',i===_payerFocusIdx));drop.children[_payerFocusIdx]&&drop.children[_payerFocusIdx].scrollIntoView({block:'nearest'});}
