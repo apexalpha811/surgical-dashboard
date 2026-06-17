@@ -5,7 +5,8 @@
       "name": "ccs-dashboard-docupipe",
       "runtimeExecutable": "node",
       "runtimeArgs": ["C:/Users/kv8n11/culver-city-surgical-dashboard-docupipe/server.js"],
-      "port": 8742
+      "port": 8742,
+      "autoPort": false
     }
   ]
 }

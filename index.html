@@ -2729,23 +2729,26 @@ function filterPayers(recordArtifact){
 let _payerDebounce,_payerResults=[],_payerFocusIdx=-1;
 function payerFromStediResponse(item){
   const data=item.payer||item;
+  const ts=data.transactionSupport||{};
+  const hasTs=Object.keys(ts).length>0;
+  const isSup=v=>v==='SUPPORTED'||v==='ENROLLMENT_REQUIRED';
   const txns=data.transactionTypes||data.transactions||data.supportedTransactions||data.supported||[];
   const txnStr=x=>typeof x==='string'?x:(x.transactionType||x.transactionSetIdentifier||x.type||x.code||'');
   const hasTxn=t=>txns.some(x=>txnStr(x).toUpperCase().includes(t));
-  const enrollReq=data.enrollmentRequired===true||String(data.enrollmentRequired).toLowerCase()==='true'
-    ||txns.some(x=>typeof x==='object'&&(x.enrollmentRequired===true||x.requiresEnrollment===true));
+  const elig=hasTs?isSup(ts.eligibilityCheck):(hasTxn('270')||hasTxn('271'));
+  const clm=hasTs?(isSup(ts.professionalClaimSubmission)||isSup(ts.institutionalClaimSubmission)||isSup(ts.claimSubmission)||isSup(ts.dentalClaimSubmission)):hasTxn('837');
+  const era=hasTs?isSup(ts.claimPayment):hasTxn('835');
+  const enrollReq=hasTs?Object.values(ts).some(v=>v==='ENROLLMENT_REQUIRED'):(data.enrollmentRequired===true||txns.some(x=>typeof x==='object'&&(x.enrollmentRequired===true||x.requiresEnrollment===true)));
   return{
     id:data.stediId||data.stediPayerId||data.id||'pyr_'+Math.random().toString(36).slice(2,8),
     stedi:data.stediId||data.stediPayerId||data.id||'',
     name:data.displayName||data.payerName||data.name||'',
     payerId:data.primaryPayerId||data.payerPrimaryId||data.payerId||data.ediPayerId||data.primaryId||'',
     aliases:Array.isArray(data.aliases)?data.aliases:[],
-    elig:hasTxn('270')||hasTxn('271')||data.eligibility===true||data.supportsEligibility===true,
-    clm:hasTxn('837')||data.claims===true||data.supportsClaims===true,
-    era:hasTxn('835')||data.era===true||data.supportsEra===true||data.remittance===true,
+    elig,clm,era,
     enroll:enrollReq?'Required':'None',
     coverageTypes:Array.isArray(data.coverageTypes)?data.coverageTypes:[],
-    states:Array.isArray(data.states)?data.states:[],
+    states:Array.isArray(data.operatingStates)?data.operatingStates:(Array.isArray(data.states)?data.states:[]),
     _raw:data
   };
 }
@@ -2753,9 +2756,11 @@ function initPayerTypeahead(){const inp=document.getElementById('payerSearchInpu
 async function livePayerSearch(query){const drop=document.getElementById('payerTypeahead');const sub=document.getElementById('sub-payers');_payerFocusIdx=-1;const spinner=document.createElement('div');spinner.className='pti';spinner.textContent='Searching…';drop.replaceChildren(spinner);drop.hidden=false;try{const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'payers',path:'/payers/search?name='+encodeURIComponent(query),method:'GET',payload:null})});const d=await res.json();const rawItems=(d.response&&Array.isArray(d.response.items))?d.response.items:(Array.isArray(d.response)?d.response:[]);_payerResults=rawItems.map(payerFromStediResponse);if(!_payerResults.length){const el=document.createElement('div');el.className='pti';el.textContent='No payers found for "'+query+'"';drop.replaceChildren(el);return;}drop.replaceChildren(..._payerResults.map((p)=>{const el=document.createElement('div');el.className='pti';el.setAttribute('role','option');const nm=document.createElement('div');nm.className='pti-name';nm.textContent=p.name;const sb=document.createElement('div');sb.className='pti-sub';sb.textContent=(p.payerId?'Payer ID: '+p.payerId+' · ':'')+'Stedi: '+p.stedi;el.append(nm,sb);el.addEventListener('click',()=>selectPayer(p.stedi,p.name));return el;}));if(sub)sub.textContent=_payerResults.length+' result'+(rawItems.length!==1?'s':'')+' for "'+query+'" — select to add to table';}catch(e){const el=document.createElement('div');el.className='pti';el.textContent='Could not reach Stedi — check connection.';drop.replaceChildren(el);}}
 function highlightPayerDropdownItem(){const drop=document.getElementById('payerTypeahead');Array.from(drop.children).forEach((el,i)=>el.classList.toggle('focused',i===_payerFocusIdx));drop.children[_payerFocusIdx]&&drop.children[_payerFocusIdx].scrollIntoView({block:'nearest'});}
 async function selectPayer(stediId,name){const inp=document.getElementById('payerSearchInput');const drop=document.getElementById('payerTypeahead');const sub=document.getElementById('sub-payers');if(inp)inp.value=name||stediId;drop.hidden=true;const fromSearch=_payerResults.find(p=>p.stedi===stediId);_payerResults=[];const detail=fromSearch||await loadPayerDetail(stediId);addPayerToTable(detail);if(sub)sub.textContent=payerDir.length+' payer'+(payerDir.length!==1?'s':'')+' · click a row for full detail';}
-async function loadPayerDetail(stediId){try{const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'payers',path:'/payers/'+encodeURIComponent(stediId),method:'GET',payload:null})});const d=await res.json();if(d&&d.ok&&d.response&&!d.response.error)return payerFromStediResponse(d.response);}catch(e){}return _payerResults.find(p=>p.stedi===stediId)||{id:stediId,stedi:stediId,name:stediId,payerId:'',aliases:[],elig:false,clm:false,era:false,enroll:'Unknown',coverageTypes:[],states:[],_raw:{}};}
+let _payerDirCache=null,_payerDirCachePromise=null;
+async function ensurePayerDirCache(){if(_payerDirCache)return _payerDirCache;if(_payerDirCachePromise)return _payerDirCachePromise;_payerDirCachePromise=(async()=>{const m=new Map();let token=null;do{const path='/payers'+(token?'?nextPageToken='+encodeURIComponent(token):'');const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'payers',path,method:'GET',payload:null})});const d=await res.json();if(!d||!d.ok)break;const items=(d.response&&Array.isArray(d.response.items))?d.response.items:[];items.forEach(it=>{const r=payerFromStediResponse(it);m.set(r.stedi,r);});token=(d.response&&d.response.nextPageToken)||null;}while(token);_payerDirCache=m;return m;})();return _payerDirCachePromise;}
+async function loadPayerDetail(stediId){const mem=payerDir.find(p=>p.stedi===stediId);if(mem&&mem.name&&mem.name!==stediId)return mem;try{const cache=await ensurePayerDirCache();const found=cache.get(stediId);if(found)return found;}catch(e){console.warn('payer dir cache:',e);}return _payerResults.find(p=>p.stedi===stediId)||{id:stediId,stedi:stediId,name:stediId,payerId:'',aliases:[],elig:false,clm:false,era:false,enroll:'Unknown',coverageTypes:[],states:[],_raw:{}};}
 function addPayerToTable(record){const existing=payerDir.findIndex(p=>p.stedi===record.stedi);if(existing>=0)payerDir[existing]=record;else payerDir.unshift(record);payersMaster=payerDir.slice();T.payers.data=payerDir;refreshLiveSection('payers');persistDashboardRecord('payers',record,'live');}
-async function loadAllPayers(){const btn=document.getElementById('btnLoadAllPayers');const sub=document.getElementById('sub-payers');if(btn)btn.disabled=true;let page=0,token=null,total=0;try{do{page++;if(sub)sub.textContent='Loading page '+page+'…';const path='/payers'+(token?'?nextPageToken='+encodeURIComponent(token):'');const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'payers',path,method:'GET',payload:null})});const d=await res.json();const items=(d.response&&Array.isArray(d.response.items))?d.response.items:(Array.isArray(d.response)?d.response:[]);items.forEach(item=>{const r=payerFromStediResponse(item);const idx=payerDir.findIndex(p=>p.stedi===r.stedi);if(idx>=0)payerDir[idx]=r;else payerDir.push(r);});total+=items.length;token=(d.response&&d.response.nextPageToken)||null;T.payers.data=payerDir;payersMaster=payerDir.slice();renderTable('payers');}while(token);if(sub)sub.textContent=total+' payers loaded from Stedi · click a row for detail';}catch(e){if(sub)sub.textContent='Could not load all payers — try again.';}finally{if(btn)btn.disabled=false;}}
+async function loadAllPayers(){const btn=document.getElementById('btnLoadAllPayers');const sub=document.getElementById('sub-payers');if(btn)btn.disabled=true;try{const cache=await ensurePayerDirCache();let total=0;cache.forEach(r=>{const idx=payerDir.findIndex(p=>p.stedi===r.stedi);if(idx>=0)payerDir[idx]=r;else payerDir.push(r);total++;});T.payers.data=payerDir;payersMaster=payerDir.slice();renderTable('payers');if(sub)sub.textContent=total+' payers loaded from Stedi · click a row for detail';}catch(e){if(sub)sub.textContent='Could not load all payers — try again.';}finally{if(btn)btn.disabled=false;}}
 
 /* Toast for section-level buttons (forms, Manage, Search, etc.) that have no dedicated handler */
 let toastTimer;
