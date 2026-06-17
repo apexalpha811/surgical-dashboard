@@ -1411,15 +1411,15 @@ const DETAIL={
     +(r.providerPhone?'<div><div style="color:var(--sub);margin-bottom:2px">Phone</div>'+safeText(r.providerPhone)+'</div>':'')
     +(addrLine?'<div style="grid-column:1/-1"><div style="color:var(--sub);margin-bottom:2px">Address</div>'+safeText(addrLine).replace(/\n/g,'<br>')+'</div>':'')
     +'</div></div>';
-  const contactAddrLine=[r.contactAddress,r.contactCity&&r.contactState?r.contactCity+', '+r.contactState+(r.contactZip?' '+r.contactZip:''):r.contactCity||r.contactState||''].filter(Boolean).join('\n');
-  const contactBlock=(r.contactName||r.contactOrganization||r.contactEmail||r.contactPhone||contactAddrLine)
+  const contactName=r.providerFirstName&&r.providerLastName?r.providerFirstName+' '+r.providerLastName:r.providerFirstName||r.providerLastName||'';
+  const contactAddrLine=[r.providerAddress,r.providerCity&&r.providerState?r.providerCity+', '+r.providerState+(r.providerZip?' '+r.providerZip:''):r.providerCity||r.providerState||''].filter(Boolean).join('\n');
+  const contactBlock=(contactName||r.providerEmail||r.providerPhone||contactAddrLine)
     ?'<div style="border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px">'
-    +'<div style="font-weight:600;font-size:.95rem;margin-bottom:10px">'+safeText(r.contactName||r.contactOrganization||'Provider Contact')+'</div>'
+    +'<div style="font-weight:600;font-size:.95rem;margin-bottom:10px">'+safeText(contactName||'Provider Contact')+'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:.78rem">'
-    +(r.contactOrganization?'<div><div style="color:var(--sub);margin-bottom:2px">Organization</div>'+safeText(r.contactOrganization)+'</div>':'')
-    +(r.contactFirstName||r.contactLastName?'<div><div style="color:var(--sub);margin-bottom:2px">First name</div>'+safeText(r.contactFirstName||'—')+'</div><div><div style="color:var(--sub);margin-bottom:2px">Last name</div>'+safeText(r.contactLastName||'—')+'</div>':'')
-    +(r.contactEmail?'<div><div style="color:var(--sub);margin-bottom:2px">Email</div><a href="mailto:'+safeText(r.contactEmail)+'">'+safeText(r.contactEmail)+'</a></div>':'')
-    +(r.contactPhone?'<div><div style="color:var(--sub);margin-bottom:2px">Phone</div>'+safeText(r.contactPhone)+'</div>':'')
+    +(r.providerFirstName||r.providerLastName?'<div><div style="color:var(--sub);margin-bottom:2px">First name</div>'+safeText(r.providerFirstName||'—')+'</div><div><div style="color:var(--sub);margin-bottom:2px">Last name</div>'+safeText(r.providerLastName||'—')+'</div>':'')
+    +(r.providerEmail?'<div><div style="color:var(--sub);margin-bottom:2px">Email</div><a href="mailto:'+safeText(r.providerEmail)+'">'+safeText(r.providerEmail)+'</a></div>':'')
+    +(r.providerPhone?'<div><div style="color:var(--sub);margin-bottom:2px">Phone</div>'+safeText(r.providerPhone)+'</div>':'')
     +(contactAddrLine?'<div style="grid-column:1/-1"><div style="color:var(--sub);margin-bottom:2px">Address</div>'+safeText(contactAddrLine).replace(/\n/g,'<br>')+'</div>':'')
     +'</div></div>'
     :'';
