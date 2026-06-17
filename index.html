@@ -1325,8 +1325,11 @@ const DETAIL={
   const billingBlock=kv({'Status':pillFor(r.status)+(r.rejReason?' '+r.rejReason:'')+(r.denCode?' '+r.denCode:''),'Rendering provider (Box 24J)':redIf(r,'provider',r.providerFull||r.provider),'Service facility (Box 32)':redIf(r,'loc',r.loc),'Payer (Box 11d)':redIf(r,'payer',r.payer),'Payer claim # (Box 28)':r.payerClm?'<span class="mono">'+safeText(r.payerClm)+'</span>':null,'Primary payer':r.primaryPayer||null,'Secondary payer':r.secondaryPayer||null,'COB rule':r.cobRule||null,'Referring provider (Box 17)':r.referringProvider||null,'Referring NPI (Box 17b)':r.referringNpi?'<span class="mono">'+safeText(r.referringNpi)+'</span>':null,'Prior auth # (Box 23)':r.priorAuth?'<span class="mono">'+safeText(r.priorAuth)+'</span>':null,'Accept assignment (Box 27)':r.acceptAssignment||null,'Total charge (Box 28)':redIf(r,'billed','<b>'+usd(r.billed)+'</b>'),'Amount paid':r.paid?'<b>'+usd(r.paid)+'</b>':'-','Corrected 837':r.needsResubmission?'Ready: <span class="mono">'+(r.correctionTransactionId||'pending')+'</span>':null});
   const linesBlock=dsec('Service lines (Box 24)',mini(['CPT','Description','Mod','POS','Units','Charge'],r.lines.map(l=>['<span class="mono">'+safeText(l.cpt)+'</span>',safeText(l.desc),safeText(l.mod||'—'),safeText(l.pos||'—'),l.units,usd(l.charge)])));
   const dxBlock=dsec('Diagnoses ICD-10 (Box 21)',r.icds.map(c=>'<span class="tag mono">'+safeText(c)+'</span>').join(' '));
-  const timelineBlock=dsec('Timeline',mini(['Event','When'],[['Claim created',r.dos],['Submitted to clearinghouse',r.dos],['999 acknowledgment',r.dos],[r.status==='Draft'?'Awaiting submission':'Payer status: '+r.status,'Latest']].concat(r.cobAppliedAt?[['COB payer order applied',r.cobAppliedAt]]:[])));
-  const actionsBlock=dsec('Actions','<button class="btn-ghost btn-sm" onclick="printClaimPacketById(\''+r.id+'\')">Claim packet PDF</button> <button class="btn-ghost btn-sm" onclick="printCms1500ById(\''+r.id+'\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="view277ByClaim(\''+r.id+'\')">Check status (276)</button>'+(r.rejReason?' <button class="btn btn-sm" onclick="submitClaimById(\''+r.id+'\')">Fix &amp; resubmit</button>':''));
+  const tlRows=[['Claim created',r.dos]];if(r.status!=='Draft'){tlRows.push(['Submitted to clearinghouse',r.submittedAt||r.dos]);tlRows.push(['999 acknowledgment',r.submittedAt||r.dos]);}if(r.cobAppliedAt)tlRows.push(['COB payer order applied',r.cobAppliedAt]);tlRows.push([r.status==='Draft'?'Awaiting submission':'Payer status: '+r.status,'Latest']);
+  const timelineBlock=dsec('Timeline',mini(['Event','When'],tlRows));
+  const submitBtn=r.status==='Draft'?' <button class="btn btn-sm" onclick="submitClaimToStedi(\''+r.id+'\')">Submit</button>':'';
+  const resubmitBtn=r.rejReason||r.status==='Rejected'||r.status==='Denied'?' <button class="btn btn-sm" onclick="submitClaimById(\''+r.id+'\')">Resubmit</button>':'';
+  const actionsBlock=dsec('Actions','<button class="btn-ghost btn-sm" onclick="printClaimPacketById(\''+r.id+'\')">Claim packet PDF</button> <button class="btn-ghost btn-sm" onclick="printCms1500ById(\''+r.id+'\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="view277ByClaim(\''+r.id+'\')">Check status (276)</button>'+submitBtn+resubmitBtn);
   return dhead(r.id,safeText(r.patient||'')+' · '+r.type+' · DOS '+(fieldMissing(r,'dos')?'<span class="miss">missing</span>':safeText(r.dos||'')))
     +'<h4 style="margin:14px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)">Patient</h4>'+patientBlock
     +'<h4 style="margin:14px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)">Billing</h4>'+billingBlock
@@ -1490,8 +1493,7 @@ function stediArtifact(kind,endpoint,request,response,opts){
  persistDashboardRecord('transactions',record,'live');
  return record;
 }
-/* Fire a real Stedi call through the server proxy and patch the transaction record with the live response.
-   Returns the record synchronously so existing callers keep working; the real response patches in async. */
+function toStediDate(d){if(!d)return '';const p=d.split('/');if(p.length===3)return p[2]+p[0].padStart(2,'0')+p[1].padStart(2,'0');return d.replace(/[\/-]/g,'');}
 function goLive(rec,base,path,method,payload){
  if(!rec||!path||path.indexOf('{')>=0)return rec;
  fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:base,path:path,method:method||'POST',payload:payload})})
@@ -1522,7 +1524,26 @@ const stediClient={
  },
  claim(claim,label){
   const endpoint=claim.type==='837I'?'/change/medicalnetwork/institutionalclaims/v1/submission':'/change/medicalnetwork/professionalclaims/v3/submission';
-  const request={claimId:claim.id,claimType:claim.type,payer:claim.payer,billingProvider:'Culver City Surgical Partners',renderingProvider:claim.providerFull,serviceFacility:claim.loc,diagnoses:claim.icds,serviceLines:claim.lines,totalCharge:claim.billed};
+  const prov=providers.find(p=>p.name===claim.providerFull||p.name===claim.provider)||{};
+  const pay=payerDir.find(p=>p.name===claim.payer)||{};
+  const subName=claim.subscriberName||claim.patient||'';
+  const subFirst=subName.split(' ')[0]||'';const subLast=subName.split(' ').slice(1).join(' ')||'';
+  const dosStedi=toStediDate(claim.dos);
+  const billing={npi:prov.npi||'',taxonomyCode:prov.taxonomyCode||''};
+  if(prov.taxIdType==='SSN')billing.ssn=(prov.taxId||'').replace(/\D/g,'');else billing.employerId=(prov.taxId||'').replace(/\D/g,'');
+  if(prov.contactType==='Org'||(!prov.firstName&&prov.name))billing.organizationName=prov.name||'Culver City Surgical Partners';
+  else{billing.firstName=prov.firstName||'';billing.lastName=prov.lastName||'';}
+  billing.address={address1:prov.address||'',city:prov.city||'',state:prov.state||'',postalCode:(prov.zip||'').replace(/\D/g,'')};
+  if(prov.addressLine2)billing.address.address2=prov.addressLine2;
+  if(prov.phone||prov.email){const ci={};if(prov.phone)ci.phoneNumber=prov.phone.replace(/\D/g,'');if(prov.email)ci.email=prov.email;billing.contactInformation=[ci];}
+  const subscriber={memberId:claim.memberId||'',firstName:subFirst,lastName:subLast,dateOfBirth:toStediDate(claim.patientDob),gender:claim.patientSex==='Male'?'M':claim.patientSex==='Female'?'F':'U'};
+  if(claim.groupNumber)subscriber.groupNumber=claim.groupNumber;
+  const claimInfo={claimChargeAmount:(claim.billed||0).toFixed(2),claimFilingCode:claim.claimFilingCode||'ZZ',claimFrequencyCode:'1',benefitsAssignmentCertificationIndicator:claim.acceptAssignment==='Yes'?'Y':'N',placeOfServiceCode:claim.lines[0]?claim.lines[0].pos:'11',healthCareCodeInformation:claim.icds.map((c,i)=>({diagnosisCode:c.replace(/\./g,''),diagnosisTypeCode:i===0?'ABK':'ABF'})),serviceLines:claim.lines.map(l=>({procedureCode:l.cpt,procedureModifiers:l.mod?[l.mod]:undefined,lineItemChargeAmount:(l.charge||0).toFixed(2),serviceUnitCount:String(l.units||1),placeOfServiceCode:l.pos||'11',diagnosisCodePointers:['1'],dateOfServiceStart:dosStedi,dateOfServiceEnd:dosStedi}))};
+  if(claim.priorAuth)claimInfo.claimSupplementalInformation={priorAuthorizationNumber:claim.priorAuth};
+  if(claim.patientAccount)claimInfo.patientAccountNumber=claim.patientAccount;
+  const request={tradingPartnerServiceId:pay.payerId||claim.payer,billing:billing,subscriber:subscriber,claimInformation:claimInfo};
+  if(claim.patientRelationship&&claim.patientRelationship!=='Self'){const rel={Self:'18',Spouse:'01',Child:'19',Other:'G8'};request.subscriber.relationshipToSubscriberCode=rel[claim.patientRelationship]||'18';request.patient={firstName:(claim.patient||'').split(' ')[0]||'',lastName:(claim.patient||'').split(' ').slice(1).join(' ')||'',dateOfBirth:toStediDate(claim.patientDob),gender:subscriber.gender};}
+  if(claim.referringProvider){const rf={};const rFirst=(claim.referringProvider||'').split(' ')[0]||'';const rLast=(claim.referringProvider||'').split(' ').slice(1).join(' ')||'';rf.firstName=rFirst;rf.lastName=rLast;if(claim.referringNpi)rf.npi=claim.referringNpi;request.referringProvider=rf;}
   const response={claimId:claim.id,accepted:true,transactionStatus:'ACCEPTED_FOR_PROCESSING',businessIdentifier:claim.id,payerClaimNumber:claim.payerClm,acknowledgment:'999 accepted, 277CA pending or received separately'};
   return goLive(stediArtifact(claim.type||'837P',endpoint,request,response,{partner:claim.payer,sourceClaim:claim.id,input:'837 claim request\n'+compactJson(request),output:'999 acknowledgment and Stedi claim submission response\n'+compactJson(response),status:'Delivered',description:label||'837 claim submission'}),'healthcare',endpoint,'POST',request);
  },
@@ -1735,7 +1756,8 @@ function runClaimStatusLifecycle(record){
 function createStatusForClaim(claimId,runNow=true){const c=findBy(claims,'id',claimId);const existing=statusChecks.find(x=>x.claim===claimId);const record=existing||{claim:claimId,patient:c?c.patient:'Unknown Patient',payer:c?c.payer:'Unknown Payer',cat:c&&c.status==='Paid'?'F1':c&&c.status==='Denied'?'F2':'A2',catDesc:c&&c.status==='Paid'?'Finalized: paid':c&&c.status==='Denied'?'Finalized: denied':'Acknowledged: accepted for processing',amt:c&&c.paid?usd(c.paid):null,payerClm:c?c.payerClm:'Pending',checked:'Not checked yet',history:[]};if(!existing)statusChecks.unshift(record);if(runNow)runClaimStatusLifecycle(record);T.status.data=statusChecks;refreshLiveSection('status');return statusChecks.indexOf(record);}
 function view277ByClaim(claimId){focusRecord('status',createStatusForClaim(claimId,true));}
 function createTransactionForClaim(r,label){return stediClient.claim(r,label);}
-function submitClaimById(id){const r=findBy(claims,'id',id);if(!r)return;r.status='Accepted';r.rejReason=null;const artifact=createTransactionForClaim(r,'837 claim submission and clearinghouse acceptance');r.transactionId=artifact.id;refreshLiveSection('claims');persistDashboardRecord('claims',r,'submitted');focusRecord('transactions',0);}
+function submitClaimToStedi(id){const r=findBy(claims,'id',id);if(!r)return;const artifact=createTransactionForClaim(r,'837 claim submission created from dashboard');r.transactionId=artifact.id;r.status='Pending payer';refreshLiveSection('claims');updateClaimKpis();persistDashboardRecord('claims',r,'submitted');openDrawer('claims',claims.indexOf(r));}
+function submitClaimById(id){const r=findBy(claims,'id',id);if(!r)return;r.status='Pending payer';r.rejReason=null;r.denCode=null;const artifact=createTransactionForClaim(r,'837 claim resubmission');r.transactionId=artifact.id;refreshLiveSection('claims');updateClaimKpis();persistDashboardRecord('claims',r,'resubmitted');openDrawer('claims',claims.indexOf(r));}
 function uploadAttachmentByCtrl(ctrl){const r=findBy(attachments,'ctrl',ctrl);if(!r)return;const artifact=stediClient.attachment(r);r.status='Sent';r.attachmentId=artifact.response.attachmentId;r.transactionId=artifact.id;refreshLiveSection('attachments');persistDashboardRecord('attachments',r,'submitted');focusRecord('attachments',attachments.indexOf(r));}
 function claimSubmittedToPayer(r){return r&&['Accepted','Paid','Pending payer','Rejected','Denied'].includes(r.status);}
 function findClaimForCob(r){return claims.find(c=>c.patient===r.patient)||claims.find(c=>String(c.patient||'').split(' ').slice(-1)[0]===String(r.patient||'').split(' ').slice(-1)[0]);}
@@ -2635,16 +2657,19 @@ const CREATE={
   {k:'addressLine2',label:'Street address 2',v:''},
   {k:'city',label:'City',v:''},
   {k:'state',label:'State',v:''},
-  {k:'zip',label:'ZIP Code',v:''}
- ],build:v=>({name:v.name||'New Provider',npi:v.npi||npi(),taxId:v.taxId||'',taxIdType:v.taxIdType||'EIN',contactType:v.contactType||'Individual',firstName:v.firstName||'',lastName:v.lastName||'',email:v.email||'',phone:v.phone||'',address:v.address||'',addressLine2:v.addressLine2||'',city:v.city||'',state:v.state||'',zip:v.zip||'',spec:'',tax:'',id:'',live:0,pend:0})},
+  {k:'zip',label:'ZIP Code',v:''},
+  {k:'taxonomyCode',label:'Taxonomy code (NUCC)',v:''}
+ ],build:v=>({name:v.name||'New Provider',npi:v.npi||npi(),taxId:v.taxId||'',taxIdType:v.taxIdType||'EIN',contactType:v.contactType||'Individual',firstName:v.firstName||'',lastName:v.lastName||'',email:v.email||'',phone:v.phone||'',address:v.address||'',addressLine2:v.addressLine2||'',city:v.city||'',state:v.state||'',zip:v.zip||'',taxonomyCode:v.taxonomyCode||'',spec:'',tax:'',id:'',live:0,pend:0})},
  claims:{title:'New claim',data:claims,key:'claims',fields:[
   {k:'patient',label:'Patient name (Box 2)',v:''},
   {k:'patientDob',label:'Patient date of birth (Box 3)',v:''},
   {k:'patientSex',label:'Patient sex (Box 3)',type:'select',opts:['Male','Female','Unknown']},
+  {k:'subscriberName',label:"Insured's name (Box 4, leave blank if same as patient)",v:''},
   {k:'patientRelationship',label:'Patient relationship to insured (Box 6)',type:'select',opts:['Self','Spouse','Child','Other']},
   {k:'memberId',label:"Insured's ID / Member ID (Box 1a)",v:''},
   {k:'groupNumber',label:'Group number (Box 11)',v:''},
   {k:'insurancePlan',label:'Insurance plan name (Box 11c)',v:''},
+  {k:'claimFilingCode',label:'Insurance type (Box 1)',type:'select',opts:['CI - Commercial','MB - Medicare Part B','MC - Medicaid','CH - CHAMPUS/TRICARE','VA - Veterans Affairs','OF - Other federal program','BL - Blue Cross/Blue Shield','HM - HMO','ZZ - Unknown']},
   {k:'type',label:'Claim type',type:'select',opts:['837P','837I']},
   {k:'provider',label:'Rendering provider (Box 24J)',type:'select',opts:providers.slice(0,12).map(p=>p.name)},
   {k:'loc',label:'Service facility (Box 32)',type:'select',opts:LOCS},
@@ -2660,7 +2685,7 @@ const CREATE={
   {k:'patientAccount',label:'Patient account number (Box 26)',v:''},
   {k:'acceptAssignment',label:'Accept assignment (Box 27)',type:'select',opts:['Yes','No']},
   {k:'billed',label:'Total charge (Box 28)',v:''}
- ],build:v=>{const cpts=v.cpt.split(',').map(s=>s.trim()).filter(Boolean);const mods=v.mod?v.mod.split(',').map(s=>s.trim()):[];const billed=+v.billed||0;const per=cpts.length?Math.round(billed/cpts.length):billed;const pos=(v.pos||'11').split(' - ')[0].trim();return{id:'CLM-'+(20561+claims.length),patient:v.patient||'New Patient',patientDob:v.patientDob||'',patientSex:v.patientSex||'',patientRelationship:v.patientRelationship||'Self',memberId:v.memberId||'',groupNumber:v.groupNumber||'',insurancePlan:v.insurancePlan||'',type:v.type,provider:(v.provider||'').replace(/^Dr\.\s*/,'').split(',')[0].trim().split(' ').slice(-1)[0]||v.provider,providerFull:v.provider,loc:v.loc,payer:v.payer,dos:v.dos||new Date().toLocaleDateString('en-US'),billed,paid:0,status:'Draft',lines:cpts.map((c,i)=>{const m=CPTS.find(x=>x[0]===c);return{cpt:c,desc:m?m[1]:'Procedure',mod:mods[i]||mods[0]||'',units:1,charge:per,pos};}),icds:v.dx.split(',').map(s=>s.trim()).filter(Boolean),referringProvider:v.referringProvider||'',referringNpi:v.referringNpi||'',priorAuth:v.priorAuth||'',patientAccount:v.patientAccount||'',acceptAssignment:v.acceptAssignment||'Yes',payerClm:'PC'+ri(100000000,999999999),rejReason:null,denCode:null};}},
+ ],build:v=>{const cpts=v.cpt.split(',').map(s=>s.trim()).filter(Boolean);const mods=v.mod?v.mod.split(',').map(s=>s.trim()):[];const billed=+v.billed||0;const per=cpts.length?Math.round(billed/cpts.length):billed;const pos=(v.pos||'11').split(' - ')[0].trim();return{id:'CLM-'+(20561+claims.length),patient:v.patient||'New Patient',patientDob:v.patientDob||'',patientSex:v.patientSex||'',subscriberName:v.subscriberName||'',patientRelationship:v.patientRelationship||'Self',memberId:v.memberId||'',groupNumber:v.groupNumber||'',insurancePlan:v.insurancePlan||'',claimFilingCode:(v.claimFilingCode||'ZZ').split(' - ')[0].trim(),type:v.type,provider:(v.provider||'').replace(/^Dr\.\s*/,'').split(',')[0].trim().split(' ').slice(-1)[0]||v.provider,providerFull:v.provider,loc:v.loc,payer:v.payer,dos:v.dos||new Date().toLocaleDateString('en-US'),billed,paid:0,status:'Draft',lines:cpts.map((c,i)=>{const m=CPTS.find(x=>x[0]===c);return{cpt:c,desc:m?m[1]:'Procedure',mod:mods[i]||mods[0]||'',units:1,charge:per,pos};}),icds:v.dx.split(',').map(s=>s.trim()).filter(Boolean),referringProvider:v.referringProvider||'',referringNpi:v.referringNpi||'',priorAuth:v.priorAuth||'',patientAccount:v.patientAccount||'',acceptAssignment:v.acceptAssignment||'Yes',payerClm:'PC'+ri(100000000,999999999),rejReason:null,denCode:null};}},
  enrollments:{title:'New enrollment',data:enrollments,key:'enrollments',fields:[
   {k:'provider',label:'Provider',type:'select',opts:providers.slice(0,12).map(p=>p.name)},
   {k:'payer',label:'Payer',type:'select',opts:PAYERS.map(p=>p[0])},
@@ -2692,9 +2717,7 @@ function submitCreate(key){
   attachArtifact(record,'providerArtifact',stediClient.provider(record));
  }
  if(key==='claims'){
-  const artifact=createTransactionForClaim(record,'837 claim submission created from dashboard form');
-  record.transactionId=artifact.id;
-  record.status='Pending payer';
+  record.status='Draft';
  }
  if(key==='enrollments'){
   const request={providerName:record.provider,payerName:record.payer,transactionType:record.txn,status:'DRAFT'};
