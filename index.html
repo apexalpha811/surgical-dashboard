@@ -1273,7 +1273,27 @@ const DETAIL={
   return dhead(safeText(ptName),safeText(r.payerName||r.payer||'')+' · Member '+safeText(r.member||r.memberId||''))+'<div class="elig-tab-bar"><button class="elig-tab active" onclick="switchEligTab(event,\'summary\')">Summary</button><button class="elig-tab" onclick="switchEligTab(event,\'benefits\')">Benefits</button><button class="elig-tab" onclick="switchEligTab(event,\'auth\')">Auth &amp; Referrals</button><button class="elig-tab" onclick="switchEligTab(event,\'raw\')">Raw JSON</button><button class="elig-tab" onclick="switchEligTab(event,\'pdf\')">PDF</button></div><div id="etab-summary" class="elig-tab-pane active">'+summaryTab+'</div><div id="etab-benefits" class="elig-tab-pane">'+benefitsTab+'</div><div id="etab-auth" class="elig-tab-pane">'+authTab+'</div><div id="etab-raw" class="elig-tab-pane">'+rawTab+'</div><div id="etab-pdf" class="elig-tab-pane">'+pdfTab+'</div>'+dsec('Actions','<button class="btn-ghost btn-sm" onclick="recheckEligibility('+i+')">Re-check</button> <button class="btn-ghost btn-sm" onclick="view271x12('+i+')">View raw X12</button> <button class="btn btn-sm" onclick="goToClaimFromElig('+i+')">New claim from this check</button>');
  },
  discovery:r=>dhead('Insurance discovery',r.patient)+kv({'Discovery ID':'<span class="mono">'+r.id+'</span>','Status':pillFor(r.status),'DOB':r.dob,'Started':r.date})+(r.status==='Complete'?dsec('Result',r.found?kv({'Coverage found':'<span class="pill ok">Yes</span>','Payer':r.payer,'Plan':r.plan,'Member ID':'<span class="mono">'+r.member+'</span>'})+'<button class="btn-ghost btn-sm" onclick="runEligibilityFromDiscovery(\''+r.id+'\')">Run full 270/271 check</button>':'<div class="empty-note">No active coverage located across the payer network. Patient flagged for self-pay workflow.</div>'):dsec('Result','<div class="empty-note">Search in progress across payer networks. Poll GET /insurance-discovery/check/v1/{discoveryId} for completion.</div>')),
- claims:r=>dhead(r.id,redIf(r,'patient',r.patient)+' · '+r.type+' · DOS '+(fieldMissing(r,'dos')?'<span class="miss">missing</span>':r.dos))+kv({'Status':pillFor(r.status)+(r.rejReason?' '+r.rejReason:'')+(r.denCode?' '+r.denCode:''),'Rendering provider':redIf(r,'provider',r.providerFull),'Service facility':redIf(r,'loc',r.loc),'Payer':redIf(r,'payer',r.payer),'Primary payer':r.primaryPayer||r.payer,'Secondary payer':r.secondaryPayer,'COB rule':r.cobRule,'COB effective':r.cobEffective,'Corrected 837':r.needsResubmission?'Ready: <span class="mono">'+(r.correctionTransactionId||'pending')+'</span>':null,'Payer claim #':redIf(r,'payerClm','<span class="mono">'+r.payerClm+'</span>'),'Billed':redIf(r,'billed','<b>'+usd(r.billed)+'</b>'),'Paid':r.paid?'<b>'+usd(r.paid)+'</b>':'-'})+dsec('Service lines',mini(['CPT','Description','Mod','Units','Charge'],r.lines.map(l=>['<span class="mono">'+l.cpt+'</span>',l.desc,l.mod||'-',l.units,usd(l.charge)])))+dsec('Diagnoses (ICD-10)',r.icds.map(c=>'<span class="tag mono">'+c+'</span>').join(' '))+dsec('Timeline',mini(['Event','When'],[['Claim created',r.dos],['Submitted to clearinghouse',r.dos],['999 acknowledgment',r.dos],[r.status==='Draft'?'Awaiting submission':'Payer status: '+r.status,'Latest']].concat(r.cobAppliedAt?[['COB payer order applied',r.cobAppliedAt]]:[])))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="printClaimPacketById(\''+r.id+'\')">Claim packet PDF</button> <button class="btn-ghost btn-sm" onclick="printCms1500ById(\''+r.id+'\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="view277ByClaim(\''+r.id+'\')">Check status (276)</button>'+(r.rejReason?' <button class="btn btn-sm" onclick="submitClaimById(\''+r.id+'\')">Fix &amp; resubmit</button>':'')),
+ claims:r=>{
+  const patientBlock='<div style="border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:.78rem">'
+    +'<div><div style="color:var(--sub);margin-bottom:2px">Patient name (Box 2)</div>'+safeText(r.patient||'—')+'</div>'
+    +'<div><div style="color:var(--sub);margin-bottom:2px">Date of birth (Box 3)</div>'+safeText(r.patientDob||'—')+'</div>'
+    +'<div><div style="color:var(--sub);margin-bottom:2px">Sex (Box 3)</div>'+safeText(r.patientSex||'—')+'</div>'
+    +'<div><div style="color:var(--sub);margin-bottom:2px">Relationship to insured (Box 6)</div>'+safeText(r.patientRelationship||'—')+'</div>'
+    +'<div><div style="color:var(--sub);margin-bottom:2px">Member ID (Box 1a)</div><span class="mono">'+safeText(r.memberId||'—')+'</span></div>'
+    +'<div><div style="color:var(--sub);margin-bottom:2px">Group number (Box 11)</div><span class="mono">'+safeText(r.groupNumber||'—')+'</span></div>'
+    +(r.insurancePlan?'<div style="grid-column:1/-1"><div style="color:var(--sub);margin-bottom:2px">Insurance plan (Box 11c)</div>'+safeText(r.insurancePlan)+'</div>':'')
+    +'<div><div style="color:var(--sub);margin-bottom:2px">Patient account # (Box 26)</div><span class="mono">'+safeText(r.patientAccount||'—')+'</span></div>'
+    +'</div></div>';
+  const billingBlock=kv({'Status':pillFor(r.status)+(r.rejReason?' '+r.rejReason:'')+(r.denCode?' '+r.denCode:''),'Rendering provider (Box 24J)':redIf(r,'provider',r.providerFull||r.provider),'Service facility (Box 32)':redIf(r,'loc',r.loc),'Payer (Box 11d)':redIf(r,'payer',r.payer),'Payer claim # (Box 28)':r.payerClm?'<span class="mono">'+safeText(r.payerClm)+'</span>':null,'Primary payer':r.primaryPayer||null,'Secondary payer':r.secondaryPayer||null,'COB rule':r.cobRule||null,'Referring provider (Box 17)':r.referringProvider||null,'Referring NPI (Box 17b)':r.referringNpi?'<span class="mono">'+safeText(r.referringNpi)+'</span>':null,'Prior auth # (Box 23)':r.priorAuth?'<span class="mono">'+safeText(r.priorAuth)+'</span>':null,'Accept assignment (Box 27)':r.acceptAssignment||null,'Total charge (Box 28)':redIf(r,'billed','<b>'+usd(r.billed)+'</b>'),'Amount paid':r.paid?'<b>'+usd(r.paid)+'</b>':'-','Corrected 837':r.needsResubmission?'Ready: <span class="mono">'+(r.correctionTransactionId||'pending')+'</span>':null});
+  const linesBlock=dsec('Service lines (Box 24)',mini(['CPT','Description','Mod','POS','Units','Charge'],r.lines.map(l=>['<span class="mono">'+safeText(l.cpt)+'</span>',safeText(l.desc),safeText(l.mod||'—'),safeText(l.pos||'—'),l.units,usd(l.charge)])));
+  const dxBlock=dsec('Diagnoses ICD-10 (Box 21)',r.icds.map(c=>'<span class="tag mono">'+safeText(c)+'</span>').join(' '));
+  const timelineBlock=dsec('Timeline',mini(['Event','When'],[['Claim created',r.dos],['Submitted to clearinghouse',r.dos],['999 acknowledgment',r.dos],[r.status==='Draft'?'Awaiting submission':'Payer status: '+r.status,'Latest']].concat(r.cobAppliedAt?[['COB payer order applied',r.cobAppliedAt]]:[])));
+  const actionsBlock=dsec('Actions','<button class="btn-ghost btn-sm" onclick="printClaimPacketById(\''+r.id+'\')">Claim packet PDF</button> <button class="btn-ghost btn-sm" onclick="printCms1500ById(\''+r.id+'\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="view277ByClaim(\''+r.id+'\')">Check status (276)</button>'+(r.rejReason?' <button class="btn btn-sm" onclick="submitClaimById(\''+r.id+'\')">Fix &amp; resubmit</button>':''));
+  return dhead(r.id,safeText(r.patient||'')+' · '+r.type+' · DOS '+(fieldMissing(r,'dos')?'<span class="miss">missing</span>':safeText(r.dos||'')))
+    +'<h4 style="margin:14px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)">Patient</h4>'+patientBlock
+    +'<h4 style="margin:14px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)">Billing</h4>'+billingBlock
+    +linesBlock+dxBlock+timelineBlock+actionsBlock;
+ },
  status:r=>{const i=statusChecks.indexOf(r);return dhead('277 claim status',r.claim+' · '+r.patient)+kv({'Payer':r.payer,'Payer claim #':'<span class="mono">'+r.payerClm+'</span>','Category':r.cat+': '+r.catDesc,'Payment':r.amt||'-','Last checked':r.checked})+dsec('Check history',mini(['Response'],r.history.map(h=>[h])))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="run276('+i+')">Run 276 now</button> <button class="btn-ghost btn-sm" onclick="view277('+i+')">View 277 report</button><div id="statusOut" style="margin-top:12px"></div>');},
  era:r=>{const i=eras.indexOf(r);return dhead(r.id,r.payer+' · '+r.date)+kv({'Status':pillFor(r.status),'Payment method':r.method,'Claims on remit':r.n,'Total billed':usd(r.billed),'Total paid':'<b>'+usd(r.paid)+'</b>','Patient responsibility':usd(r.pr)})+dsec('Claim payments',mini(['Claim','Billed','Allowed','Paid','Pt resp'],r.pays.map(p=>['<span class="mono">'+p.claim+'</span>',usd(p.billed),usd(p.allowed),usd(p.paid),usd(p.pr)])))+dsec('Adjustment groups (CAS)',mini(['Code','Meaning','Amount'],[['CO-45','Charge exceeds fee schedule',usd(r.billed-r.paid-r.pr)],['PR-1','Deductible',usd(Math.round(r.pr*.55))],['PR-2','Coinsurance',usd(Math.round(r.pr*.45))]]))+dsec('Actions','<button class="btn-ghost btn-sm" onclick="printEraById(\''+r.id+'\')">ERA PDF</button> <button class="btn-ghost btn-sm" onclick="view835('+i+')">View 835 report</button>'+(r.status==='New'?' <button class="btn btn-sm" onclick="postEraById(\''+r.id+'\')">Post to PM system</button>':''));},
  attachments:r=>dhead('275 attachment',r.claim+' · '+r.payer)+kv({'Status':pillFor(r.status),'Document type':r.doc,'Requested':r.req,'Due':r.due,'Control # (PWK)':'<span class="mono">'+r.ctrl+'</span>','Pages':r.pages})+dsec('Actions',(r.status==='Awaiting upload'||r.status==='Overdue'?'<button class="btn btn-sm" onclick="uploadAttachmentByCtrl(\''+r.ctrl+'\')">Upload document</button> ':'')+'<button class="btn-ghost btn-sm" onclick="panel(\'Request detail\',\''+r.payer+' requested a '+r.doc+' (control '+r.ctrl+', due '+r.due+').\')">View request</button>'),
@@ -2580,15 +2600,29 @@ const CREATE={
   {k:'zip',label:'ZIP Code',v:''}
  ],build:v=>({name:v.name||'New Provider',npi:v.npi||npi(),taxId:v.taxId||'',taxIdType:v.taxIdType||'EIN',contactType:v.contactType||'Individual',firstName:v.firstName||'',lastName:v.lastName||'',email:v.email||'',phone:v.phone||'',address:v.address||'',addressLine2:v.addressLine2||'',city:v.city||'',state:v.state||'',zip:v.zip||'',spec:'',tax:'',id:'',live:0,pend:0})},
  claims:{title:'New claim',data:claims,key:'claims',fields:[
-  {k:'patient',label:'Patient name',v:''},
+  {k:'patient',label:'Patient name (Box 2)',v:''},
+  {k:'patientDob',label:'Patient date of birth (Box 3)',v:''},
+  {k:'patientSex',label:'Patient sex (Box 3)',type:'select',opts:['Male','Female','Unknown']},
+  {k:'patientRelationship',label:'Patient relationship to insured (Box 6)',type:'select',opts:['Self','Spouse','Child','Other']},
+  {k:'memberId',label:"Insured's ID / Member ID (Box 1a)",v:''},
+  {k:'groupNumber',label:'Group number (Box 11)',v:''},
+  {k:'insurancePlan',label:'Insurance plan name (Box 11c)',v:''},
   {k:'type',label:'Claim type',type:'select',opts:['837P','837I']},
-  {k:'provider',label:'Rendering provider',type:'select',opts:providers.slice(0,12).map(p=>p.name)},
-  {k:'loc',label:'Service facility',type:'select',opts:LOCS},
-  {k:'payer',label:'Payer',type:'select',opts:PAYERS.map(p=>p[0])},
-  {k:'cpt',label:'CPT codes (comma separated)',v:'29881'},
-  {k:'dx',label:'Diagnosis ICD-10 (comma separated)',v:'M17.11'},
-  {k:'billed',label:'Amount billed',v:'8500'}
- ],build:v=>{const cpts=v.cpt.split(',').map(s=>s.trim()).filter(Boolean);const billed=+v.billed||0;const per=cpts.length?Math.round(billed/cpts.length):billed;return{id:'CLM-'+(20561+claims.length),patient:v.patient||'New Patient',type:v.type,provider:'Dr. '+(v.provider.replace(/^Dr\.\s*/,'').split(',')[0].trim().split(' ').slice(-1)[0]),providerFull:v.provider,loc:v.loc,payer:v.payer,billed,paid:0,status:'Draft',dos:'06/11/2026',lines:cpts.map(c=>{const m=CPTS.find(x=>x[0]===c);return{cpt:c,desc:m?m[1]:'Procedure',mod:'',units:1,charge:per};}),icds:v.dx.split(',').map(s=>s.trim()).filter(Boolean),payerClm:'PC'+ri(100000000,999999999),rejReason:null,denCode:null};}},
+  {k:'provider',label:'Rendering provider (Box 24J)',type:'select',opts:providers.slice(0,12).map(p=>p.name)},
+  {k:'loc',label:'Service facility (Box 32)',type:'select',opts:LOCS},
+  {k:'payer',label:'Payer (Box 11d)',type:'select',opts:PAYERS.map(p=>p[0])},
+  {k:'dos',label:'Date of service (Box 24A)',v:''},
+  {k:'pos',label:'Place of service (Box 24B)',type:'select',opts:['11 - Office','21 - Inpatient hospital','22 - Outpatient hospital','23 - Emergency room','24 - Ambulatory surgical center','31 - Skilled nursing facility','81 - Independent lab']},
+  {k:'cpt',label:'CPT codes, comma separated (Box 24D)',v:''},
+  {k:'mod',label:'Modifiers, comma separated (Box 24D)',v:''},
+  {k:'dx',label:'ICD-10 diagnosis codes, comma separated (Box 21)',v:''},
+  {k:'referringProvider',label:'Referring provider name (Box 17)',v:''},
+  {k:'referringNpi',label:'Referring provider NPI (Box 17b)',v:''},
+  {k:'priorAuth',label:'Prior authorization number (Box 23)',v:''},
+  {k:'patientAccount',label:'Patient account number (Box 26)',v:''},
+  {k:'acceptAssignment',label:'Accept assignment (Box 27)',type:'select',opts:['Yes','No']},
+  {k:'billed',label:'Total charge (Box 28)',v:''}
+ ],build:v=>{const cpts=v.cpt.split(',').map(s=>s.trim()).filter(Boolean);const mods=v.mod?v.mod.split(',').map(s=>s.trim()):[];const billed=+v.billed||0;const per=cpts.length?Math.round(billed/cpts.length):billed;const pos=(v.pos||'11').split(' - ')[0].trim();return{id:'CLM-'+(20561+claims.length),patient:v.patient||'New Patient',patientDob:v.patientDob||'',patientSex:v.patientSex||'',patientRelationship:v.patientRelationship||'Self',memberId:v.memberId||'',groupNumber:v.groupNumber||'',insurancePlan:v.insurancePlan||'',type:v.type,provider:(v.provider||'').replace(/^Dr\.\s*/,'').split(',')[0].trim().split(' ').slice(-1)[0]||v.provider,providerFull:v.provider,loc:v.loc,payer:v.payer,dos:v.dos||new Date().toLocaleDateString('en-US'),billed,paid:0,status:'Draft',lines:cpts.map((c,i)=>{const m=CPTS.find(x=>x[0]===c);return{cpt:c,desc:m?m[1]:'Procedure',mod:mods[i]||mods[0]||'',units:1,charge:per,pos};}),icds:v.dx.split(',').map(s=>s.trim()).filter(Boolean),referringProvider:v.referringProvider||'',referringNpi:v.referringNpi||'',priorAuth:v.priorAuth||'',patientAccount:v.patientAccount||'',acceptAssignment:v.acceptAssignment||'Yes',payerClm:'PC'+ri(100000000,999999999),rejReason:null,denCode:null};}},
  enrollments:{title:'New enrollment',data:enrollments,key:'enrollments',fields:[
   {k:'provider',label:'Provider',type:'select',opts:providers.slice(0,12).map(p=>p.name)},
   {k:'payer',label:'Payer',type:'select',opts:PAYERS.map(p=>p[0])},
@@ -2696,19 +2730,32 @@ let activeDrawer={key:'',index:-1};
 const EDITABLE_KEYS=new Set(['claims','eligibility','providers','payers','enrollments','attachments','appeals','cob']);
 const EDIT={
  claims:{title:'Edit claim',fields:[
-  {k:'patient',label:'Patient name',v:''},
+  {k:'patient',label:'Patient name (Box 2)',v:''},
+  {k:'patientDob',label:'Patient date of birth (Box 3)',v:''},
+  {k:'patientSex',label:'Patient sex (Box 3)',type:'select',opts:['Male','Female','Unknown']},
+  {k:'patientRelationship',label:'Patient relationship to insured (Box 6)',type:'select',opts:['Self','Spouse','Child','Other']},
+  {k:'memberId',label:"Insured's ID / Member ID (Box 1a)",v:''},
+  {k:'groupNumber',label:'Group number (Box 11)',v:''},
+  {k:'insurancePlan',label:'Insurance plan name (Box 11c)',v:''},
   {k:'type',label:'Claim type',type:'select',opts:['837P','837I']},
-  {k:'providerFull',label:'Rendering provider',v:''},
-  {k:'loc',label:'Service facility',type:'select',opts:LOCS},
-  {k:'payer',label:'Payer',type:'select',opts:PAYERS.map(p=>p[0])},
-  {k:'payerClm',label:'Payer claim #',v:''},
-  {k:'dos',label:'DOS',v:''},
+  {k:'providerFull',label:'Rendering provider (Box 24J)',v:''},
+  {k:'loc',label:'Service facility (Box 32)',type:'select',opts:LOCS},
+  {k:'payer',label:'Payer (Box 11d)',type:'select',opts:PAYERS.map(p=>p[0])},
+  {k:'dos',label:'Date of service (Box 24A)',v:''},
+  {k:'pos',label:'Place of service (Box 24B)',type:'select',opts:['11 - Office','21 - Inpatient hospital','22 - Outpatient hospital','23 - Emergency room','24 - Ambulatory surgical center','31 - Skilled nursing facility','81 - Independent lab']},
+  {k:'cpt',label:'CPT codes, comma separated (Box 24D)',v:''},
+  {k:'mod',label:'Modifiers, comma separated (Box 24D)',v:''},
+  {k:'dx',label:'ICD-10 diagnosis codes, comma separated (Box 21)',v:''},
+  {k:'referringProvider',label:'Referring provider name (Box 17)',v:''},
+  {k:'referringNpi',label:'Referring provider NPI (Box 17b)',v:''},
+  {k:'priorAuth',label:'Prior authorization number (Box 23)',v:''},
+  {k:'patientAccount',label:'Patient account number (Box 26)',v:''},
+  {k:'acceptAssignment',label:'Accept assignment (Box 27)',type:'select',opts:['Yes','No']},
+  {k:'payerClm',label:'Payer claim # (Box 28)',v:''},
   {k:'status',label:'Status',type:'select',opts:['Draft','Pending payer','Accepted','Paid','Rejected','Denied']},
-  {k:'billed',label:'Amount billed',v:'0'},
-  {k:'paid',label:'Amount paid',v:'0'},
-  {k:'cpt',label:'CPT codes (comma separated)',v:''},
-  {k:'dx',label:'Diagnosis ICD-10 (comma separated)',v:''}
- ],render:r=>({patient:r.patient||'',type:r.type||'837P',providerFull:r.providerFull||r.provider||'',loc:r.loc||LOCS[0],payer:r.payer||'',payerClm:r.payerClm||'',dos:r.dos||'',status:r.status||'Draft',billed:r.billed||0,paid:r.paid||0,cpt:(r.lines||[]).map(l=>l.cpt).join(', '),dx:(r.icds||[]).join(', ')}),build:(v,r)=>{const cpts=v.cpt.split(',').map(s=>s.trim()).filter(Boolean);const billed=+v.billed||0;const paid=+v.paid||0;const per=cpts.length?Math.round(billed/cpts.length):billed;return{...r,patient:v.patient||r.patient,type:v.type||r.type,providerFull:v.providerFull||r.providerFull,provider:(v.providerFull||r.providerFull||'').replace(/,.*$/,''),loc:v.loc||r.loc,payer:v.payer||r.payer,payerClm:v.payerClm||r.payerClm,dos:v.dos||r.dos,status:v.status||r.status,billed,paid,lines:cpts.map((c,i)=>{const m=CPTS.find(x=>x[0]===c);const prev=(r.lines||[])[i]||{};return{cpt:c,desc:prev.desc||(m?m[1]:'Procedure'),mod:prev.mod||'',units:prev.units||1,charge:per};}),icds:v.dx.split(',').map(s=>s.trim()).filter(Boolean)};}},
+  {k:'billed',label:'Total charge (Box 28)',v:'0'},
+  {k:'paid',label:'Amount paid',v:'0'}
+ ],render:r=>({patient:r.patient||'',patientDob:r.patientDob||'',patientSex:r.patientSex||'Male',patientRelationship:r.patientRelationship||'Self',memberId:r.memberId||'',groupNumber:r.groupNumber||'',insurancePlan:r.insurancePlan||'',type:r.type||'837P',providerFull:r.providerFull||r.provider||'',loc:r.loc||LOCS[0],payer:r.payer||'',dos:r.dos||'',pos:(r.lines&&r.lines[0]&&r.lines[0].pos?r.lines[0].pos+' - Office':'11 - Office'),cpt:(r.lines||[]).map(l=>l.cpt).join(', '),mod:(r.lines||[]).map(l=>l.mod||'').filter(Boolean).join(', '),dx:(r.icds||[]).join(', '),referringProvider:r.referringProvider||'',referringNpi:r.referringNpi||'',priorAuth:r.priorAuth||'',patientAccount:r.patientAccount||'',acceptAssignment:r.acceptAssignment||'Yes',payerClm:r.payerClm||'',status:r.status||'Draft',billed:r.billed||0,paid:r.paid||0}),build:(v,r)=>{const cpts=v.cpt.split(',').map(s=>s.trim()).filter(Boolean);const mods=v.mod?v.mod.split(',').map(s=>s.trim()):[];const billed=+v.billed||0;const paid=+v.paid||0;const per=cpts.length?Math.round(billed/cpts.length):billed;const pos=(v.pos||'11').split(' - ')[0].trim();return{...r,patient:v.patient||r.patient,patientDob:v.patientDob||r.patientDob||'',patientSex:v.patientSex||r.patientSex||'',patientRelationship:v.patientRelationship||r.patientRelationship||'Self',memberId:v.memberId||r.memberId||'',groupNumber:v.groupNumber||r.groupNumber||'',insurancePlan:v.insurancePlan||r.insurancePlan||'',type:v.type||r.type,providerFull:v.providerFull||r.providerFull,provider:(v.providerFull||r.providerFull||'').replace(/,.*$/,''),loc:v.loc||r.loc,payer:v.payer||r.payer,dos:v.dos||r.dos,billed,paid,status:v.status||r.status,payerClm:v.payerClm||r.payerClm,lines:cpts.map((c,i)=>{const m=CPTS.find(x=>x[0]===c);const prev=(r.lines||[])[i]||{};return{cpt:c,desc:prev.desc||(m?m[1]:'Procedure'),mod:mods[i]||mods[0]||prev.mod||'',units:prev.units||1,charge:per,pos};}),icds:v.dx.split(',').map(s=>s.trim()).filter(Boolean),referringProvider:v.referringProvider||r.referringProvider||'',referringNpi:v.referringNpi||r.referringNpi||'',priorAuth:v.priorAuth||r.priorAuth||'',patientAccount:v.patientAccount||r.patientAccount||'',acceptAssignment:v.acceptAssignment||r.acceptAssignment||'Yes'};}},
  eligibility:{title:'Edit eligibility',fields:[
   {k:'patient',label:'Patient name',v:''},
   {k:'member',label:'Member ID',v:''},
