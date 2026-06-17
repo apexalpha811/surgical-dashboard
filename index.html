@@ -1328,7 +1328,7 @@ const DETAIL={
   const tlRows=[['Claim created',r.dos]];if(r.status!=='Draft'){tlRows.push(['Submitted to clearinghouse',r.submittedAt||r.dos]);tlRows.push(['999 acknowledgment',r.submittedAt||r.dos]);}if(r.cobAppliedAt)tlRows.push(['COB payer order applied',r.cobAppliedAt]);tlRows.push([r.status==='Draft'?'Awaiting submission':'Payer status: '+r.status,'Latest']);
   const timelineBlock=dsec('Timeline',mini(['Event','When'],tlRows));
   const submitBtn=r.status==='Draft'?' <button class="btn btn-sm" onclick="submitClaimToStedi(\''+r.id+'\')">Submit</button>':'';
-  const resubmitBtn=r.rejReason||r.status==='Rejected'||r.status==='Denied'?' <button class="btn btn-sm" onclick="submitClaimById(\''+r.id+'\')">Resubmit</button>':'';
+  const resubmitBtn=r.status!=='Draft'?' <button class="btn btn-sm" onclick="submitClaimById(\''+r.id+'\')">Resubmit</button>':'';
   const actionsBlock=dsec('Actions','<button class="btn-ghost btn-sm" onclick="printClaimPacketById(\''+r.id+'\')">Claim packet PDF</button> <button class="btn-ghost btn-sm" onclick="printCms1500ById(\''+r.id+'\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="view277ByClaim(\''+r.id+'\')">Check status (276)</button>'+submitBtn+resubmitBtn);
   return dhead(r.id,safeText(r.patient||'')+' · '+r.type+' · DOS '+(fieldMissing(r,'dos')?'<span class="miss">missing</span>':safeText(r.dos||'')))
     +'<h4 style="margin:14px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)">Patient</h4>'+patientBlock
@@ -2705,7 +2705,7 @@ function openCreate(key,defaults){
  modal.replaceChildren();
  const head=document.createElement('div');head.className='d-head';const h2=document.createElement('h2');h2.textContent=c.title;const xbtn=document.createElement('button');xbtn.className='x';xbtn.setAttribute('onclick','closeCreate()');xbtn.setAttribute('aria-label','Close');xbtn.textContent='✕';head.append(h2,xbtn);modal.append(head);
  c.fields.forEach(f=>{const value=(preset[f.k]??f.v??'').toString();const field=document.createElement('div');field.className='field';field.style.marginBottom='12px';const label=document.createElement('label');label.textContent=f.label;field.append(label);if(f.type==='select'){const opts=(['payer','provider'].includes(f.k)?getFormOptions(key,f.k):f.opts)||[];const select=document.createElement('select');select.id='cf-'+f.k;opts.forEach(o=>{const opt=document.createElement('option');opt.value=o;if(String(o)===String(value))opt.selected=true;opt.textContent=o;select.append(opt);});field.append(select);}else{const input=document.createElement('input');input.id='cf-'+f.k;input.value=safeText(value);field.append(input);}modal.append(field);});
- const footer=document.createElement('div');footer.style.marginTop='16px';footer.style.display='flex';footer.style.gap='8px';const createBtn=document.createElement('button');createBtn.className='btn';createBtn.setAttribute('onclick','submitCreate(\''+key+'\')');createBtn.textContent='Create';const cancelBtn=document.createElement('button');cancelBtn.className='btn-ghost';cancelBtn.setAttribute('onclick','closeCreate()');cancelBtn.textContent='Cancel';footer.append(createBtn,cancelBtn);modal.append(footer);
+ const footer=document.createElement('div');footer.style.marginTop='16px';footer.style.display='flex';footer.style.gap='8px';const createBtn=document.createElement('button');createBtn.className='btn-ghost';createBtn.setAttribute('onclick','submitCreate(\''+key+'\')');createBtn.textContent='Create draft';if(key==='claims'){const sendBtn=document.createElement('button');sendBtn.className='btn';sendBtn.setAttribute('onclick','submitCreateAndSend(\''+key+'\')');sendBtn.textContent='Submit';footer.append(sendBtn);}footer.append(createBtn);const cancelBtn=document.createElement('button');cancelBtn.className='btn-ghost';cancelBtn.setAttribute('onclick','closeCreate()');cancelBtn.textContent='Cancel';footer.append(cancelBtn);modal.append(footer);
  document.getElementById('createOvl').classList.add('open');
 }
 function closeCreate(){document.getElementById('createOvl').classList.remove('open');}
@@ -2732,6 +2732,10 @@ function submitCreate(key){
  if(key==='claims')updateClaimKpis();
  updateRibbonCounts();
  closeCreate();openDrawer(key,0);
+}
+function submitCreateAndSend(key){
+ submitCreate(key);
+ if(key==='claims'&&claims[0]&&claims[0].status==='Draft')submitClaimToStedi(claims[0].id);
 }
 document.getElementById('createOvl').addEventListener('click',e=>{if(e.target.id==='createOvl')closeCreate();});
 
