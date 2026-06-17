@@ -1216,20 +1216,47 @@ async function loadProvidersFromStedi(){
   }catch(e){if(sub)sub.textContent='Could not reach Stedi — showing local data.';console.warn('loadProvidersFromStedi:',e);}
 }
 async function seedPayersFromEnrollments(){
-  const seen=new Set(payerDir.map(p=>p.stedi));
+  const seen=new Set(payerDir.map(p=>p.stedi||p.name));
   for(const e of enrollments){
     if(!e.payer&&!e.payerStediId)continue;
-    if(e.payerStediId&&!seen.has(e.payerStediId)){
-      try{const detail=await loadPayerDetail(e.payerStediId);addPayerToTable(detail);seen.add(detail.stedi||e.payerStediId);}
-      catch(err){console.warn('seedPayersFromEnrollments:',err);}
-    } else if(!e.payerStediId&&e.payer){
+    const key=e.payerStediId||e.payer;
+    if(seen.has(key))continue;
+    seen.add(key);
+    const txnStr=x=>typeof x==='string'?x:(x.transactionType||x.transactionSetIdentifier||x.name||'');
+    const hasTxn=(sets,t)=>sets.some(x=>txnStr(x).toUpperCase().includes(t));
+    const sets=Array.isArray(e.txnSets)?e.txnSets:[];
+    const baseRec={
+      id:e.payerStediId||('pyr_'+Math.random().toString(36).slice(2,8)),
+      stedi:e.payerStediId||'',
+      name:e.payer||'',
+      payerId:e.payerPrimaryId||'',
+      aliases:Array.isArray(e.payerAliases)?e.payerAliases:[],
+      elig:hasTxn(sets,'270')||hasTxn(sets,'271'),
+      clm:hasTxn(sets,'837'),
+      era:hasTxn(sets,'835'),
+      enroll:'None',
+      coverageTypes:[],
+      states:[],
+      _raw:{}
+    };
+    if(e.payerStediId){
+      try{
+        const detail=await loadPayerDetail(e.payerStediId);
+        if(detail.name&&detail.name!==e.payerStediId){
+          addPayerToTable({...baseRec,...detail,name:detail.name||baseRec.name,payerId:detail.payerId||baseRec.payerId,aliases:detail.aliases.length?detail.aliases:baseRec.aliases});
+        } else {
+          addPayerToTable(baseRec);
+        }
+      }catch(err){addPayerToTable(baseRec);}
+    } else if(e.payer){
       try{
         const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({base:'payers',path:'/payers/search?name='+encodeURIComponent(e.payer),method:'GET',payload:null})});
         const d=await res.json();
         const items=(d.response&&Array.isArray(d.response.items))?d.response.items:(Array.isArray(d.response)?d.response:[]);
-        if(items[0]){const detail=payerFromStediResponse(items[0]);if(detail.stedi&&!seen.has(detail.stedi)){addPayerToTable(detail);seen.add(detail.stedi);}}
-      }catch(err){console.warn('seedPayersFromEnrollments name fallback:',err);}
+        if(items[0]){const fromDir=payerFromStediResponse(items[0]);addPayerToTable({...baseRec,...fromDir,name:fromDir.name||baseRec.name});}
+        else{addPayerToTable(baseRec);}
+      }catch(err){addPayerToTable(baseRec);}
     }
   }
 }
