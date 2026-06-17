@@ -1118,45 +1118,55 @@ async function loadDashboardRecords(){try{const result=await dashboardApi('/api/
 async function loadEnrollmentsFromStedi(){const sub=document.getElementById('sub-enrollments');if(sub)sub.textContent='Loading enrollments from Stedi…';try{const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'enrollments',path:'/enrollments',method:'GET',payload:null})});const d=await res.json();if(!d||d.mode!=='live'||!d.ok){if(sub)sub.textContent=enrollments.length+' records · Stedi: '+(d&&d.response&&(d.response.message||d.response.error)||'mock mode or key missing');return;}const r=d.response;const items=Array.isArray(r)?r:Array.isArray(r&&r.enrollments)?r.enrollments:Array.isArray(r&&r.items)?r.items:[];const mapped=items.map(enrollmentFromStediResponse);const staleKeys=enrollments.map(e=>dashboardRecordKey('enrollments',e)).filter(Boolean);enrollments.length=0;mapped.forEach(rec=>enrollments.push(rec));_stediEnrollmentsDone=true;T.enrollments.data=enrollments;refreshLiveSection('enrollments');if(sub)sub.textContent=enrollments.length+' enrollment'+(enrollments.length!==1?'s':'')+' · synced from Stedi';if(!items.length&&!enrollments.length&&sub)sub.textContent='No enrollments found. Click + New Enrollment to get started.';seedPayersFromEnrollments();if(staleKeys.length){staleKeys.forEach(k=>{dashboardApi('/api/dashboard-records/delete',{method:'POST',body:JSON.stringify({key:'enrollments',target:'enrollments',recordKey:k})}).catch(()=>{});});}}catch(e){if(sub)sub.textContent='Could not reach Stedi — showing local data.';console.warn('loadEnrollmentsFromStedi:',e);}}
 function enrollmentFromStediResponse(item){
   const p=item.provider&&typeof item.provider==='object'?item.provider:{};
-  const c=p.contact&&typeof p.contact==='object'?p.contact:{};
-  const addr=p.address&&typeof p.address==='object'?p.address:{};
+  // Stedi enrollment vs provider endpoints use different contact shapes — try both
+  const cArr=Array.isArray(p.contacts)&&p.contacts.length&&typeof p.contacts[0]==='object'?p.contacts[0]:{};
+  const cObj=p.contact&&typeof p.contact==='object'?p.contact:{};
+  const c=Object.assign({},cArr,cObj);
+  // Address may sit on provider directly or nested under contact
+  const addrP=p.address&&typeof p.address==='object'?p.address:{};
+  const addrC=c.address&&typeof c.address==='object'?c.address:{};
+  const addr=Object.assign({},addrC,addrP);
   const tpPayer=item.payer&&typeof item.payer==='object'?item.payer:{};
   const tpPartner=item.tradingPartner&&typeof item.tradingPartner==='object'?item.tradingPartner:{};
   const tp=Object.assign({},tpPayer,tpPartner);
   const txnSets=Array.isArray(item.transactionSets)?item.transactionSets:[];
   const txnLabel=txnSets.map(t=>typeof t==='object'?(t.name||t.transactionSetIdentifier||''):String(t)).filter(Boolean).join(', ');
   const fmtDate=v=>{if(!v)return null;try{return new Date(v).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}catch{return String(v);}};
+  // Resolve payer display name: Stedi often returns the payer ID (e.g. LAESW) as the name;
+  // look it up in our PAYERS array to get the human-readable name (e.g. Anthem)
+  const rawPayerName=tp.payerName||tp.name||tp.displayName||tp.tradingPartnerName||item.tradingPartnerName||item.payerName||'';
+  const rawPayerId=tp.stediId||tp.stediPayerId||tp.tradingPartnerId||tp.payerId||tp.id||rawPayerName||'';
+  const payerMatch=PAYERS.find(([,id])=>id===rawPayerId||id===rawPayerName);
+  const friendlyPayerName=payerMatch?payerMatch[0]:rawPayerName;
+  // Provider name: try organizationName, legalName, then name
+  const providerName=p.organizationName||p.legalName||p.name||item.providerName||'';
   return {
     id:item.enrollmentId||item.id||'enr_'+Math.random().toString(36).slice(2,8),
     status:item.status||'Draft',
     source:item.source||'API',
-    processType:item.enrollmentProcessType||null,
+    processType:item.enrollmentProcessType||item.processType||null,
     activationTimeframe:item.activationTimeframe||null,
-    contactEmail:item.contactEmail||null,
+    contactEmail:item.contactEmail||item.enrollmentContactEmail||null,
     submittedDate:fmtDate(item.submittedDate||item.submittedAt||item.createdAt)||item.submitted||new Date().toLocaleDateString('en-US'),
     requestedEffectiveDate:item.requestedEffectiveDate||item.effectiveDate||null,
     aggregationPreference:typeof item.aggregationPreference==='string'?item.aggregationPreference:item.aggregationPreference&&typeof item.aggregationPreference==='object'?(Object.values(item.aggregationPreference).find(v=>typeof v==='string')||null):null,
     task:item.openTask||item.nextTask||item.task||null,
     txn:txnLabel||item.transactionType||item.txn||'',
     txnSets,
-    processType:item.enrollmentProcessType||item.processType||null,
-    activationTimeframe:item.activationTimeframe||null,
-    contactEmail:item.contactEmail||item.enrollmentContactEmail||null,
-    source:item.source||'API',
-    provider:p.name||item.providerName||'',
+    provider:providerName,
     providerNpi:p.npi||p.providerId||item.npi||'',
     providerTaxId:p.taxId||p.ein||item.taxId||'',
-    providerFirstName:c.firstName||c.first||'',
-    providerLastName:c.lastName||c.last||'',
-    providerEmail:c.email||c.emailAddress||'',
-    providerPhone:c.phone||c.phoneNumber||'',
+    providerFirstName:c.firstName||c.first||p.firstName||p.first||'',
+    providerLastName:c.lastName||c.last||p.lastName||p.last||'',
+    providerEmail:c.email||c.emailAddress||p.email||'',
+    providerPhone:c.phone||c.phoneNumber||p.phone||'',
     providerAddress:[addr.line1,addr.streetAddress,addr.line2].filter(Boolean).join(', ')||'',
     providerCity:addr.city||'',
     providerState:addr.state||addr.stateCode||'',
     providerZip:addr.zip||addr.postalCode||addr.zipCode||'',
-    payer:tp.payerName||tp.name||tp.displayName||tp.tradingPartnerName||item.tradingPartnerName||item.payerName||(tp&&typeof tp==='object'?Object.values(tp).find(v=>typeof v==='string'&&v.length>1)||'':''),
-    payerStediId:tp.stediId||tp.stediPayerId||tp.tradingPartnerId||tp.id||'',
-    payerPrimaryId:tp.primaryPayerId||tp.payerPrimaryId||tp.payerId||tp.ediPayerId||tp.payerIdentifier||'',
+    payer:friendlyPayerName,
+    payerStediId:rawPayerId,
+    payerPrimaryId:tp.primaryPayerId||tp.payerPrimaryId||tp.payerId||tp.ediPayerId||tp.payerIdentifier||rawPayerId||'',
     payerAliases:Array.isArray(tp.aliases)?tp.aliases:[],
     history:Array.isArray(item.history)?item.history:[],
     docs:Array.isArray(item.documents)?item.documents:[]
