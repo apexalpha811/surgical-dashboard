@@ -617,7 +617,7 @@ th.sort:hover{color:var(--text)}
     </div>
     <div class="card">
       <h3>Remittance inbox</h3>
-      <div class="sub">Click any row for claim payments and CAS adjustment detail</div>
+      <div class="sub" id="sub-era">Click any row for claim payments and CAS adjustment detail</div>
       <div class="tbl-wrap"><table>
         <thead><tr><th>Check / EFT</th><th>Payer</th><th>Claims</th><th>Billed</th><th>Paid</th><th>Patient resp.</th><th>Status</th></tr></thead>
         <tbody id="tb-era"></tbody>
@@ -1108,7 +1108,7 @@ updateClaimKpis();
 const LIVE_KEYS=new Set(['claims','eligibility','providers','payers','enrollments','attachments','appeals','cob','transactions','status']);
 function dashboardRecordKey(key,record){if(!record)return'';if(key==='claims')return record.id||record.payerClm||record.patient;if(key==='eligibility')return record.trn||[record.patient,record.member,record.payer].join('|');if(key==='providers')return record.npi||record.name;if(key==='payers')return record.stedi||record.name;if(key==='enrollments')return record.id||[record.provider,record.payer,record.txn].join('|');if(key==='attachments')return record.ctrl||[record.claim,record.doc,record.payer].join('|');if(key==='appeals')return record.id||record.claimNumber||[record.patientName,record.payer].join('|');if(key==='cob')return[record.patient,record.primary,record.secondary].join('|');if(key==='transactions')return record.exec||record.id||'';return JSON.stringify(record);}
 function refreshLiveSection(key){if(key==='appeals'){if(typeof renderAppealStats==='function')renderAppealStats();if(typeof renderAppealsTable==='function')renderAppealsTable();updateRibbonCounts();return;}if(key==='payers')payersMaster=payerDir.slice();if(key==='claims')updateClaimKpis();if(T[key]){T[key].data=key==='payers'?payerDir:T[key].data;T[key].page=0;renderTable(key);}const sub=document.getElementById('sub-'+key);if(sub&&T[key])sub.textContent=T[key].data.length+' saved records · click a row for detail';updateRibbonCounts();}
-const STEDI_SOURCE_KEYS=new Set(['providers','enrollments']);
+const STEDI_SOURCE_KEYS=new Set(['providers','enrollments','era']);
 function applyLiveRecord(key,record){if(!LIVE_KEYS.has(key)||!T[key]||!record)return;if(STEDI_SOURCE_KEYS.has(key))return;const data=key==='payers'?payerDir:T[key].data;const id=dashboardRecordKey(key,record);const index=data.findIndex(item=>dashboardRecordKey(key,item)===id);if(index>=0)data[index]=record;else data.unshift(record);T[key].data=data;refreshLiveSection(key);}
 async function dashboardApi(path,options){const response=await fetch(path,{headers:{'Content-Type':'application/json','Accept':'application/json'},...(options||{})});const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.error||payload.message||('Request failed with '+response.status));return payload;}
 async function persistDashboardRecord(key,record,status){if(!LIVE_KEYS.has(key)||!record)return;try{await dashboardApi('/api/dashboard-records',{method:'POST',body:JSON.stringify({key,target:key,record,recordKey:dashboardRecordKey(key,record),status:status||'dashboard'})});}catch(error){console.warn(error);toast('Saved locally. Supabase save failed.');}}
@@ -1228,6 +1228,66 @@ async function loadProvidersFromStedi(){
     if(!items.length&&sub)sub.textContent='No providers found in Stedi. Click + Add Provider to register one.';
   }catch(e){if(sub)sub.textContent='Could not reach Stedi — showing local data.';console.warn('loadProvidersFromStedi:',e);}
 }
+function eraFromStediResponse(item){
+  const num=v=>{const n=Number(String(v||0).replace(/[$,]/g,''));return isFinite(n)?n:0;};
+  const fmtDate=v=>{if(!v)return'';try{const d=new Date(v);if(isNaN(d))return String(v);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch{return String(v);}};
+  // Payer: Stedi 835 puts payer in sender or payerIdentification
+  const pi=item.payerIdentification&&typeof item.payerIdentification==='object'?item.payerIdentification:{};
+  const senderName=(item.sender&&(item.sender.name||item.sender.organizationName))||pi.organizationName||pi.name||item.payerName||item.tradingPartnerName||'';
+  const senderId=(item.sender&&(item.sender.id||item.sender.identifier))||pi.identifier||pi.id||item.payerId||item.tradingPartnerId||'';
+  const payerMatch=PAYERS.find(([,id])=>id===senderId||id===senderName);
+  const payer=payerMatch?payerMatch[0]:(senderName||senderId||'—');
+  const fi=item.financialInformation&&typeof item.financialInformation==='object'?item.financialInformation:{};
+  const paid=num(fi.totalActualProviderPaymentAmount||item.totalAmount||item.paymentAmount||item.paid||0);
+  const method=fi.paymentMethodCode||item.paymentMethod||'EFT';
+  const methodLabel={'CHK':'CHK (Check)','ACH':'ACH (EFT)','NON':'NON (Non-payment)'}[method]||method;
+  const payDateRaw=fi.paymentDate||'';
+  const payDateIso=payDateRaw.match(/^\d{8}$/)?payDateRaw.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3'):payDateRaw;
+  const date=fmtDate(payDateIso)||fmtDate(item.createdAt||item.processedAt||'');
+  const rawClaims=Array.isArray(item.claimPaymentInformation)?item.claimPaymentInformation:Array.isArray(item.claims)?item.claims:[];
+  const pays=rawClaims.map(c=>{
+    const cp=c.claimPaymentInfo||c;
+    return{claim:cp.patientControlNumber||cp.claimId||cp.claimNumber||'—',billed:num(cp.totalClaimChargeAmount||cp.billed||0),allowed:num(cp.claimPaymentAmount||cp.allowed||0),paid:num(cp.claimPaymentAmount||cp.paid||0),pr:num(cp.patientResponsibility||cp.pr||0)};
+  });
+  const billed=pays.length?pays.reduce((s,p)=>s+p.billed,0):(paid||0);
+  const pr=pays.reduce((s,p)=>s+p.pr,0);
+  return{id:item.transactionId||item.id||'ERA-'+Math.random().toString(36).slice(2,8),transactionId:item.transactionId||item.id||'',payer,payerSenderId:senderId,date,status:item.status==='posted'?'Posted':'New',method:methodLabel,n:rawClaims.length||item.claimCount||1,billed,paid,pr,pays};
+}
+async function loadErasFromStedi(){
+  const sub=document.getElementById('sub-era');
+  if(sub)sub.textContent='Loading ERA from Stedi…';
+  try{
+    const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({base:'healthcare',path:'/transactions?transactionSetType=835&direction=RECEIVED',method:'GET',payload:null})});
+    const d=await res.json();
+    if(!d||d.mode!=='live'||!d.ok){
+      if(sub)sub.textContent=eras.length+' ERA records · Stedi: '+(d&&d.response&&(d.response.message||d.response.error)||'mock mode or key missing');
+      return;
+    }
+    const r=d.response;
+    const items=Array.isArray(r)?r:Array.isArray(r&&r.items)?r.items:Array.isArray(r&&r.transactions)?r.transactions:Array.isArray(r&&r.data)?r.data:[];
+    const era835s=items.filter(it=>!it.transactionSetType||it.transactionSetType==='835'||it.transactionSetIdentifier==='835');
+    // Fetch detail JSON for each so we get claim payment breakdown (cap at 20)
+    const withDetail=await Promise.all(era835s.slice(0,20).map(async it=>{
+      const tid=it.transactionId||it.id;if(!tid)return it;
+      try{
+        const dr=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({base:'healthcare',path:'/transactions/'+encodeURIComponent(tid),method:'GET',payload:null})});
+        const dd=await dr.json();
+        if(dd&&dd.ok&&dd.response&&typeof dd.response==='object')return Object.assign({},it,dd.response);
+      }catch{}
+      return it;
+    }));
+    const mapped=withDetail.map(eraFromStediResponse);
+    eras.length=0;mapped.forEach(rec=>eras.push(rec));
+    T.era.data=eras;refreshLiveSection('era');updateEraKpis();
+    if(sub)sub.textContent=eras.length+' ERA'+(eras.length!==1?'s':'')+' · synced from Stedi';
+    if(!mapped.length&&sub)sub.textContent='No 835 ERA transactions found in Stedi.';
+  }catch(e){
+    if(sub)sub.textContent='Could not reach Stedi — showing local data.';
+    console.warn('loadErasFromStedi:',e);
+  }
+}
 async function seedPayersFromEnrollments(){
   const seen=new Set(payerDir.map(p=>p.stedi||p.name));
   for(const e of enrollments){
@@ -1273,9 +1333,8 @@ async function seedPayersFromEnrollments(){
     }
   }
 }
-const posted=eras.filter(e=>e.status==='Posted'),unposted=eras.filter(e=>e.status==='New');
-document.getElementById('kpiEraN').textContent=eras.length;document.getElementById('kpiEraPosted').textContent=usd(posted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraPostedN').textContent=posted.length+' remits';document.getElementById('kpiEraUnposted').textContent=usd(unposted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraUnpostedN').textContent=unposted.length+' remits';document.getElementById('kpiEraAdj').textContent=usd(eras.reduce((a,e)=>a+e.billed-e.paid-e.pr,0)/10);
-document.getElementById('kpiRejQueue').textContent=claims.filter(c=>['Rejected','Denied'].includes(c.status)).length+' to fix';document.getElementById('kpiEraQueue').textContent=unposted.length+' new';document.getElementById('kpiAttQueue').textContent=attachments.filter(a=>a.status==='Overdue').length+' urgent';
+function updateEraKpis(){const posted=eras.filter(e=>e.status==='Posted'),unposted=eras.filter(e=>e.status==='New');document.getElementById('kpiEraN').textContent=eras.length;document.getElementById('kpiEraPosted').textContent=usd(posted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraPostedN').textContent=posted.length+' remits';document.getElementById('kpiEraUnposted').textContent=usd(unposted.reduce((a,e)=>a+e.paid,0));document.getElementById('kpiEraUnpostedN').textContent=unposted.length+' remits';document.getElementById('kpiEraAdj').textContent=usd(eras.reduce((a,e)=>a+e.billed-e.paid-e.pr,0)/10);document.getElementById('kpiRejQueue').textContent=claims.filter(c=>['Rejected','Denied'].includes(c.status)).length+' to fix';document.getElementById('kpiEraQueue').textContent=unposted.length+' new';document.getElementById('kpiAttQueue').textContent=attachments.filter(a=>a.status==='Overdue').length+' urgent';}
+updateEraKpis();
 ['locClm1','locClm2','locClm3'].forEach((id,i)=>{document.getElementById(id).textContent=claims.filter(c=>c.loc===LOCS[i]).length+' claims'});
 
 /* drawer */
@@ -3181,7 +3240,7 @@ window.openDrawer=function(key,i){
 };
 (async function bootDashboard(){
  await loadDashboardRecords();
- await Promise.all([loadEnrollmentsFromStedi(),loadProvidersFromStedi()]);
+ await Promise.all([loadEnrollmentsFromStedi(),loadProvidersFromStedi(),loadErasFromStedi()]);
  initPayerTypeahead();
  const m=document.getElementById('appMain');if(m)m.style.opacity='1';
  restoreOpenDrawer();
