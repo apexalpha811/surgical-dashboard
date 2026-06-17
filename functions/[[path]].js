@@ -296,7 +296,8 @@ function config(env) {
     stediHealthcareBaseUrl: trimSlash(env.STEDI_HEALTHCARE_BASE_URL || "https://healthcare.us.stedi.com/2024-04-01"),
     stediClaimsBaseUrl: trimSlash(env.STEDI_CLAIMS_BASE_URL || "https://claims.us.stedi.com/2025-03-07"),
     stediEnrollmentsBaseUrl: trimSlash(env.STEDI_ENROLLMENTS_BASE_URL || "https://enrollments.us.stedi.com/2024-09-01"),
-    stediPayersBaseUrl: trimSlash(env.STEDI_PAYERS_BASE_URL || "https://payers.us.stedi.com/2024-04-01")
+    stediPayersBaseUrl: trimSlash(env.STEDI_PAYERS_BASE_URL || "https://payers.us.stedi.com/2024-04-01"),
+    stediCoreBaseUrl: trimSlash(env.STEDI_CORE_BASE_URL || "https://core.us.stedi.com/2023-08-01")
   };
 }
 
@@ -886,7 +887,7 @@ const STEDI_PROXY_ALLOW = ["/change/medicalnetwork/", "/insurance-discovery/", "
 // Generic authenticated proxy to Stedi (see server.js for rationale). Errors are returned, not thrown.
 async function stediProxy(env, body) {
   const cfg = config(env);
-  const bases = { healthcare: cfg.stediHealthcareBaseUrl, claims: cfg.stediClaimsBaseUrl, enrollments: cfg.stediEnrollmentsBaseUrl, payers: cfg.stediPayersBaseUrl };
+  const bases = { healthcare: cfg.stediHealthcareBaseUrl, claims: cfg.stediClaimsBaseUrl, enrollments: cfg.stediEnrollmentsBaseUrl, payers: cfg.stediPayersBaseUrl, core: cfg.stediCoreBaseUrl };
   const path = String(body.path || "").trim();
   if (!path.startsWith("/") || path.includes("{")) sendConfigError("Invalid or unresolved Stedi path.");
   if (!STEDI_PROXY_ALLOW.some(p => path.startsWith(p))) sendConfigError("Stedi path not allowed.");

@@ -1399,22 +1399,21 @@ async function loadErasFromStedi(){
   if(sub)sub.textContent='Loading ERA from Stedi…';
   try{
     const res=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({base:'healthcare',path:'/change/medicalnetwork/reports/v2',method:'GET',payload:null})});
+      body:JSON.stringify({base:'core',path:'/transactions?transactionSetIdentifier=835&direction=INBOUND&limit=50',method:'GET',payload:null})});
     const d=await res.json();
     if(!d||d.mode!=='live'||!d.ok){
       if(sub)sub.textContent=eraClaims.length+' claim rows · Stedi: '+(d&&d.response&&(d.response.message||d.response.error)||'mock mode or key missing');
       return;
     }
     const r=d.response;
-    const items=Array.isArray(r)?r:Array.isArray(r&&r.reports)?r.reports:Array.isArray(r&&r.items)?r.items:Array.isArray(r&&r.data)?r.data:[];
-    const era835s=items.filter(it=>!it.reportType||it.reportType==='835'||it.transactionSetType==='835'||it.transactionSetIdentifier==='835');
-    const withDetail=await Promise.all(era835s.slice(0,20).map(async it=>{
-      const tid=it.transactionId||it.id;if(!tid)return it;
-      try{const dr=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'healthcare',path:'/change/medicalnetwork/reports/v2/'+encodeURIComponent(tid)+'/835',method:'GET',payload:null})});const dd=await dr.json();if(dd&&dd.ok&&dd.response&&typeof dd.response==='object')return Object.assign({transactionId:tid},it,dd.response);}catch{}
-      return it;
+    const items=Array.isArray(r)?r:Array.isArray(r&&r.transactions)?r.transactions:Array.isArray(r&&r.items)?r.items:Array.isArray(r&&r.data)?r.data:[];
+    const withDetail=await Promise.all(items.slice(0,20).map(async it=>{
+      const tid=it.transactionId||it.id;if(!tid)return null;
+      try{const dr=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'healthcare',path:'/change/medicalnetwork/reports/v2/'+encodeURIComponent(tid)+'/835',method:'GET',payload:null})});const dd=await dr.json();if(dd&&dd.ok&&dd.response&&typeof dd.response==='object')return Object.assign({transactionId:tid},dd.response);}catch{}
+      return null;
     }));
     eras.length=0;eraClaims.length=0;
-    withDetail.forEach(it=>_mergeEraIntoArrays(eraFromStediResponse(it)));
+    withDetail.filter(Boolean).forEach(it=>_mergeEraIntoArrays(eraFromStediResponse(it)));
     applyEraFilters();updateEraKpis();buildEraEnrollmentBanner();
     const s=eraClaims.length,e=eras.length;
     if(sub)sub.textContent=s+' claim row'+(s!==1?'s':'')+' across '+e+' ERA'+(e!==1?'s':'')+' · synced from Stedi';

@@ -22,7 +22,8 @@ const config = {
   stediHealthcareBaseUrl: trimSlash(process.env.STEDI_HEALTHCARE_BASE_URL || "https://healthcare.us.stedi.com/2024-04-01"),
   stediClaimsBaseUrl: trimSlash(process.env.STEDI_CLAIMS_BASE_URL || "https://claims.us.stedi.com/2025-03-07"),
   stediEnrollmentsBaseUrl: trimSlash(process.env.STEDI_ENROLLMENTS_BASE_URL || "https://enrollments.us.stedi.com/2024-09-01"),
-  stediPayersBaseUrl: trimSlash(process.env.STEDI_PAYERS_BASE_URL || "https://payers.us.stedi.com/2024-04-01")
+  stediPayersBaseUrl: trimSlash(process.env.STEDI_PAYERS_BASE_URL || "https://payers.us.stedi.com/2024-04-01"),
+  stediCoreBaseUrl: trimSlash(process.env.STEDI_CORE_BASE_URL || "https://core.us.stedi.com/2023-08-01")
 };
 
 function loadEnvFile(filePath) {
@@ -1340,9 +1341,10 @@ const STEDI_PROXY_BASES = {
   healthcare: () => config.stediHealthcareBaseUrl,
   claims: () => config.stediClaimsBaseUrl,
   enrollments: () => config.stediEnrollmentsBaseUrl,
-  payers: () => config.stediPayersBaseUrl
+  payers: () => config.stediPayersBaseUrl,
+  core: () => config.stediCoreBaseUrl
 };
-const STEDI_PROXY_ALLOW = ["/change/medicalnetwork/", "/insurance-discovery/", "/coordination-of-benefits", "/claim-attachments/", "/enrollments", "/providers", "/payers", "/eligibility-manager/", "/tasks/", "/documents/"];
+const STEDI_PROXY_ALLOW = ["/change/medicalnetwork/", "/insurance-discovery/", "/coordination-of-benefits", "/claim-attachments/", "/enrollments", "/providers", "/payers", "/eligibility-manager/", "/tasks/", "/documents/", "/transactions"];
 
 // Generic authenticated proxy to Stedi. Forwards a built payload to the real Stedi endpoint
 // with the server-side key. Errors (incl. sandbox "not available in Test Mode") are returned,
