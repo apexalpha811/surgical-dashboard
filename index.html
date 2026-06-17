@@ -2748,7 +2748,8 @@ function openCreate(key,defaults){
 }
 function closeCreate(){document.getElementById('createOvl').classList.remove('open');}
 let _slCount=0;
-function renderServiceLineGroup(n,container){
+function renderServiceLineGroup(n,container,defaults){
+ const d=defaults||{};
  const grp=document.createElement('div');grp.id='sl-group-'+n;grp.style.cssText='border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:12px';
  const hdr=document.createElement('div');hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px';
  const title=document.createElement('b');title.textContent='Service Line '+n;hdr.append(title);
@@ -2771,14 +2772,15 @@ function renderServiceLineGroup(n,container){
   {k:'renderingProvider',label:'Rendering provider (24J)',type:'select',opts:provOpts}
  ];
  slFields.forEach(f=>{
+  const dv=d[f.k]!=null?String(d[f.k]):'';
   const fd=document.createElement('div');fd.className='field';fd.style.marginBottom='8px';
   const lbl=document.createElement('label');lbl.textContent=f.label;fd.append(lbl);
   if(f.type==='select'){
    const sel=document.createElement('select');sel.id='cf-sl-'+n+'-'+f.k;
-   (f.opts||[]).forEach(o=>{const opt=document.createElement('option');opt.value=o;opt.textContent=o;sel.append(opt);});
+   (f.opts||[]).forEach(o=>{const opt=document.createElement('option');opt.value=o;opt.textContent=o;if(dv&&o.startsWith(dv))opt.selected=true;sel.append(opt);});
    fd.append(sel);
   }else{
-   const inp=document.createElement('input');inp.id='cf-sl-'+n+'-'+f.k;inp.value=f.v||'';
+   const inp=document.createElement('input');inp.id='cf-sl-'+n+'-'+f.k;inp.value=dv||f.v||'';
    fd.append(inp);
   }
   grp.append(fd);
@@ -2909,32 +2911,67 @@ let activeDrawer={key:'',index:-1};
 const EDITABLE_KEYS=new Set(['claims','eligibility','providers','payers','enrollments','attachments','appeals','cob']);
 const EDIT={
  claims:{title:'Edit claim',fields:[
+  {k:'claimFilingCode',label:'Insurance type (Box 1)',type:'select',opts:['CI - Commercial','MB - Medicare Part B','MC - Medicaid','CH - CHAMPUS/TRICARE','VA - Veterans Affairs','OF - Other federal program','BL - Blue Cross/Blue Shield','HM - HMO','ZZ - Unknown']},
+  {k:'memberId',label:"Insured's ID / Member ID (Box 1a)",v:''},
   {k:'patient',label:'Patient name (Box 2)',v:''},
   {k:'patientDob',label:'Patient date of birth (Box 3)',v:''},
   {k:'patientSex',label:'Patient sex (Box 3)',type:'select',opts:['Male','Female','Unknown']},
+  {k:'subscriberName',label:"Insured's name (Box 4)",v:''},
+  {k:'patientAddress',label:'Patient address (Box 5)',v:''},
+  {k:'patientCity',label:'Patient city (Box 5)',v:''},
+  {k:'patientState',label:'Patient state (Box 5)',v:''},
+  {k:'patientZip',label:'Patient zip (Box 5)',v:''},
+  {k:'patientPhone',label:'Patient phone (Box 5)',v:''},
   {k:'patientRelationship',label:'Patient relationship to insured (Box 6)',type:'select',opts:['Self','Spouse','Child','Other']},
-  {k:'memberId',label:"Insured's ID / Member ID (Box 1a)",v:''},
+  {k:'insuredAddress',label:"Insured's address (Box 7)",v:''},
+  {k:'insuredCity',label:"Insured's city (Box 7)",v:''},
+  {k:'insuredState',label:"Insured's state (Box 7)",v:''},
+  {k:'insuredZip',label:"Insured's zip (Box 7)",v:''},
+  {k:'insuredPhone',label:"Insured's phone (Box 7)",v:''},
+  {k:'otherInsuredName',label:"Other insured's name (Box 9)",v:''},
+  {k:'otherInsuredPolicy',label:"Other insured's policy/group number (Box 9a)",v:''},
+  {k:'otherInsuredPlan',label:"Other insured's insurance plan name (Box 9d)",v:''},
+  {k:'condEmployment',label:'Condition related to employment (Box 10a)',type:'select',opts:['No','Yes']},
+  {k:'condAutoAccident',label:'Condition related to auto accident (Box 10b)',type:'select',opts:['No','Yes']},
+  {k:'condAutoState',label:'Auto accident state (Box 10b)',v:''},
+  {k:'condOtherAccident',label:'Condition related to other accident (Box 10c)',type:'select',opts:['No','Yes']},
+  {k:'claimCodes',label:'Claim codes (Box 10d)',v:''},
   {k:'groupNumber',label:'Group number (Box 11)',v:''},
+  {k:'insuredDob',label:"Insured's date of birth (Box 11a)",v:''},
+  {k:'insuredSex',label:"Insured's sex (Box 11a)",type:'select',opts:['Male','Female','Unknown']},
+  {k:'otherClaimId',label:'Other claim ID (Box 11b)',v:''},
   {k:'insurancePlan',label:'Insurance plan name (Box 11c)',v:''},
-  {k:'type',label:'Claim type',type:'select',opts:['837P','837I']},
-  {k:'providerFull',label:'Rendering provider (Box 24J)',v:''},
-  {k:'loc',label:'Service facility (Box 32)',type:'select',opts:LOCS},
   {k:'payer',label:'Payer (Box 11d)',type:'select',opts:PAYERS.map(p=>p[0])},
-  {k:'dos',label:'Date of service (Box 24A)',v:''},
-  {k:'pos',label:'Place of service (Box 24B)',type:'select',opts:['11 - Office','21 - Inpatient hospital','22 - Outpatient hospital','23 - Emergency room','24 - Ambulatory surgical center','31 - Skilled nursing facility','81 - Independent lab']},
-  {k:'cpt',label:'CPT codes, comma separated (Box 24D)',v:''},
-  {k:'mod',label:'Modifiers, comma separated (Box 24D)',v:''},
-  {k:'dx',label:'ICD-10 diagnosis codes, comma separated (Box 21)',v:''},
+  {k:'dateOfIllness',label:'Date of current illness/injury/pregnancy (Box 14)',v:''},
+  {k:'illnessQualifier',label:'Qualifier (Box 14)',type:'select',opts:['431 - Onset of current symptoms','484 - Last menstrual period']},
+  {k:'otherDate',label:'Other date (Box 15)',v:''},
+  {k:'otherDateQualifier',label:'Qualifier (Box 15)',type:'select',opts:['454 - Initial treatment','304 - Latest visit','453 - Acute manifestation','439 - Accident']},
+  {k:'unableToWorkFrom',label:'Dates unable to work from (Box 16)',v:''},
+  {k:'unableToWorkTo',label:'Dates unable to work to (Box 16)',v:''},
   {k:'referringProvider',label:'Referring provider name (Box 17)',v:''},
+  {k:'referringIdQualifier',label:'Referring provider ID qualifier (Box 17a)',v:''},
+  {k:'referringOtherId',label:'Referring provider other ID (Box 17a)',v:''},
   {k:'referringNpi',label:'Referring provider NPI (Box 17b)',v:''},
+  {k:'hospFrom',label:'Hospitalization date from (Box 18)',v:''},
+  {k:'hospTo',label:'Hospitalization date to (Box 18)',v:''},
+  {k:'additionalClaimInfo',label:'Additional claim information (Box 19)',v:''},
+  {k:'outsideLab',label:'Outside lab (Box 20)',type:'select',opts:['No','Yes']},
+  {k:'outsideLabCharges',label:'Outside lab charges (Box 20)',v:''},
+  {k:'dx',label:'ICD-10 diagnosis codes, comma separated (Box 21)',v:''},
+  {k:'resubmissionCode',label:'Resubmission code (Box 22)',v:''},
+  {k:'originalRefNumber',label:'Original reference number (Box 22)',v:''},
   {k:'priorAuth',label:'Prior authorization number (Box 23)',v:''},
+  {k:'serviceLines',type:'serviceLines'},
   {k:'patientAccount',label:'Patient account number (Box 26)',v:''},
   {k:'acceptAssignment',label:'Accept assignment (Box 27)',type:'select',opts:['Yes','No']},
-  {k:'payerClm',label:'Payer claim # (Box 28)',v:''},
-  {k:'status',label:'Status',type:'select',opts:['Draft','Pending payer','Accepted','Paid','Rejected','Denied']},
   {k:'billed',label:'Total charge (Box 28)',v:'0'},
-  {k:'paid',label:'Amount paid',v:'0'}
- ],render:r=>({patient:r.patient||'',patientDob:r.patientDob||'',patientSex:r.patientSex||'Male',patientRelationship:r.patientRelationship||'Self',memberId:r.memberId||'',groupNumber:r.groupNumber||'',insurancePlan:r.insurancePlan||'',type:r.type||'837P',providerFull:r.providerFull||r.provider||'',loc:r.loc||LOCS[0],payer:r.payer||'',dos:r.dos||'',pos:(r.lines&&r.lines[0]&&r.lines[0].pos?r.lines[0].pos+' - Office':'11 - Office'),cpt:(r.lines||[]).map(l=>l.cpt).join(', '),mod:(r.lines||[]).map(l=>l.mod||'').filter(Boolean).join(', '),dx:(r.icds||[]).join(', '),referringProvider:r.referringProvider||'',referringNpi:r.referringNpi||'',priorAuth:r.priorAuth||'',patientAccount:r.patientAccount||'',acceptAssignment:r.acceptAssignment||'Yes',payerClm:r.payerClm||'',status:r.status||'Draft',billed:r.billed||0,paid:r.paid||0}),build:(v,r)=>{const cpts=v.cpt.split(',').map(s=>s.trim()).filter(Boolean);const mods=v.mod?v.mod.split(',').map(s=>s.trim()):[];const billed=+v.billed||0;const paid=+v.paid||0;const per=cpts.length?Math.round(billed/cpts.length):billed;const pos=(v.pos||'11').split(' - ')[0].trim();return{...r,patient:v.patient||r.patient,patientDob:v.patientDob||r.patientDob||'',patientSex:v.patientSex||r.patientSex||'',patientRelationship:v.patientRelationship||r.patientRelationship||'Self',memberId:v.memberId||r.memberId||'',groupNumber:v.groupNumber||r.groupNumber||'',insurancePlan:v.insurancePlan||r.insurancePlan||'',type:v.type||r.type,providerFull:v.providerFull||r.providerFull,provider:(v.providerFull||r.providerFull||'').replace(/,.*$/,''),loc:v.loc||r.loc,payer:v.payer||r.payer,dos:v.dos||r.dos,billed,paid,status:v.status||r.status,payerClm:v.payerClm||r.payerClm,lines:cpts.map((c,i)=>{const m=CPTS.find(x=>x[0]===c);const prev=(r.lines||[])[i]||{};return{cpt:c,desc:prev.desc||(m?m[1]:'Procedure'),mod:mods[i]||mods[0]||prev.mod||'',units:prev.units||1,charge:per,pos};}),icds:v.dx.split(',').map(s=>s.trim()).filter(Boolean),referringProvider:v.referringProvider||r.referringProvider||'',referringNpi:v.referringNpi||r.referringNpi||'',priorAuth:v.priorAuth||r.priorAuth||'',patientAccount:v.patientAccount||r.patientAccount||'',acceptAssignment:v.acceptAssignment||r.acceptAssignment||'Yes'};}},
+  {k:'amountPaid',label:'Amount paid (Box 29)',v:'0'},
+  {k:'billingProvider',label:'Billing provider (Box 33)',type:'select',opts:providers.slice(0,12).map(p=>p.name)},
+  {k:'loc',label:'Service facility (Box 32)',type:'select',opts:LOCS},
+  {k:'type',label:'Claim type',type:'select',opts:['837P','837I']},
+  {k:'status',label:'Status',type:'select',opts:['Draft','Pending payer','Accepted','Paid','Rejected','Denied']},
+  {k:'paid',label:'Amount paid from payer',v:'0'}
+ ],render:r=>{const fc=r.claimFilingCode||'ZZ';const fcMatch=['CI','MB','MC','CH','VA','OF','BL','HM','ZZ'].find(c=>fc.startsWith(c))||'ZZ';const iq=r.illnessQualifier||'431';const iqMatch=['431','484'].find(c=>iq.startsWith(c))||'431';const odq=r.otherDateQualifier||'454';const odqMatch=['454','304','453','439'].find(c=>odq.startsWith(c))||'454';return{claimFilingCode:fcMatch+' - '+({CI:'Commercial',MB:'Medicare Part B',MC:'Medicaid',CH:'CHAMPUS/TRICARE',VA:'Veterans Affairs',OF:'Other federal program',BL:'Blue Cross/Blue Shield',HM:'HMO',ZZ:'Unknown'}[fcMatch]||'Unknown'),memberId:r.memberId||'',patient:r.patient||'',patientDob:r.patientDob||'',patientSex:r.patientSex||'Male',subscriberName:r.subscriberName||'',patientAddress:r.patientAddress||'',patientCity:r.patientCity||'',patientState:r.patientState||'',patientZip:r.patientZip||'',patientPhone:r.patientPhone||'',patientRelationship:r.patientRelationship||'Self',insuredAddress:r.insuredAddress||'',insuredCity:r.insuredCity||'',insuredState:r.insuredState||'',insuredZip:r.insuredZip||'',insuredPhone:r.insuredPhone||'',otherInsuredName:r.otherInsuredName||'',otherInsuredPolicy:r.otherInsuredPolicy||'',otherInsuredPlan:r.otherInsuredPlan||'',condEmployment:r.condEmployment||'No',condAutoAccident:r.condAutoAccident||'No',condAutoState:r.condAutoState||'',condOtherAccident:r.condOtherAccident||'No',claimCodes:r.claimCodes||'',groupNumber:r.groupNumber||'',insuredDob:r.insuredDob||'',insuredSex:r.insuredSex||'Male',otherClaimId:r.otherClaimId||'',insurancePlan:r.insurancePlan||'',payer:r.payer||'',dateOfIllness:r.dateOfIllness||'',illnessQualifier:iqMatch+' - '+({431:'Onset of current symptoms',484:'Last menstrual period'}[iqMatch]||'Onset of current symptoms'),otherDate:r.otherDate||'',otherDateQualifier:odqMatch+' - '+({454:'Initial treatment',304:'Latest visit',453:'Acute manifestation',439:'Accident'}[odqMatch]||'Initial treatment'),unableToWorkFrom:r.unableToWorkFrom||'',unableToWorkTo:r.unableToWorkTo||'',referringProvider:r.referringProvider||'',referringIdQualifier:r.referringIdQualifier||'',referringOtherId:r.referringOtherId||'',referringNpi:r.referringNpi||'',hospFrom:r.hospFrom||'',hospTo:r.hospTo||'',additionalClaimInfo:r.additionalClaimInfo||'',outsideLab:r.outsideLab||'No',outsideLabCharges:r.outsideLabCharges||'',dx:(r.icds||[]).join(', '),resubmissionCode:r.resubmissionCode||'',originalRefNumber:r.originalRefNumber||'',priorAuth:r.priorAuth||'',patientAccount:r.patientAccount||'',acceptAssignment:r.acceptAssignment||'Yes',billed:r.billed||0,amountPaid:r.amountPaid||'0',billingProvider:r.providerFull||r.provider||'',loc:r.loc||LOCS[0],type:r.type||'837P',status:r.status||'Draft',paid:r.paid||0};},build:(v,r)=>{const sls=typeof collectServiceLines==='function'?collectServiceLines():[];const billed=+v.billed||0;const paid=+v.paid||0;return{...r,claimFilingCode:(v.claimFilingCode||'ZZ').split(' - ')[0].trim(),memberId:v.memberId||r.memberId||'',patient:v.patient||r.patient,patientDob:v.patientDob||r.patientDob||'',patientSex:v.patientSex||r.patientSex||'',subscriberName:v.subscriberName||r.subscriberName||'',patientAddress:v.patientAddress||r.patientAddress||'',patientCity:v.patientCity||r.patientCity||'',patientState:v.patientState||r.patientState||'',patientZip:v.patientZip||r.patientZip||'',patientPhone:v.patientPhone||r.patientPhone||'',patientRelationship:v.patientRelationship||r.patientRelationship||'Self',insuredAddress:v.insuredAddress||r.insuredAddress||'',insuredCity:v.insuredCity||r.insuredCity||'',insuredState:v.insuredState||r.insuredState||'',insuredZip:v.insuredZip||r.insuredZip||'',insuredPhone:v.insuredPhone||r.insuredPhone||'',otherInsuredName:v.otherInsuredName||'',otherInsuredPolicy:v.otherInsuredPolicy||'',otherInsuredPlan:v.otherInsuredPlan||'',condEmployment:v.condEmployment||'No',condAutoAccident:v.condAutoAccident||'No',condAutoState:v.condAutoState||'',condOtherAccident:v.condOtherAccident||'No',claimCodes:v.claimCodes||'',groupNumber:v.groupNumber||r.groupNumber||'',insuredDob:v.insuredDob||'',insuredSex:v.insuredSex||'',otherClaimId:v.otherClaimId||'',insurancePlan:v.insurancePlan||r.insurancePlan||'',payer:v.payer||r.payer,dateOfIllness:v.dateOfIllness||'',illnessQualifier:(v.illnessQualifier||'').split(' - ')[0].trim(),otherDate:v.otherDate||'',otherDateQualifier:(v.otherDateQualifier||'').split(' - ')[0].trim(),unableToWorkFrom:v.unableToWorkFrom||'',unableToWorkTo:v.unableToWorkTo||'',referringProvider:v.referringProvider||'',referringIdQualifier:v.referringIdQualifier||'',referringOtherId:v.referringOtherId||'',referringNpi:v.referringNpi||r.referringNpi||'',hospFrom:v.hospFrom||'',hospTo:v.hospTo||'',additionalClaimInfo:v.additionalClaimInfo||'',outsideLab:v.outsideLab||'No',outsideLabCharges:v.outsideLabCharges||'',resubmissionCode:v.resubmissionCode||'',originalRefNumber:v.originalRefNumber||'',priorAuth:v.priorAuth||r.priorAuth||'',patientAccount:v.patientAccount||r.patientAccount||'',acceptAssignment:v.acceptAssignment||r.acceptAssignment||'Yes',billed,paid,amountPaid:v.amountPaid||'',status:v.status||r.status,providerFull:v.billingProvider||r.providerFull||'',provider:(v.billingProvider||r.providerFull||r.provider||'').replace(/,.*$/,''),loc:v.loc||r.loc,type:v.type||r.type,dos:sls[0]?(sls[0].dosFrom||r.dos):r.dos,lines:sls.map((sl,i)=>{const m=CPTS.find(x=>x[0]===sl.cpt);const prev=(r.lines||[])[i]||{};return{cpt:sl.cpt,desc:prev.desc||(m?m[1]:'Procedure'),mod:sl.mod||'',units:+sl.units||1,charge:+sl.charge||0,pos:sl.pos||'11',emg:sl.emg||'No',dxPointers:sl.dxPointers||'1',epsdt:sl.epsdt||'No',idQualifier:sl.idQualifier||'',renderingProvider:sl.renderingProvider||'',dosFrom:sl.dosFrom||'',dosTo:sl.dosTo||''};}),icds:v.dx?v.dx.split(',').map(s=>s.trim()).filter(Boolean):(r.icds||[]),payerClm:r.payerClm||''};}},
  eligibility:{title:'Edit eligibility',fields:[
   {k:'patient',label:'Patient name',v:''},
   {k:'member',label:'Member ID',v:''},
@@ -3024,22 +3061,19 @@ function openEditCurrent(){
  if(!spec){toast('No editor is defined for this record yet.');return;}
  const record=T[activeDrawer.key]&&T[activeDrawer.key].data[activeDrawer.index];
  if(!record){toast('Open a record first.');return;}
- const modal=document.getElementById('createModal');
- modal.innerHTML='<div class="d-head"><h2>'+spec.title+'</h2><button class="x" onclick="closeCreate()" aria-label="Close">✕</button></div>'+renderEditFields(spec,record,activeDrawer.key)+
-  '<div style="margin-top:16px;display:flex;gap:8px"><button class="btn" id="saveEditBtn">Save changes</button><button class="btn-ghost" onclick="closeCreate()">Cancel</button></div>';
-  setTimeout(()=>{const btn=document.getElementById('saveEditBtn');if(btn)btn.onclick=()=>submitEdit(activeDrawer.key,activeDrawer.index);},0);
- document.getElementById('createOvl').classList.add('open');
-}
-
-function renderEditFields(spec,record,key){
+ const key=activeDrawer.key;
  const values=spec.render?spec.render(record):record;
- const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
- return spec.fields.map(f=>{const opts=f.type==='select'&&['payer','provider'].includes(f.k)?getFormOptions(key,f.k):f.opts;return '<div class="field" style="margin-bottom:12px"><label>'+f.label+'</label>'+(f.type==='select'?'<select id="ef-'+f.k+'">'+opts.map(o=>'<option'+(String(values[f.k]||'')===String(o)?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>':'<input id="ef-'+f.k+'" value="'+esc(values[f.k]??f.v??'')+'">')+'</div>';}).join('');
+ const modal=document.getElementById('createModal');
+ modal.replaceChildren();
+ const head=document.createElement('div');head.className='d-head';const h2=document.createElement('h2');h2.textContent=spec.title;const xbtn=document.createElement('button');xbtn.className='x';xbtn.setAttribute('onclick','closeCreate()');xbtn.setAttribute('aria-label','Close');xbtn.textContent='✕';head.append(h2,xbtn);modal.append(head);
+ spec.fields.forEach(f=>{if(f.type==='serviceLines'){_slCount=0;const sec=document.createElement('div');sec.style.cssText='margin:20px 0';const ttl=document.createElement('h3');ttl.textContent='Service Lines (Box 24)';ttl.style.cssText='margin:0 0 12px;font-size:15px';sec.append(ttl);const ctr=document.createElement('div');ctr.id='sl-container';sec.append(ctr);const existingLines=record.lines||[];if(existingLines.length>0){existingLines.forEach(ln=>{_slCount++;renderServiceLineGroup(_slCount,ctr,ln);});}else{_slCount++;renderServiceLineGroup(_slCount,ctr);}const ab=document.createElement('button');ab.className='btn-ghost btn-sm';ab.textContent='+ Add Service Line';ab.style.marginTop='8px';ab.setAttribute('onclick','addServiceLine()');sec.append(ab);modal.append(sec);return;}const value=String(values[f.k]!=null?values[f.k]:(f.v!=null?f.v:''));const field=document.createElement('div');field.className='field';field.style.marginBottom='12px';const label=document.createElement('label');label.textContent=f.label;field.append(label);if(f.type==='select'){const opts=(['payer','provider','billingProvider'].includes(f.k)?getFormOptions(key,f.k):f.opts)||[];const select=document.createElement('select');select.id='ef-'+f.k;opts.forEach(o=>{const opt=document.createElement('option');opt.value=o;if(String(o)===String(value))opt.selected=true;opt.textContent=o;select.append(opt);});field.append(select);}else{const input=document.createElement('input');input.id='ef-'+f.k;input.value=safeText(value);field.append(input);}modal.append(field);});
+ const footer=document.createElement('div');footer.style.cssText='margin-top:16px;display:flex;gap:8px';const saveBtn=document.createElement('button');saveBtn.className='btn';saveBtn.textContent='Save changes';saveBtn.onclick=()=>submitEdit(activeDrawer.key,activeDrawer.index);const cancelBtn=document.createElement('button');cancelBtn.className='btn-ghost';cancelBtn.setAttribute('onclick','closeCreate()');cancelBtn.textContent='Cancel';footer.append(saveBtn,cancelBtn);modal.append(footer);
+ document.getElementById('createOvl').classList.add('open');
 }
 
 function submitEdit(key,index){
  const spec=EDIT[key],record=T[key].data[index],v={};
- spec.fields.forEach(f=>{const el=document.getElementById('ef-'+f.k);v[f.k]=el?el.value:'';});
+ spec.fields.forEach(f=>{if(f.type==='serviceLines')return;const el=document.getElementById('ef-'+f.k);v[f.k]=el?el.value:'';});
  T[key].data[index]=spec.build(v,record);
  persistDashboardRecord(key,T[key].data[index],'edited');
  if(key==='claims')updateClaimKpis();
