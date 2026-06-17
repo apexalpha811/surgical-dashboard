@@ -1327,9 +1327,8 @@ const DETAIL={
   const dxBlock=dsec('Diagnoses ICD-10 (Box 21)',r.icds.map(c=>'<span class="tag mono">'+safeText(c)+'</span>').join(' '));
   const tlRows=[['Claim created',r.dos]];if(r.status!=='Draft'){tlRows.push(['Submitted to clearinghouse',r.submittedAt||r.dos]);tlRows.push(['999 acknowledgment',r.submittedAt||r.dos]);}if(r.cobAppliedAt)tlRows.push(['COB payer order applied',r.cobAppliedAt]);tlRows.push([r.status==='Draft'?'Awaiting submission':'Payer status: '+r.status,'Latest']);
   const timelineBlock=dsec('Timeline',mini(['Event','When'],tlRows));
-  const submitBtn=r.status==='Draft'?' <button class="btn-ghost btn-sm" onclick="submitClaimToStedi(\''+r.id+'\')">Submit</button>':'';
-  const resubmitBtn=r.status!=='Draft'?' <button class="btn-ghost btn-sm" onclick="submitClaimById(\''+r.id+'\')">Resubmit</button>':'';
-  const actionsBlock=dsec('Actions','<button class="btn-ghost btn-sm" onclick="printClaimPacketById(\''+r.id+'\')">Claim packet PDF</button> <button class="btn-ghost btn-sm" onclick="printCms1500ById(\''+r.id+'\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="view277ByClaim(\''+r.id+'\')">Check status (276)</button>'+submitBtn+resubmitBtn);
+  const stediActions='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'+(r.status==='Draft'?'<button class="btn-ghost btn-sm" onclick="submitClaimToStedi(\''+r.id+'\')">Submit</button>':'')+'<button class="btn-ghost btn-sm" onclick="submitClaimById(\''+r.id+'\')">Resubmit</button></div>';
+  const actionsBlock=dsec('Actions','<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-ghost btn-sm" onclick="printClaimPacketById(\''+r.id+'\')">Claim packet PDF</button> <button class="btn-ghost btn-sm" onclick="printCms1500ById(\''+r.id+'\')">CMS-1500 PDF</button> <button class="btn-ghost btn-sm" onclick="view277ByClaim(\''+r.id+'\')">Check status (276)</button></div>'+stediActions);
   return dhead(r.id,safeText(r.patient||'')+' · '+r.type+' · DOS '+(fieldMissing(r,'dos')?'<span class="miss">missing</span>':safeText(r.dos||'')))
     +'<h4 style="margin:14px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)">Patient</h4>'+patientBlock
     +'<h4 style="margin:14px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)">Billing</h4>'+billingBlock
