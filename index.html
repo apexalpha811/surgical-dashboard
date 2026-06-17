@@ -1422,6 +1422,22 @@ async function loadErasFromStedi(){
   }catch(e){if(sub)sub.textContent='Auto-list unavailable · paste a Stedi transaction ID above to import an ERA directly.';console.warn('loadErasFromStedi:',e);}
 }
 
+async function restoreImportedEras(){
+  try{
+    const _storedIds=JSON.parse(localStorage.getItem('eraImportedIds')||'[]');
+    const _loaded=new Set(eras.map(e=>e.transactionId).filter(Boolean));
+    const _missing=_storedIds.filter(id=>!_loaded.has(id));
+    if(!_missing.length)return;
+    const _extra=await Promise.all(_missing.map(async tid=>{
+      try{const dr=await fetch('/api/stedi/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:'healthcare',path:'/change/medicalnetwork/reports/v2/'+encodeURIComponent(tid)+'/835',method:'GET',payload:null})});const dd=await dr.json();if(dd&&dd.ok&&dd.response&&typeof dd.response==='object')return Object.assign({transactionId:tid},dd.response);}catch{}return null;
+    }));
+    _extra.filter(Boolean).forEach(it=>_mergeEraIntoArrays(eraFromStediResponse(it)));
+    applyEraFilters();updateEraKpis();
+    const sub=document.getElementById('sub-era');
+    if(sub){const s=eraClaims.length,e=eras.length;sub.textContent=s+' claim row'+(s!==1?'s':'')+' across '+e+' ERA'+(e!==1?'s':'')+' · restored from saved imports';}
+  }catch{}
+}
+
 async function importEraById(){
   const inp=document.getElementById('eraImportId');
   const raw=(inp?inp.value:'').trim();
@@ -1437,7 +1453,8 @@ async function importEraById(){
     const eraRec=eraFromStediResponse(Object.assign({transactionId:tid},dd.response));
     _mergeEraIntoArrays(eraRec);
     applyEraFilters();updateEraKpis();buildEraEnrollmentBanner();
-    persistDashboardRecord('era',{transactionId:tid,payer:eraRec.payer,date:eraRec.date,paid:eraRec.paid,n:eraRec.n},'imported');
+    try{const _ids=JSON.parse(localStorage.getItem('eraImportedIds')||'[]');if(!_ids.includes(tid)){_ids.unshift(tid);localStorage.setItem('eraImportedIds',JSON.stringify(_ids.slice(0,100)));}}catch{}
+
     if(inp)inp.value='';
     const s=eraClaims.length,e=eras.length;
     if(sub)sub.textContent=s+' claim row'+(s!==1?'s':'')+' across '+e+' ERA'+(e!==1?'s':'')+' · last imported from Stedi';
@@ -3547,6 +3564,7 @@ window.openDrawer=function(key,i){
 (async function bootDashboard(){
  await loadDashboardRecords();
  await Promise.all([loadEnrollmentsFromStedi(),loadProvidersFromStedi(),loadErasFromStedi()]);
+  await restoreImportedEras();
  initPayerTypeahead();
  const m=document.getElementById('appMain');if(m)m.style.opacity='1';
  restoreOpenDrawer();
