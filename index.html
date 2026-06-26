@@ -3297,7 +3297,7 @@ function renderServiceLineGroup(n,container,defaults){
   const lbl=document.createElement('label');lbl.textContent=f.label;fd.append(lbl);
   if(f.type==='select'){
    const sel=document.createElement('select');sel.id='cf-sl-'+n+'-'+f.k;
-   (f.opts||[]).forEach(o=>{const opt=document.createElement('option');opt.value=o;opt.textContent=o;if(dv&&o.startsWith(dv))opt.selected=true;sel.append(opt);});
+   (f.opts&&f.opts[0]===''?f.opts:[''].concat(f.opts||[])).forEach(o=>{const opt=document.createElement('option');opt.value=o;opt.textContent=o;if(o===dv)opt.selected=true;sel.append(opt);});
    fd.append(sel);
   }else{
    const inp=document.createElement('input');inp.id='cf-sl-'+n+'-'+f.k;inp.value=dv||f.v||'';
