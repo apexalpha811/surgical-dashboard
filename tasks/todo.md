@@ -298,9 +298,17 @@ Committed and pushed.
 ✅ Fixed global click handler hijack: added `#createOvl` and `#loc-grid` to exclusion list so dynamically-created modal buttons (Manage, Lookup NPI, Save, Delete) are not caught by the `panel()` fallback
 ✅ Graphify run on project: 308 nodes, 789 edges, 16 communities — ingested into Second Brain
 
+## COMPLETED (2026-06-26) — Blank-default dropdowns + Graphify re-run
+
+✅ All Yes/No selects in claim module defaulted to blank (commit `2c1c80c`)
+✅ Extended blank-default to every dropdown across the entire dashboard: modified the select renderer in both `openCreate` and edit modal to prepend `[''].concat(opts)` when `opts[0] !== ''` — one change covers all modules (commit `71855e4`)
+✅ Graphify re-run on project: 399 nodes, 861 edges, 30 communities — ingested into Second Brain (Second Brain commit `c77e922`)
+  - New communities: Location & NPI Module, API & Integration Lessons, Endpoint Audit Trail, DocuPipe Schema Config, Storage Migration, API Retry Logic
+  - Playwright UI snapshots (20 files) now in graph as a living UI audit trail
+
 ## NEXT — No active tasks
 
-All requested work is complete and pushed (latest: `cc36923`). Production site is at culver-city-surgical-dashboard.pages.dev.
+All requested work is complete and pushed (latest: `71855e4`). Production site is at culver-city-surgical-dashboard.pages.dev.
 
 ---
 

@@ -73,5 +73,220 @@
     "mtime": 1781449138.2939906,
     "ast_hash": "0961733727549ff39f64977f4c7e7b2a",
     "semantic_hash": ""
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.claude\\launch.json": {
+    "mtime": 1781658228.9770782,
+    "ast_hash": "8b39bf2e1fe87e886b63b3e31c17e1e6",
+    "semantic_hash": "8b39bf2e1fe87e886b63b3e31c17e1e6"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.claude\\settings.local.json": {
+    "mtime": 1781453912.1738303,
+    "ast_hash": "76d2be6781b9fd8574ba019f5c23f819",
+    "semantic_hash": "76d2be6781b9fd8574ba019f5c23f819"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.firecrawl\\urls.json": {
+    "mtime": 1781450501.6636026,
+    "ast_hash": "a410da83247b3b5fa1259b68f9fa5d6c",
+    "semantic_hash": "a410da83247b3b5fa1259b68f9fa5d6c"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\data\\cpt-codes.js": {
+    "mtime": 1781684295.0560355,
+    "ast_hash": "bac3b0d850c6ce006c3f98374dcc04fd",
+    "semantic_hash": "bac3b0d850c6ce006c3f98374dcc04fd"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\data\\docupipe-modules.json": {
+    "mtime": 1781451751.2013497,
+    "ast_hash": "417edfe1e99aa4e6dd992fc5bb954c08",
+    "semantic_hash": "417edfe1e99aa4e6dd992fc5bb954c08"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\functions\\[[path]].js": {
+    "mtime": 1782444843.1169043,
+    "ast_hash": "ab12ec72487c364f00a726eae350cf3b",
+    "semantic_hash": "ab12ec72487c364f00a726eae350cf3b"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\lib\\ai\\generateAppealLetter.js": {
+    "mtime": 1781224401.6397624,
+    "ast_hash": "ac64cfdd15ec71fb6a363981ed1137e3",
+    "semantic_hash": "ac64cfdd15ec71fb6a363981ed1137e3"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\lib\\data\\appeals.js": {
+    "mtime": 1781579231.8064125,
+    "ast_hash": "f3e442023de7089b82ec8b254a6f111a",
+    "semantic_hash": "f3e442023de7089b82ec8b254a6f111a"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\lib\\docupipe.js": {
+    "mtime": 1781455261.7732315,
+    "ast_hash": "db7794428081f611a90124234851a363",
+    "semantic_hash": "db7794428081f611a90124234851a363"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\lib\\stedi.js": {
+    "mtime": 1781224413.802832,
+    "ast_hash": "5a5597fa4061295204eb45e4ed9752de",
+    "semantic_hash": "5a5597fa4061295204eb45e4ed9752de"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\package.json": {
+    "mtime": 1781421092.8412528,
+    "ast_hash": "65380e9a1b862462af0ff7947f70c66d",
+    "semantic_hash": "65380e9a1b862462af0ff7947f70c66d"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\server.js": {
+    "mtime": 1782444838.0347614,
+    "ast_hash": "b7c6d99e0afc99899af47d0ea3f8b53b",
+    "semantic_hash": "b7c6d99e0afc99899af47d0ea3f8b53b"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\supabase\\migrations\\20260616000000_eligibility.sql": {
+    "mtime": 1781598133.564618,
+    "ast_hash": "4719703d3f8a2b96a23ddfc89101c85b",
+    "semantic_hash": "4719703d3f8a2b96a23ddfc89101c85b"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.firecrawl\\dashboard.md": {
+    "mtime": 1781450564.72952,
+    "ast_hash": "c87dcbe4830eaea606351a07561e4a60",
+    "semantic_hash": "c87dcbe4830eaea606351a07561e4a60"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-14T16-42-08-483Z.yml": {
+    "mtime": 1781455328.4876518,
+    "ast_hash": "134f71602a7ba6c4c1064a6bd1300ec4",
+    "semantic_hash": "134f71602a7ba6c4c1064a6bd1300ec4"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-14T16-43-01-240Z.yml": {
+    "mtime": 1781455381.2429142,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-14T16-43-21-302Z.yml": {
+    "mtime": 1781455401.306047,
+    "ast_hash": "61b16259002d9e35b8945f73fd61fdd6",
+    "semantic_hash": "61b16259002d9e35b8945f73fd61fdd6"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-14T16-44-01-780Z.yml": {
+    "mtime": 1781455441.7829745,
+    "ast_hash": "61b16259002d9e35b8945f73fd61fdd6",
+    "semantic_hash": "61b16259002d9e35b8945f73fd61fdd6"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-14T16-47-18-197Z.yml": {
+    "mtime": 1781455638.1997106,
+    "ast_hash": "134f71602a7ba6c4c1064a6bd1300ec4",
+    "semantic_hash": "134f71602a7ba6c4c1064a6bd1300ec4"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-14T16-47-25-156Z.yml": {
+    "mtime": 1781455645.1588705,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-14T16-47-32-599Z.yml": {
+    "mtime": 1781455652.601627,
+    "ast_hash": "1f9cd5182599fff41cca4996043258b9",
+    "semantic_hash": "1f9cd5182599fff41cca4996043258b9"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-14T16-48-12-163Z.yml": {
+    "mtime": 1781455692.168105,
+    "ast_hash": "af99c1ca811cc450c3aad079bfe8f814",
+    "semantic_hash": "af99c1ca811cc450c3aad079bfe8f814"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-14T20-35-21-135Z.yml": {
+    "mtime": 1781469321.1402388,
+    "ast_hash": "435128fe8b4d00727eb81861a0696edf",
+    "semantic_hash": "435128fe8b4d00727eb81861a0696edf"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-14T21-35-04-380Z.yml": {
+    "mtime": 1781472904.3846083,
+    "ast_hash": "435128fe8b4d00727eb81861a0696edf",
+    "semantic_hash": "435128fe8b4d00727eb81861a0696edf"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-15T02-20-02-386Z.yml": {
+    "mtime": 1781490002.400106,
+    "ast_hash": "3bebf81d0c70a607ddfa712b8d08c0cf",
+    "semantic_hash": "3bebf81d0c70a607ddfa712b8d08c0cf"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-15T06-55-38-687Z.yml": {
+    "mtime": 1781506538.6885564,
+    "ast_hash": "316d0a3e5104bc341243c54687402102",
+    "semantic_hash": "316d0a3e5104bc341243c54687402102"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-15T12-35-50-130Z.yml": {
+    "mtime": 1781526950.1320653,
+    "ast_hash": "316d0a3e5104bc341243c54687402102",
+    "semantic_hash": "316d0a3e5104bc341243c54687402102"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-15T19-13-00-579Z.yml": {
+    "mtime": 1781550780.5988548,
+    "ast_hash": "348d6ec51e8e636da9158914ad1d2f4d",
+    "semantic_hash": "348d6ec51e8e636da9158914ad1d2f4d"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-15T19-16-37-327Z.yml": {
+    "mtime": 1781550997.328992,
+    "ast_hash": "2a0b6c065e9a3e219fb02dea1b550a0f",
+    "semantic_hash": "2a0b6c065e9a3e219fb02dea1b550a0f"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-15T19-21-08-630Z.yml": {
+    "mtime": 1781551268.6322515,
+    "ast_hash": "2a0b6c065e9a3e219fb02dea1b550a0f",
+    "semantic_hash": "2a0b6c065e9a3e219fb02dea1b550a0f"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-16T02-52-56-445Z.yml": {
+    "mtime": 1781578376.4506884,
+    "ast_hash": "596020a5823cb8538eb8a6d0c8f2ce29",
+    "semantic_hash": "596020a5823cb8538eb8a6d0c8f2ce29"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-16T02-53-36-561Z.yml": {
+    "mtime": 1781578416.5610383,
+    "ast_hash": "9d6ea144430c701bfa5347955c2e7462",
+    "semantic_hash": "9d6ea144430c701bfa5347955c2e7462"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-16T02-54-04-437Z.yml": {
+    "mtime": 1781578444.4388447,
+    "ast_hash": "9d6ea144430c701bfa5347955c2e7462",
+    "semantic_hash": "9d6ea144430c701bfa5347955c2e7462"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-16T02-54-13-721Z.yml": {
+    "mtime": 1781578453.7242577,
+    "ast_hash": "8c1f1e46aed31d5842d246a9e79d3040",
+    "semantic_hash": "8c1f1e46aed31d5842d246a9e79d3040"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\.playwright-mcp\\page-2026-06-16T02-55-12-860Z.yml": {
+    "mtime": 1781578512.8630328,
+    "ast_hash": "3f04462e8011259f9bd97d2302aa740f",
+    "semantic_hash": "3f04462e8011259f9bd97d2302aa740f"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\DOCUPIPE_SETUP.md": {
+    "mtime": 1781292488.791222,
+    "ast_hash": "b2f7661fd29ebe4d5f6ffa8dd3041104",
+    "semantic_hash": "b2f7661fd29ebe4d5f6ffa8dd3041104"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\README.md": {
+    "mtime": 1781421099.5587456,
+    "ast_hash": "b55c180ec632a31531a915aaeb40f948",
+    "semantic_hash": "b55c180ec632a31531a915aaeb40f948"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\STEDI_REQUIREMENTS.md": {
+    "mtime": 1781685537.752011,
+    "ast_hash": "5c44baee910105b91e718d37529250ad",
+    "semantic_hash": "5c44baee910105b91e718d37529250ad"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\index.html": {
+    "mtime": 1782456959.0454133,
+    "ast_hash": "2a20188048f172b03e465f8a8fd3e806",
+    "semantic_hash": "2a20188048f172b03e465f8a8fd3e806"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\memory\\project-current-state.md": {
+    "mtime": 1781595490.3882103,
+    "ast_hash": "4681a8d6d0f34f5d89b26629f2f6f657",
+    "semantic_hash": "4681a8d6d0f34f5d89b26629f2f6f657"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\tasks\\efficient-frontier.md": {
+    "mtime": 1781401655.439708,
+    "ast_hash": "a44029c1596771cbeeae6958c5346153",
+    "semantic_hash": "a44029c1596771cbeeae6958c5346153"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\tasks\\lessons.md": {
+    "mtime": 1782449239.7186584,
+    "ast_hash": "c7659e82404677a10aac65d8f3da024b",
+    "semantic_hash": "c7659e82404677a10aac65d8f3da024b"
+  },
+  "C:\\Users\\kv8n11\\culver-city-surgical-dashboard-docupipe\\tasks\\todo.md": {
+    "mtime": 1782449230.4811463,
+    "ast_hash": "1e9b5bc833df68dc7955f2a713f99220",
+    "semantic_hash": "1e9b5bc833df68dc7955f2a713f99220"
   }
 }

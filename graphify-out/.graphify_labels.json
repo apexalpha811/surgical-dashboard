@@ -1,17 +1,1 @@
-{
-  "0": "Community 0",
-  "1": "Community 1",
-  "2": "Community 2",
-  "3": "Community 3",
-  "4": "Community 4",
-  "5": "Community 5",
-  "6": "Community 6",
-  "7": "Community 7",
-  "8": "Community 8",
-  "9": "Community 9",
-  "10": "Community 10",
-  "11": "Community 11",
-  "12": "Community 12",
-  "13": "Community 13",
-  "14": "Community 14"
-}
+{"0": "Dev Server API", "1": "Cloudflare Pages API", "2": "DocuPipe & Lib Layer", "3": "EDI Transaction Types", "4": "API & Integration Lessons", "5": "Claim Lifecycle Concepts", "6": "Infrastructure & Persistence", "7": "Package Config", "8": "Endpoint Audit Trail", "9": "Scraped UI Snapshots", "10": "Print & UX Continuity", "11": "Security & Input Handling", "12": "DocuPipe Schema Config", "13": "Location & NPI Module", "14": "Dev Launch Config", "15": "Local Permissions", "16": "Storage Migration", "17": "DocuPipe Error Handling", "18": "API Retry Logic", "19": "AI Appeal Generation", "20": "Appeals Data", "21": "Cross-Module Navigation", "22": "Dashboard Shell", "23": "Efficient Workflow", "24": "Claims UI Snapshot", "25": "Enrollments UI Snapshot", "26": "UI State Snapshots", "27": "Local Settings", "28": "Task Tracking", "29": "Eligibility Module"}

@@ -172,6 +172,10 @@ When a global `document.addEventListener('click', ...)` guards against delegatio
 
 Fetching an external API (like NPPES NPI registry) directly from a browser preview fails with "Failed to fetch" because sandboxed iframes block external network requests. Always proxy external lookups through the backend (`/api/npi-lookup` on server.js and functions/[[path]].js) rather than calling from the frontend.
 
+## Blank-default selects: fix the renderer, not every opts array
+
+When all dropdown fields need a blank default, modify the select renderer once (`opts[0]===''?opts:[''].concat(opts)`) instead of prepending `''` to every individual `opts` array in the field config. Touching each array is fragile — any new field added without a leading `''` breaks the rule. The renderer approach is self-enforcing: every future `type:'select'` field gets the blank automatically.
+
 ## Race condition in live search selection
 
 When a typeahead search result is selected, the code may clear the search results array BEFORE the detail lookup uses that array as a fallback. Capture the selected item into a local variable before clearing: `const fromSearch = _payerResults.find(...); _payerResults = []; loadPayerDetail(..., fromSearch)`. Not doing this causes the UI to render a fallback stub instead of the real search result.
