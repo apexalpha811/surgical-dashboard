@@ -3275,7 +3275,6 @@ function submitCreateAndSend(key){
  submitCreate(key);
  if(key==='claims'&&claims[0]&&claims[0].status==='Draft')submitClaimToStedi(claims[0].id);
 }
-document.getElementById('createOvl').addEventListener('click',e=>{if(e.target.id==='createOvl')closeCreate();});
 
 /* Payer search filter */
 let payersMaster=payerDir.slice();
