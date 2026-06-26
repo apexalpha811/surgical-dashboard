@@ -623,6 +623,16 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/api/npi-lookup") {
+    const npi = url.searchParams.get("npi") || "";
+    if (!/^\d{10}$/.test(npi)) { sendJson(res, 400, { error: "Invalid NPI" }); return; }
+    try {
+      const r = await fetch("https://npiregistry.cms.hhs.gov/api/?number=" + npi + "&version=2.1");
+      sendJson(res, 200, await r.json());
+    } catch (e) { sendJson(res, 502, { error: "NPPES unavailable" }); }
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/imports") {
     const body = await readJsonBody(req);
     const result = await saveImportRecord(body);

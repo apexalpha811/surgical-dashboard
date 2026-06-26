@@ -817,27 +817,11 @@ th.sort:hover{color:var(--text)}
 
   <!-- ========== LOCATIONS ========== -->
   <section class="section" id="sec-locations">
-    <div class="sub" style="margin-bottom:14px;color:var(--sub);font-size:.78rem">Service facility locations (claim loop 2310C). Kept separate from provider records: a provider can render at any location.</div>
-    <div class="grid two-col" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
-      <div class="card loc-card">
-        <div class="loc-head"><h3>Culver City ASC</h3><span class="pill ok">Primary</span></div>
-        <div class="loc-meta">9808 Washington Blvd, Suite 200<br>Culver City, CA 90232<br>Facility NPI <span class="mono">1841557020</span> · POS 24 (ASC)</div>
-        <div class="chip-row" style="margin:0"><span class="tag">4 ORs</span><span class="tag" id="locClm1">…</span></div>
-        <button class="btn-ghost btn-sm" onclick="manageLocation('Culver City ASC')">Manage</button>
-      </div>
-      <div class="card loc-card">
-        <div class="loc-head"><h3>Marina del Rey Clinic</h3><span class="pill info">Satellite</span></div>
-        <div class="loc-meta">4560 Admiralty Way, Suite 310<br>Marina del Rey, CA 90292<br>Facility NPI <span class="mono">1992304186</span> · POS 11 (Office)</div>
-        <div class="chip-row" style="margin:0"><span class="tag">Pre-op / consults</span><span class="tag" id="locClm2">…</span></div>
-        <button class="btn-ghost btn-sm" onclick="manageLocation('Marina del Rey Clinic')">Manage</button>
-      </div>
-      <div class="card loc-card">
-        <div class="loc-head"><h3>El Segundo Imaging & Pain</h3><span class="pill info">Satellite</span></div>
-        <div class="loc-meta">2041 Rosecrans Ave, Suite 155<br>El Segundo, CA 90245<br>Facility NPI <span class="mono">1577449863</span> · POS 11 (Office)</div>
-        <div class="chip-row" style="margin:0"><span class="tag">Pain procedures</span><span class="tag" id="locClm3">…</span></div>
-        <button class="btn-ghost btn-sm" onclick="manageLocation('El Segundo Imaging & Pain')">Manage</button>
-      </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div class="sub" style="flex:1;color:var(--sub);font-size:.78rem;margin:0">Service facility locations (claim loop 2310C). Kept separate from provider records: a provider can render at any location.</div>
+      <button class="btn-ghost btn-sm" onclick="openLocationModal(null)">+ Add location</button>
     </div>
+    <div id="loc-grid" class="grid two-col" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))"></div>
   </section>
 
   <!-- ========== PAYERS ========== -->
@@ -1121,12 +1105,9 @@ const PAYERS=[
  ['Humana','HUMANA'],['Health Net CA','HNET-CA'],['Oscar Health','OSCAR'],['Tricare West','TRIWEST']
 ];
 const PLANS=['PPO Gold','PPO Silver','HMO Select','EPO Value','Choice Plus','Open Access','Part B','Managed Care','HDHP Bronze','POS Premier'];
-const LOCS=['Culver City ASC','Marina del Rey Clinic','El Segundo Imaging & Pain'];
-const LOCATION_CONFIGS={
- 'Culver City ASC':{name:'Culver City ASC',address:'9808 Washington Blvd, Suite 200',city:'Culver City',state:'CA',zip:'90232',npi:'1841557020',pos:'24',role:'ASC service facility'},
- 'Marina del Rey Clinic':{name:'Marina del Rey Clinic',address:'4560 Admiralty Way, Suite 310',city:'Marina del Rey',state:'CA',zip:'90292',npi:'1992304186',pos:'11',role:'Office service facility'},
- 'El Segundo Imaging & Pain':{name:'El Segundo Imaging & Pain',address:'2041 Rosecrans Ave, Suite 155',city:'El Segundo',state:'CA',zip:'90245',npi:'1577449863',pos:'11',role:'Office service facility'}
-};
+const DEFAULT_LOCS=[{name:'Culver City ASC',address:'9808 Washington Blvd, Suite 200',city:'Culver City',state:'CA',zip:'90232',phone:'',npi:'1922138817',pos:'24',role:'ASC service facility',taxonomy:''}];
+function getLocations(){try{const s=localStorage.getItem('ccs-locations');return s?JSON.parse(s):DEFAULT_LOCS;}catch{return DEFAULT_LOCS;}}
+function saveLocations(arr){localStorage.setItem('ccs-locations',JSON.stringify(arr));}
 const SPECS=[['Orthopedic surgery','207X00000X'],['General surgery','208600000X'],['Pain management','208VP0014X'],['Ophthalmology','207W00000X'],['Gastroenterology','207RG0100X'],['Podiatry','213E00000X'],['Anesthesiology','207L00000X'],['Otolaryngology','207Y00000X']];
 const CPTS=[['29881','Knee arthroscopy w/ meniscectomy',4820],['29827','Arthroscopic rotator cuff repair',7240],['64483','Transforaminal epidural, lumbar',1180],['63030','Lumbar discectomy',9640],['47562','Laparoscopic cholecystectomy',8150],['49505','Inguinal hernia repair',6480],['66984','Cataract extraction w/ IOL',3420],['45380','Colonoscopy with biopsy',1950],['43239','Upper GI endoscopy with biopsy',1720],['28296','Bunionectomy w/ osteotomy',5310],['62323','Interlaminar epidural injection',1240],['27447','Total knee arthroplasty',21800],['23472','Total shoulder arthroplasty',19400],['64635','RF ablation, lumbar facet',2360]];
 const ICDS=['M17.11','M75.101','M54.16','K80.20','K40.90','H25.11','K63.5','M20.11','M48.062','Z12.11','M25.561','G89.29'];
@@ -1642,7 +1623,7 @@ function updateEraKpis(){
   const ribbon=document.getElementById('ribbonEra');if(ribbon)ribbon.textContent=unposted.length;
 }
 updateEraKpis();
-['locClm1','locClm2','locClm3'].forEach((id,i)=>{document.getElementById(id).textContent=claims.filter(c=>c.loc===LOCS[i]).length+' claims'});
+renderLocationsSection();
 
 /* drawer */
 const drawer=document.getElementById('drawer'),ovl=document.getElementById('ovl');
@@ -2282,21 +2263,111 @@ function exportEnrollmentsCsv(){const response={count:enrollments.length,fileNam
 async function deleteEnrollment(id){const r=findBy(enrollments,'id',id);if(!r)return;if(!confirm('Delete enrollment '+r.id+' for '+r.payer+'?'))return;const _ep='/enrollments/'+encodeURIComponent(r.id);goLive(stediArtifact('Enrollment delete',_ep,{enrollmentId:r.id},{deleted:true,enrollmentId:r.id},{partner:r.payer,description:'Enrollment deleted'}),'enrollments',_ep,'DELETE',{enrollmentId:r.id});enrollments.splice(enrollments.indexOf(r),1);T.enrollments.data=enrollments;refreshLiveSection('enrollments');persistDashboardDelete('enrollments',r);closeDrawer();toast('Enrollment '+r.id+' deleted.');}
 function downloadEnrollmentDoc(documentId,fileName){if(!documentId)return;const p='/documents/'+encodeURIComponent(documentId)+'/download';goLive(stediArtifact('Doc download',p,{documentId},{documentId,downloaded:true},{partner:'Stedi enrollments',description:'Enrollment document downloaded'}),'enrollments',p,'GET',null);toast('Requesting document: '+safeText(fileName||documentId));}
 async function deleteEnrollmentDoc(documentId,enrollmentId){if(!documentId||!confirm('Delete document '+documentId+'?'))return;const p='/documents/'+encodeURIComponent(documentId);goLive(stediArtifact('Doc delete',p,{documentId},{deleted:true,documentId},{partner:'Stedi enrollments',description:'Enrollment document deleted'}),'enrollments',p,'DELETE',{documentId});const r=findBy(enrollments,'id',enrollmentId);if(r){r.docs=(r.docs||[]).filter(d=>(typeof d==='object'?d.documentId:d)!==documentId);refreshLiveSection('enrollments');persistDashboardRecord('enrollments',r,'doc-deleted');}toast('Document deleted.');}
-function locationConfig(name){try{const saved=JSON.parse(localStorage.getItem('ccs-location-configs')||'{}');return saved[name]||LOCATION_CONFIGS[name]||{name,address:'',city:'',state:'CA',zip:'',npi:'',pos:'11',role:'Service facility'};}catch{return LOCATION_CONFIGS[name]||{name,address:'',city:'',state:'CA',zip:'',npi:'',pos:'11',role:'Service facility'};}}
-function manageLocation(name){
- const cfg=locationConfig(name),modal=document.getElementById('createModal');
- modal.innerHTML='<div class="d-head"><h2>Manage location</h2><button class="x" onclick="closeCreate()" aria-label="Close">✕</button></div>'+
-  '<div class="empty-note">Local service facility settings. These populate 837 service facility loops and CMS-1500 facility fields.</div>'+
-  ['name','address','city','state','zip','npi','pos','role'].map(k=>'<div class="field" style="margin-bottom:12px"><label>'+k.toUpperCase()+'</label><input id="loc-'+k+'" value="'+safeText(cfg[k]||'')+'"></div>').join('')+
-  '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="saveLocationConfig(\''+safeText(name)+'\')">Save location</button><button class="btn-ghost" onclick="createLocationTestClaim(\''+safeText(name)+'\')">Create test 837</button><button class="btn-ghost" onclick="closeCreate()">Cancel</button></div>';
+function locationConfig(name){return getLocations().find(l=>l.name===name)||{name,address:'',city:'',state:'CA',zip:'',phone:'',npi:'',pos:'11',role:'Service facility',taxonomy:''};}
+function renderLocationsSection(){
+ const locs=getLocations(),grid=document.getElementById('loc-grid');
+ if(!grid)return;
+ grid.replaceChildren();
+ if(!locs.length){const n=document.createElement('div');n.className='empty-note';n.textContent='No locations configured. Click + Add location to add a service facility.';grid.append(n);return;}
+ locs.forEach((loc,i)=>{
+  const card=document.createElement('div');card.className='card loc-card';
+  const hd=document.createElement('div');hd.className='loc-head';
+  const h3=document.createElement('h3');h3.textContent=loc.name;
+  const pill=document.createElement('span');pill.className='pill '+(i===0?'ok':'info');pill.textContent=i===0?'Primary':'Facility';
+  hd.append(h3,pill);
+  const meta=document.createElement('div');meta.className='loc-meta';
+  if(loc.address){meta.append(loc.address,document.createElement('br'));}
+  const csz=[loc.city,loc.state].filter(Boolean).join(', ')+(loc.zip?' '+loc.zip:'');
+  if(csz.trim()){meta.append(csz,document.createElement('br'));}
+  meta.append('Facility NPI ');
+  const npiSpan=document.createElement('span');npiSpan.className='mono';npiSpan.textContent=loc.npi||'—';
+  meta.append(npiSpan,' · POS '+(loc.pos||'—'));
+  if(loc.phone){meta.append(document.createElement('br'),loc.phone);}
+  const chips=document.createElement('div');chips.className='chip-row';chips.style.margin='0';
+  const roleTag=document.createElement('span');roleTag.className='tag';roleTag.textContent=loc.role||'Service facility';
+  const clmCount=claims.filter(c=>c.loc===loc.name).length;
+  const clmTag=document.createElement('span');clmTag.className='tag';clmTag.textContent=clmCount+' claim'+(clmCount!==1?'s':'');
+  chips.append(roleTag,clmTag);
+  const btn=document.createElement('button');btn.className='btn-ghost btn-sm';btn.textContent='Manage';btn.onclick=()=>openLocationModal(loc.name);
+  card.append(hd,meta,chips,btn);grid.append(card);
+ });
+}
+async function lookupNpi(npi){
+ try{
+  const res=await fetch('/api/npi-lookup?npi='+encodeURIComponent(npi));
+  const d=await res.json();const r=d&&d.results&&d.results[0];if(!r)return null;
+  const addr=(r.addresses||[]).find(a=>a.address_purpose==='LOCATION')||(r.addresses||[])[0]||{};
+  const tax=(r.taxonomies||[]).find(t=>t.primary)||(r.taxonomies||[])[0]||{};
+  const b=r.basic||{};
+  return{name:b.organization_name||(b.first_name?(b.first_name+' '+(b.last_name||'')).trim():''),
+   address:[addr.address_1,addr.address_2].filter(Boolean).join(', '),
+   city:addr.city||'',state:addr.state||'',zip:(addr.postal_code||'').slice(0,5),
+   phone:addr.telephone_number||'',taxonomy:tax.code||'',role:tax.desc||''};
+ }catch(e){return null;}
+}
+async function npiLookupAndFill(){
+ const npiEl=document.getElementById('loc-npi'),status=document.getElementById('loc-npi-status');
+ const npi=(npiEl&&npiEl.value||'').trim();
+ if(!npi||!/^\d{10}$/.test(npi)){if(status)status.textContent='Enter a valid 10-digit NPI.';return;}
+ if(status)status.textContent='Looking up NPI…';
+ const data=await lookupNpi(npi);
+ if(!data){if(status)status.textContent='NPI not found in NPPES registry.';return;}
+ const fill=(k,v)=>{const el=document.getElementById('loc-'+k);if(el&&v)el.value=v;};
+ fill('name',data.name);fill('address',data.address);fill('city',data.city);
+ fill('state',data.state);fill('zip',data.zip);fill('phone',data.phone);
+ fill('taxonomy',data.taxonomy);fill('role',data.role);
+ if(status)status.textContent='Fields populated from NPPES registry.';
+}
+function openLocationModal(name){
+ const cfg=name?locationConfig(name):{},modal=document.getElementById('createModal'),isNew=!name;
+ modal.replaceChildren();
+ const head=document.createElement('div');head.className='d-head';
+ const h2=document.createElement('h2');h2.textContent=isNew?'Add location':'Edit location';
+ const xbtn=document.createElement('button');xbtn.className='x';xbtn.setAttribute('onclick','closeCreate()');xbtn.setAttribute('aria-label','Close');xbtn.textContent='✕';
+ head.append(h2,xbtn);modal.append(head);
+ const note=document.createElement('div');note.className='empty-note';
+ note.textContent='Service facility data for 837 claim loops and CMS-1500 Box 32. NPI lookup auto-fills from the NPPES registry.';
+ modal.append(note);
+ const npiRow=document.createElement('div');npiRow.style.cssText='display:flex;gap:8px;align-items:flex-end;margin-bottom:4px';
+ const npiWrap=document.createElement('div');npiWrap.className='field';npiWrap.style.cssText='flex:1;margin:0';
+ const npiLbl=document.createElement('label');npiLbl.textContent='NPI';
+ const npiIn=document.createElement('input');npiIn.id='loc-npi';npiIn.value=cfg.npi||'';npiIn.placeholder='10-digit NPI';
+ npiWrap.append(npiLbl,npiIn);
+ const lookupBtn=document.createElement('button');lookupBtn.className='btn-ghost btn-sm';lookupBtn.style.cssText='margin-bottom:0;white-space:nowrap';lookupBtn.textContent='Lookup NPI';lookupBtn.onclick=npiLookupAndFill;
+ npiRow.append(npiWrap,lookupBtn);modal.append(npiRow);
+ const statusEl=document.createElement('div');statusEl.id='loc-npi-status';statusEl.style.cssText='font-size:.75rem;color:var(--sub);min-height:18px;margin-bottom:8px';
+ modal.append(statusEl);
+ const addFld=(k,lbl,val,ph)=>{const w=document.createElement('div');w.className='field';w.style.marginBottom='12px';const l=document.createElement('label');l.textContent=lbl;const inp=document.createElement('input');inp.id='loc-'+k;inp.value=val||'';if(ph)inp.placeholder=ph;w.append(l,inp);modal.append(w);};
+ addFld('name','Facility name',cfg.name);
+ addFld('address','Street address',cfg.address);
+ const cityRow=document.createElement('div');cityRow.style.cssText='display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:12px';
+ [['city','City',cfg.city,'City'],['state','State',cfg.state,'CA'],['zip','ZIP',cfg.zip,'90000']].forEach(([k,lbl,val,ph])=>{const w=document.createElement('div');w.className='field';w.style.margin='0';const l=document.createElement('label');l.textContent=lbl;const inp=document.createElement('input');inp.id='loc-'+k;inp.value=val||'';inp.placeholder=ph;w.append(l,inp);cityRow.append(w);});
+ modal.append(cityRow);
+ addFld('phone','Phone',cfg.phone,'(###) ###-####');
+ addFld('pos','POS code',cfg.pos||'11','11');
+ addFld('role','Role / description',cfg.role,'e.g. ASC service facility');
+ addFld('taxonomy','Taxonomy code',cfg.taxonomy,'e.g. 261QA1903X');
+ const footer=document.createElement('div');footer.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:16px';
+ const saveBtn=document.createElement('button');saveBtn.className='btn';saveBtn.textContent='Save location';saveBtn.onclick=()=>saveLocationModal(name||'');
+ footer.append(saveBtn);
+ if(!isNew){const delBtn=document.createElement('button');delBtn.className='btn-ghost';delBtn.textContent='Delete';delBtn.onclick=()=>deleteLocation(name);footer.append(delBtn);}
+ const cancelBtn=document.createElement('button');cancelBtn.className='btn-ghost';cancelBtn.setAttribute('onclick','closeCreate()');cancelBtn.textContent='Cancel';
+ footer.append(cancelBtn);modal.append(footer);
  document.getElementById('createOvl').classList.add('open');
 }
-function saveLocationConfig(name){
- const keys=['name','address','city','state','zip','npi','pos','role'],cfg={};
- keys.forEach(k=>{const el=document.getElementById('loc-'+k);cfg[k]=el?el.value:'';});
- let saved={};try{saved=JSON.parse(localStorage.getItem('ccs-location-configs')||'{}');}catch{}
- saved[name]=cfg;localStorage.setItem('ccs-location-configs',JSON.stringify(saved));
- panel('Location saved','<div class="empty-note">'+safeText(cfg.name||name)+' will now populate service facility data for new 837 claims at POS '+safeText(cfg.pos)+'.</div>');
+function saveLocationModal(originalName){
+ const keys=['name','address','city','state','zip','phone','npi','pos','role','taxonomy'],cfg={};
+ keys.forEach(k=>{const el=document.getElementById('loc-'+k);cfg[k]=(el?el.value:'').trim();});
+ if(!cfg.name){toast('Facility name is required.');return;}
+ let locs=getLocations();
+ if(originalName){const i=locs.findIndex(l=>l.name===originalName);if(i>=0)locs[i]=cfg;else locs.push(cfg);}
+ else{if(locs.find(l=>l.name===cfg.name)){toast('A location with that name already exists.');return;}locs.push(cfg);}
+ saveLocations(locs);renderLocationsSection();closeCreate();toast('Location saved.');
+}
+function deleteLocation(name){
+ if(!confirm('Delete "'+name+'"? This cannot be undone.'))return;
+ saveLocations(getLocations().filter(l=>l.name!==name));
+ renderLocationsSection();closeCreate();toast('Location deleted.');
 }
 function createLocationTestClaim(name){
  const cfg=locationConfig(name),payer=PAYERS[0][0],provider=providers[0];
@@ -3169,7 +3240,7 @@ const CREATE={
   {k:'billed',label:'Total charge (Box 28)',v:''},
   {k:'amountPaid',label:'Amount paid (Box 29)',v:''},
   {k:'billingProvider',label:'Billing provider (Box 33)',type:'select',opts:providers.slice(0,12).map(p=>p.name)},
-  {k:'loc',label:'Service facility (Box 32)',type:'select',opts:LOCS},
+  {k:'loc',label:'Service facility (Box 32)',type:'select',opts:[]},
   {k:'type',label:'Claim type',type:'select',opts:['837P','837I']}
  ],build:v=>{const sls=typeof collectServiceLines==='function'?collectServiceLines():[];const billed=sls.reduce((sum, sl) => sum + (+sl.charge||0), 0);return{id:'CLM-'+(20561+claims.length),patient:v.patient||'New Patient',patientDob:v.patientDob||'',patientSex:v.patientSex||'',patientAddress:v.patientAddress||'',patientCity:v.patientCity||'',patientState:v.patientState||'',patientZip:v.patientZip||'',patientPhone:v.patientPhone||'',subscriberName:v.subscriberName||'',patientRelationship:v.patientRelationship||'Self',insuredAddress:v.insuredAddress||'',insuredCity:v.insuredCity||'',insuredState:v.insuredState||'',insuredZip:v.insuredZip||'',insuredPhone:v.insuredPhone||'',memberId:v.memberId||'',groupNumber:v.groupNumber||'',insurancePlan:v.insurancePlan||'',insuredDob:v.insuredDob||'',insuredSex:v.insuredSex||'',otherClaimId:v.otherClaimId||'',otherInsuredName:v.otherInsuredName||'',otherInsuredPolicy:v.otherInsuredPolicy||'',otherInsuredPlan:v.otherInsuredPlan||'',condEmployment:v.condEmployment||'No',condAutoAccident:v.condAutoAccident||'No',condAutoState:v.condAutoState||'',condOtherAccident:v.condOtherAccident||'No',claimCodes:v.claimCodes||'',claimFilingCode:(v.claimFilingCode||'ZZ').split(' - ')[0].trim(),dateOfIllness:v.dateOfIllness||'',illnessQualifier:(v.illnessQualifier||'').split(' - ')[0].trim(),otherDate:v.otherDate||'',otherDateQualifier:(v.otherDateQualifier||'').split(' - ')[0].trim(),unableToWorkFrom:v.unableToWorkFrom||'',unableToWorkTo:v.unableToWorkTo||'',hospFrom:v.hospFrom||'',hospTo:v.hospTo||'',additionalClaimInfo:v.additionalClaimInfo||'',outsideLab:v.outsideLab||'No',outsideLabCharges:v.outsideLabCharges||'',resubmissionCode:v.resubmissionCode||'',originalRefNumber:v.originalRefNumber||'',amountPaid:v.amountPaid||'',type:v.type,provider:v.billingProvider||'',providerFull:v.billingProvider||'',loc:v.loc,payer:v.payer,dos:sls[0]?(sls[0].dosFrom||new Date().toLocaleDateString('en-US')):(new Date().toLocaleDateString('en-US')),billed,paid:0,status:'Draft',lines:sls.map(sl=>{const m=(typeof window.CPT_DB!=='undefined'&&window.CPT_DB[sl.cpt])||(CPTS.find(x=>x[0]===sl.cpt)?.[1]);return{cpt:sl.cpt,desc:m||'Procedure',mod:sl.mod||'',units:+sl.units||1,charge:+sl.charge||0,pos:sl.pos||'11',emg:sl.emg||'No',dxPointers:sl.dxPointers||'1',epsdt:sl.epsdt||'No',idQualifier:sl.idQualifier||'',renderingProvider:sl.renderingProvider||'',dosFrom:sl.dosFrom||'',dosTo:sl.dosTo||''};}),icds:v.dx.split(',').map(s=>s.trim()).filter(Boolean),referringProvider:v.referringProvider||'',referringNpi:v.referringNpi||'',referringIdQualifier:v.referringIdQualifier||'',referringOtherId:v.referringOtherId||'',priorAuth:v.priorAuth||'',patientAccount:v.patientAccount||'',acceptAssignment:v.acceptAssignment||'Yes',payerClm:'PC'+ri(100000000,999999999),rejReason:null,denCode:null};}},
  enrollments:{title:'New enrollment',data:enrollments,key:'enrollments',fields:[
@@ -3183,14 +3254,14 @@ const CREATE={
   {k:'enroll',label:'Enrollment required',type:'select',opts:['None','ERA only','Claims + ERA','All transactions']}
  ],build:v=>({name:v.name||'New Payer',stedi:v.stedi||('PAYER-'+ri(100,999)),elig:true,clm:true,era:true,enroll:v.enroll,avgMs:ri(800,4000)})}
 };
-function getFormOptions(key,fieldKey){const payerOpts=payerDir.length?payerDir.map(p=>p.name):PAYERS.map(p=>p[0]);const providerOpts=providers.map(p=>p.name);if(fieldKey==='payer')return payerOpts;if(fieldKey==='billingProvider'&&key==='claims')return providerOpts;if(fieldKey==='provider'&&(key==='claims'||key==='enrollments'))return providerOpts;return[];}
+function getFormOptions(key,fieldKey){const payerOpts=payerDir.length?payerDir.map(p=>p.name):PAYERS.map(p=>p[0]);const providerOpts=providers.map(p=>p.name);if(fieldKey==='payer')return payerOpts;if(fieldKey==='billingProvider'&&key==='claims')return providerOpts;if(fieldKey==='provider'&&(key==='claims'||key==='enrollments'))return providerOpts;if(fieldKey==='loc')return getLocations().map(l=>l.name);return[];}
 function openCreate(key,defaults){
  const preset=defaults||{};
  const c=CREATE[key];
  const modal=document.getElementById('createModal');
  modal.replaceChildren();
  const head=document.createElement('div');head.className='d-head';const h2=document.createElement('h2');h2.textContent=c.title;const xbtn=document.createElement('button');xbtn.className='x';xbtn.setAttribute('onclick','closeCreate()');xbtn.setAttribute('aria-label','Close');xbtn.textContent='✕';head.append(h2,xbtn);modal.append(head);
- c.fields.forEach(f=>{if(f.type==='serviceLines'){_slCount=0;const sec=document.createElement('div');sec.style.cssText='margin:20px 0';const ttl=document.createElement('h3');ttl.textContent='Service Lines (Box 24)';ttl.style.cssText='margin:0 0 12px;font-size:15px';sec.append(ttl);const ctr=document.createElement('div');ctr.id='sl-container';sec.append(ctr);_slCount++;renderServiceLineGroup(_slCount,ctr);const ab=document.createElement('button');ab.className='btn-ghost btn-sm';ab.textContent='+ Add Service Line';ab.style.marginTop='8px';ab.setAttribute('onclick','addServiceLine()');sec.append(ab);modal.append(sec);return;}const value=(preset[f.k]??f.v??'').toString();const field=document.createElement('div');field.className='field';field.style.marginBottom='12px';const label=document.createElement('label');label.textContent=f.label;field.append(label);if(f.type==='select'){const opts=(['payer','provider','billingProvider'].includes(f.k)?getFormOptions(key,f.k):f.opts)||[];const select=document.createElement('select');select.id='cf-'+f.k;opts.forEach(o=>{const opt=document.createElement('option');opt.value=o;if(String(o)===String(value))opt.selected=true;opt.textContent=o;select.append(opt);});field.append(select);}else{const input=document.createElement('input');input.id='cf-'+f.k;input.value=safeText(value);field.append(input);}modal.append(field);});
+ c.fields.forEach(f=>{if(f.type==='serviceLines'){_slCount=0;const sec=document.createElement('div');sec.style.cssText='margin:20px 0';const ttl=document.createElement('h3');ttl.textContent='Service Lines (Box 24)';ttl.style.cssText='margin:0 0 12px;font-size:15px';sec.append(ttl);const ctr=document.createElement('div');ctr.id='sl-container';sec.append(ctr);_slCount++;renderServiceLineGroup(_slCount,ctr);const ab=document.createElement('button');ab.className='btn-ghost btn-sm';ab.textContent='+ Add Service Line';ab.style.marginTop='8px';ab.setAttribute('onclick','addServiceLine()');sec.append(ab);modal.append(sec);return;}const value=(preset[f.k]??f.v??'').toString();const field=document.createElement('div');field.className='field';field.style.marginBottom='12px';const label=document.createElement('label');label.textContent=f.label;field.append(label);if(f.type==='select'){const opts=(['payer','provider','billingProvider','loc'].includes(f.k)?getFormOptions(key,f.k):f.opts)||[];const select=document.createElement('select');select.id='cf-'+f.k;opts.forEach(o=>{const opt=document.createElement('option');opt.value=o;if(String(o)===String(value))opt.selected=true;opt.textContent=o;select.append(opt);});field.append(select);}else{const input=document.createElement('input');input.id='cf-'+f.k;input.value=safeText(value);field.append(input);}modal.append(field);});
  const footer=document.createElement('div');footer.style.marginTop='16px';footer.style.display='flex';footer.style.gap='8px';const createBtn=document.createElement('button');createBtn.className='btn-ghost';createBtn.setAttribute('onclick','submitCreate(\''+key+'\')');createBtn.textContent='Create draft';if(key==='claims'){const sendBtn=document.createElement('button');sendBtn.className='btn';sendBtn.setAttribute('onclick','submitCreateAndSend(\''+key+'\')');sendBtn.textContent='Submit';footer.append(sendBtn);}footer.append(createBtn);const cancelBtn=document.createElement('button');cancelBtn.className='btn-ghost';cancelBtn.setAttribute('onclick','closeCreate()');cancelBtn.textContent='Cancel';footer.append(cancelBtn);modal.append(footer);
  document.getElementById('createOvl').classList.add('open');
 }
@@ -3413,7 +3484,7 @@ const EDIT={
   {k:'acceptAssignment',label:'Accept assignment (Box 27)',type:'select',opts:['Yes','No']},
   {k:'amountPaid',label:'Amount paid (Box 29) — 0.00',v:'0'},
   {k:'billingProvider',label:'Billing provider (Box 33)',type:'select',opts:providers.slice(0,12).map(p=>p.name)},
-  {k:'loc',label:'Service facility (Box 32)',type:'select',opts:LOCS},
+  {k:'loc',label:'Service facility (Box 32)',type:'select',opts:[]},
   {k:'type',label:'Claim type',type:'select',opts:['837P','837I']},
   {k:'status',label:'Status',type:'select',opts:['Draft','Pending payer','Accepted','Paid','Rejected','Denied']},
   {k:'paid',label:'Amount paid from payer',v:'0'}
@@ -3512,7 +3583,7 @@ function openEditCurrent(){
  const modal=document.getElementById('createModal');
  modal.replaceChildren();
  const head=document.createElement('div');head.className='d-head';const h2=document.createElement('h2');h2.textContent=spec.title;const xbtn=document.createElement('button');xbtn.className='x';xbtn.setAttribute('onclick','closeCreate()');xbtn.setAttribute('aria-label','Close');xbtn.textContent='✕';head.append(h2,xbtn);modal.append(head);
- spec.fields.forEach(f=>{if(f.type==='serviceLines'){_slCount=0;const sec=document.createElement('div');sec.style.cssText='margin:20px 0';const ttl=document.createElement('h3');ttl.textContent='Service Lines (Box 24)';ttl.style.cssText='margin:0 0 12px;font-size:15px';sec.append(ttl);const ctr=document.createElement('div');ctr.id='sl-container';sec.append(ctr);const existingLines=record.lines||[];if(existingLines.length>0){existingLines.forEach(ln=>{_slCount++;renderServiceLineGroup(_slCount,ctr,ln);});}else{_slCount++;renderServiceLineGroup(_slCount,ctr);}const ab=document.createElement('button');ab.className='btn-ghost btn-sm';ab.textContent='+ Add Service Line';ab.style.marginTop='8px';ab.setAttribute('onclick','addServiceLine()');sec.append(ab);modal.append(sec);return;}const value=String(values[f.k]!=null?values[f.k]:(f.v!=null?f.v:''));const field=document.createElement('div');field.className='field';field.style.marginBottom='12px';const label=document.createElement('label');label.textContent=f.label;field.append(label);if(f.type==='select'){const opts=(['payer','provider','billingProvider'].includes(f.k)?getFormOptions(key,f.k):f.opts)||[];const select=document.createElement('select');select.id='ef-'+f.k;opts.forEach(o=>{const opt=document.createElement('option');opt.value=o;if(String(o)===String(value))opt.selected=true;opt.textContent=o;select.append(opt);});field.append(select);}else{const input=document.createElement('input');input.id='ef-'+f.k;input.value=safeText(value);field.append(input);}modal.append(field);});
+ spec.fields.forEach(f=>{if(f.type==='serviceLines'){_slCount=0;const sec=document.createElement('div');sec.style.cssText='margin:20px 0';const ttl=document.createElement('h3');ttl.textContent='Service Lines (Box 24)';ttl.style.cssText='margin:0 0 12px;font-size:15px';sec.append(ttl);const ctr=document.createElement('div');ctr.id='sl-container';sec.append(ctr);const existingLines=record.lines||[];if(existingLines.length>0){existingLines.forEach(ln=>{_slCount++;renderServiceLineGroup(_slCount,ctr,ln);});}else{_slCount++;renderServiceLineGroup(_slCount,ctr);}const ab=document.createElement('button');ab.className='btn-ghost btn-sm';ab.textContent='+ Add Service Line';ab.style.marginTop='8px';ab.setAttribute('onclick','addServiceLine()');sec.append(ab);modal.append(sec);return;}const value=String(values[f.k]!=null?values[f.k]:(f.v!=null?f.v:''));const field=document.createElement('div');field.className='field';field.style.marginBottom='12px';const label=document.createElement('label');label.textContent=f.label;field.append(label);if(f.type==='select'){const opts=(['payer','provider','billingProvider','loc'].includes(f.k)?getFormOptions(key,f.k):f.opts)||[];const select=document.createElement('select');select.id='ef-'+f.k;opts.forEach(o=>{const opt=document.createElement('option');opt.value=o;if(String(o)===String(value))opt.selected=true;opt.textContent=o;select.append(opt);});field.append(select);}else{const input=document.createElement('input');input.id='ef-'+f.k;input.value=safeText(value);field.append(input);}modal.append(field);});
  const footer=document.createElement('div');footer.style.cssText='margin-top:16px;display:flex;gap:8px';const saveBtn=document.createElement('button');saveBtn.className='btn';saveBtn.textContent='Save changes';saveBtn.onclick=()=>submitEdit(activeDrawer.key,activeDrawer.index);const cancelBtn=document.createElement('button');cancelBtn.className='btn-ghost';cancelBtn.setAttribute('onclick','closeCreate()');cancelBtn.textContent='Cancel';footer.append(saveBtn,cancelBtn);modal.append(footer);
  document.getElementById('createOvl').classList.add('open');
 }

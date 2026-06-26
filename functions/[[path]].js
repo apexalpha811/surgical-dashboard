@@ -89,6 +89,15 @@ async function handleApi(context, url) {
     return json(await stediProxy(context.env, await readJsonBody(request)));
   }
 
+  if (request.method === "GET" && url.pathname === "/api/npi-lookup") {
+    const npi = url.searchParams.get("npi") || "";
+    if (!/^\d{10}$/.test(npi)) return json({ error: "Invalid NPI" }, 400);
+    try {
+      const r = await fetch("https://npiregistry.cms.hhs.gov/api/?number=" + npi + "&version=2.1");
+      return json(await r.json());
+    } catch (e) { return json({ error: "NPPES unavailable" }, 502); }
+  }
+
   if (request.method === "GET" && url.pathname === "/api/stedi/era-pdf") {
     return eraPdfProxy(context.env, url.searchParams.get("transactionId") || "");
   }
