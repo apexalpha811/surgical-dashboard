@@ -164,6 +164,14 @@ When saving a dashboard record to Supabase via `POST /api/dashboard-records`, th
 
 Forms that have payer or provider dropdowns must read from live arrays at render time, not hardcode static lists. When payers or providers are added to the dashboard (via Stedi API or manual entry), forms must immediately show the new options. Use `getFormOptions(key, fieldKey)` to read live state instead of using `PAYERS.map()` or `providers.slice()` in form definitions. Hardcoded arrays show stale data after add/edit actions.
 
+## JS property vs HTML attribute in global click handlers
+
+When a global `document.addEventListener('click', ...)` guards against delegation with `b.hasAttribute('onclick')`, it only sees attributes set in HTML or via `setAttribute`. Setting `el.onclick = fn` in JS sets a DOM property, not an HTML attribute, so `hasAttribute` returns false and the handler intercepts the button anyway. Fix: add the button's container to the exclusion list (e.g., `b.closest('#createOvl')`) rather than relying on the onclick guard to cover dynamically created buttons.
+
+## External API fetch from browser sandbox
+
+Fetching an external API (like NPPES NPI registry) directly from a browser preview fails with "Failed to fetch" because sandboxed iframes block external network requests. Always proxy external lookups through the backend (`/api/npi-lookup` on server.js and functions/[[path]].js) rather than calling from the frontend.
+
 ## Race condition in live search selection
 
 When a typeahead search result is selected, the code may clear the search results array BEFORE the detail lookup uses that array as a fallback. Capture the selected item into a local variable before clearing: `const fromSearch = _payerResults.find(...); _payerResults = []; loadPayerDetail(..., fromSearch)`. Not doing this causes the UI to render a fallback stub instead of the real search result.
