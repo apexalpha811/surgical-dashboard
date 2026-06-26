@@ -3205,10 +3205,10 @@ const CREATE={
   {k:'otherInsuredName',label:"Other insured's name (Box 9)",v:''},
   {k:'otherInsuredPolicy',label:"Other insured's policy/group number (Box 9a)",v:''},
   {k:'otherInsuredPlan',label:"Other insured's insurance plan name (Box 9d)",v:''},
-  {k:'condEmployment',label:'Condition related to employment (Box 10a)',type:'select',opts:['','No','Yes']},
-  {k:'condAutoAccident',label:'Condition related to auto accident (Box 10b)',type:'select',opts:['','No','Yes']},
+  {k:'condEmployment',label:'Condition related to employment (Box 10a)',type:'select',opts:['No','Yes']},
+  {k:'condAutoAccident',label:'Condition related to auto accident (Box 10b)',type:'select',opts:['No','Yes']},
   {k:'condAutoState',label:'Auto accident state (Box 10b)',v:''},
-  {k:'condOtherAccident',label:'Condition related to other accident (Box 10c)',type:'select',opts:['','No','Yes']},
+  {k:'condOtherAccident',label:'Condition related to other accident (Box 10c)',type:'select',opts:['No','Yes']},
   {k:'claimCodes',label:'Claim codes (Box 10d)',v:''},
   {k:'groupNumber',label:'Group number (Box 11)',v:''},
   {k:'insuredDob',label:"Insured's date of birth (Box 11a) — MM/DD/YYYY",v:''},
@@ -3229,7 +3229,7 @@ const CREATE={
   {k:'hospFrom',label:'Hospitalization date from (Box 18) — MM/DD/YYYY',v:''},
   {k:'hospTo',label:'Hospitalization date to (Box 18) — MM/DD/YYYY',v:''},
   {k:'additionalClaimInfo',label:'Additional claim information (Box 19)',v:''},
-  {k:'outsideLab',label:'Outside lab (Box 20)',type:'select',opts:['','No','Yes']},
+  {k:'outsideLab',label:'Outside lab (Box 20)',type:'select',opts:['No','Yes']},
   {k:'outsideLabCharges',label:'Outside lab charges (Box 20) — 0.00',v:''},
   {k:'dx',label:'ICD-10 diagnosis codes, comma separated (Box 21) — no dots, e.g. M1711',v:''},
   {k:'resubmissionCode',label:'Resubmission code (Box 22)',v:''},
@@ -3237,7 +3237,7 @@ const CREATE={
   {k:'priorAuth',label:'Prior authorization number (Box 23)',v:''},
   {k:'serviceLines',type:'serviceLines'},
   {k:'patientAccount',label:'Patient account number (Box 26)',v:''},
-  {k:'acceptAssignment',label:'Accept assignment (Box 27)',type:'select',opts:['','Yes','No']},
+  {k:'acceptAssignment',label:'Accept assignment (Box 27)',type:'select',opts:['Yes','No']},
   {k:'billed',label:'Total charge (Box 28)',v:''},
   {k:'amountPaid',label:'Amount paid (Box 29)',v:''},
   {k:'billingProvider',label:'Billing provider (Box 33)',type:'select',opts:providers.slice(0,12).map(p=>p.name)},
@@ -3262,7 +3262,7 @@ function openCreate(key,defaults){
  const modal=document.getElementById('createModal');
  modal.replaceChildren();
  const head=document.createElement('div');head.className='d-head';const h2=document.createElement('h2');h2.textContent=c.title;const xbtn=document.createElement('button');xbtn.className='x';xbtn.setAttribute('onclick','closeCreate()');xbtn.setAttribute('aria-label','Close');xbtn.textContent='✕';head.append(h2,xbtn);modal.append(head);
- c.fields.forEach(f=>{if(f.type==='serviceLines'){_slCount=0;const sec=document.createElement('div');sec.style.cssText='margin:20px 0';const ttl=document.createElement('h3');ttl.textContent='Service Lines (Box 24)';ttl.style.cssText='margin:0 0 12px;font-size:15px';sec.append(ttl);const ctr=document.createElement('div');ctr.id='sl-container';sec.append(ctr);_slCount++;renderServiceLineGroup(_slCount,ctr);const ab=document.createElement('button');ab.className='btn-ghost btn-sm';ab.textContent='+ Add Service Line';ab.style.marginTop='8px';ab.setAttribute('onclick','addServiceLine()');sec.append(ab);modal.append(sec);return;}const value=(preset[f.k]??f.v??'').toString();const field=document.createElement('div');field.className='field';field.style.marginBottom='12px';const label=document.createElement('label');label.textContent=f.label;field.append(label);if(f.type==='select'){const opts=(['payer','provider','billingProvider','loc'].includes(f.k)?getFormOptions(key,f.k):f.opts)||[];const select=document.createElement('select');select.id='cf-'+f.k;opts.forEach(o=>{const opt=document.createElement('option');opt.value=o;if(String(o)===String(value))opt.selected=true;opt.textContent=o;select.append(opt);});if(f.k==='loc'){const addOpt=document.createElement('option');addOpt.value='__add_loc__';addOpt.textContent='＋ Add location…';select.append(addOpt);select.addEventListener('change',()=>{if(select.value==='__add_loc__'){closeCreate();showSection('locations');}});}field.append(select);}else{const input=document.createElement('input');input.id='cf-'+f.k;input.value=safeText(value);field.append(input);}modal.append(field);});
+ c.fields.forEach(f=>{if(f.type==='serviceLines'){_slCount=0;const sec=document.createElement('div');sec.style.cssText='margin:20px 0';const ttl=document.createElement('h3');ttl.textContent='Service Lines (Box 24)';ttl.style.cssText='margin:0 0 12px;font-size:15px';sec.append(ttl);const ctr=document.createElement('div');ctr.id='sl-container';sec.append(ctr);_slCount++;renderServiceLineGroup(_slCount,ctr);const ab=document.createElement('button');ab.className='btn-ghost btn-sm';ab.textContent='+ Add Service Line';ab.style.marginTop='8px';ab.setAttribute('onclick','addServiceLine()');sec.append(ab);modal.append(sec);return;}const value=(preset[f.k]??f.v??'').toString();const field=document.createElement('div');field.className='field';field.style.marginBottom='12px';const label=document.createElement('label');label.textContent=f.label;field.append(label);if(f.type==='select'){const opts=(['payer','provider','billingProvider','loc'].includes(f.k)?getFormOptions(key,f.k):f.opts)||[];const select=document.createElement('select');select.id='cf-'+f.k;(opts[0]===''?opts:[''].concat(opts)).forEach(o=>{const opt=document.createElement('option');opt.value=o;if(String(o)===String(value))opt.selected=true;opt.textContent=o;select.append(opt);});if(f.k==='loc'){const addOpt=document.createElement('option');addOpt.value='__add_loc__';addOpt.textContent='＋ Add location…';select.append(addOpt);select.addEventListener('change',()=>{if(select.value==='__add_loc__'){closeCreate();showSection('locations');}});}field.append(select);}else{const input=document.createElement('input');input.id='cf-'+f.k;input.value=safeText(value);field.append(input);}modal.append(field);});
  const footer=document.createElement('div');footer.style.marginTop='16px';footer.style.display='flex';footer.style.gap='8px';const createBtn=document.createElement('button');createBtn.className='btn-ghost';createBtn.setAttribute('onclick','submitCreate(\''+key+'\')');createBtn.textContent='Create draft';if(key==='claims'){const sendBtn=document.createElement('button');sendBtn.className='btn';sendBtn.setAttribute('onclick','submitCreateAndSend(\''+key+'\')');sendBtn.textContent='Submit';footer.append(sendBtn);}footer.append(createBtn);const cancelBtn=document.createElement('button');cancelBtn.className='btn-ghost';cancelBtn.setAttribute('onclick','closeCreate()');cancelBtn.textContent='Cancel';footer.append(cancelBtn);modal.append(footer);
  document.getElementById('createOvl').classList.add('open');
 }
@@ -3281,13 +3281,13 @@ function renderServiceLineGroup(n,container,defaults){
   {k:'dosFrom',label:'Date of service from (24A) — MM/DD/YYYY',v:''},
   {k:'dosTo',label:'Date of service to (24A) — MM/DD/YYYY',v:''},
   {k:'pos',label:'Place of service (24B)',type:'select',opts:posOpts},
-  {k:'emg',label:'EMG (24C)',type:'select',opts:['','No','Yes']},
+  {k:'emg',label:'EMG (24C)',type:'select',opts:['No','Yes']},
   {k:'cpt',label:'CPT/HCPCS code (24D) — e.g. 29881',v:''},
   {k:'mod',label:'Modifiers (24D) — comma separated, no spaces, e.g. LT,50',v:''},
   {k:'dxPointers',label:'Diagnosis pointer (24E)',v:'1'},
   {k:'charge',label:'Charges (24F) — 0.00',v:''},
   {k:'units',label:'Days or units (24G)',v:'1'},
-  {k:'epsdt',label:'EPSDT/Family plan (24H)',type:'select',opts:['','No','Yes']},
+  {k:'epsdt',label:'EPSDT/Family plan (24H)',type:'select',opts:['No','Yes']},
   {k:'idQualifier',label:'ID qualifier (24I)',v:''},
   {k:'renderingProvider',label:'Rendering provider (24J)',type:'select',opts:provOpts}
  ];
@@ -3450,10 +3450,10 @@ const EDIT={
   {k:'otherInsuredName',label:"Other insured's name (Box 9)",v:''},
   {k:'otherInsuredPolicy',label:"Other insured's policy/group number (Box 9a)",v:''},
   {k:'otherInsuredPlan',label:"Other insured's insurance plan name (Box 9d)",v:''},
-  {k:'condEmployment',label:'Condition related to employment (Box 10a)',type:'select',opts:['','No','Yes']},
-  {k:'condAutoAccident',label:'Condition related to auto accident (Box 10b)',type:'select',opts:['','No','Yes']},
+  {k:'condEmployment',label:'Condition related to employment (Box 10a)',type:'select',opts:['No','Yes']},
+  {k:'condAutoAccident',label:'Condition related to auto accident (Box 10b)',type:'select',opts:['No','Yes']},
   {k:'condAutoState',label:'Auto accident state (Box 10b)',v:''},
-  {k:'condOtherAccident',label:'Condition related to other accident (Box 10c)',type:'select',opts:['','No','Yes']},
+  {k:'condOtherAccident',label:'Condition related to other accident (Box 10c)',type:'select',opts:['No','Yes']},
   {k:'claimCodes',label:'Claim codes (Box 10d)',v:''},
   {k:'groupNumber',label:'Group number (Box 11)',v:''},
   {k:'insuredDob',label:"Insured's date of birth (Box 11a) — MM/DD/YYYY",v:''},
@@ -3474,7 +3474,7 @@ const EDIT={
   {k:'hospFrom',label:'Hospitalization date from (Box 18) — MM/DD/YYYY',v:''},
   {k:'hospTo',label:'Hospitalization date to (Box 18) — MM/DD/YYYY',v:''},
   {k:'additionalClaimInfo',label:'Additional claim information (Box 19)',v:''},
-  {k:'outsideLab',label:'Outside lab (Box 20)',type:'select',opts:['','No','Yes']},
+  {k:'outsideLab',label:'Outside lab (Box 20)',type:'select',opts:['No','Yes']},
   {k:'outsideLabCharges',label:'Outside lab charges (Box 20) — 0.00',v:''},
   {k:'dx',label:'ICD-10 diagnosis codes, comma separated (Box 21) — no dots, e.g. M1711',v:''},
   {k:'resubmissionCode',label:'Resubmission code (Box 22)',v:''},
@@ -3482,7 +3482,7 @@ const EDIT={
   {k:'priorAuth',label:'Prior authorization number (Box 23)',v:''},
   {k:'serviceLines',type:'serviceLines'},
   {k:'patientAccount',label:'Patient account number (Box 26)',v:''},
-  {k:'acceptAssignment',label:'Accept assignment (Box 27)',type:'select',opts:['','Yes','No']},
+  {k:'acceptAssignment',label:'Accept assignment (Box 27)',type:'select',opts:['Yes','No']},
   {k:'amountPaid',label:'Amount paid (Box 29) — 0.00',v:'0'},
   {k:'billingProvider',label:'Billing provider (Box 33)',type:'select',opts:providers.slice(0,12).map(p=>p.name)},
   {k:'loc',label:'Service facility (Box 32)',type:'select',opts:[]},
@@ -3525,9 +3525,9 @@ const EDIT={
   {k:'name',label:'Payer name',v:''},
   {k:'stedi',label:'Stedi ID',v:''},
   {k:'enroll',label:'Enrollment required',type:'select',opts:['None','ERA only','Claims + ERA','All transactions']},
-  {k:'elig',label:'Eligibility supported',type:'select',opts:['','Yes','No']},
-  {k:'clm',label:'Claims supported',type:'select',opts:['','Yes','No']},
-  {k:'era',label:'ERA supported',type:'select',opts:['','Yes','No']},
+  {k:'elig',label:'Eligibility supported',type:'select',opts:['Yes','No']},
+  {k:'clm',label:'Claims supported',type:'select',opts:['Yes','No']},
+  {k:'era',label:'ERA supported',type:'select',opts:['Yes','No']},
   {k:'avgMs',label:'Avg 271 response ms',v:'1200'}
  ],render:r=>({name:r.name||'',stedi:r.stedi||'',enroll:r.enroll||'None',elig:r.elig?'Yes':'No',clm:r.clm?'Yes':'No',era:r.era?'Yes':'No',avgMs:r.avgMs||1200}),build:(v,r)=>({...r,name:v.name||r.name,stedi:v.stedi||r.stedi,enroll:v.enroll||r.enroll,elig:v.elig==='Yes',clm:v.clm==='Yes',era:v.era==='Yes',avgMs:+v.avgMs||r.avgMs||1200})},
  enrollments:{title:'Edit enrollment',fields:[
@@ -3584,7 +3584,7 @@ function openEditCurrent(){
  const modal=document.getElementById('createModal');
  modal.replaceChildren();
  const head=document.createElement('div');head.className='d-head';const h2=document.createElement('h2');h2.textContent=spec.title;const xbtn=document.createElement('button');xbtn.className='x';xbtn.setAttribute('onclick','closeCreate()');xbtn.setAttribute('aria-label','Close');xbtn.textContent='✕';head.append(h2,xbtn);modal.append(head);
- spec.fields.forEach(f=>{if(f.type==='serviceLines'){_slCount=0;const sec=document.createElement('div');sec.style.cssText='margin:20px 0';const ttl=document.createElement('h3');ttl.textContent='Service Lines (Box 24)';ttl.style.cssText='margin:0 0 12px;font-size:15px';sec.append(ttl);const ctr=document.createElement('div');ctr.id='sl-container';sec.append(ctr);const existingLines=record.lines||[];if(existingLines.length>0){existingLines.forEach(ln=>{_slCount++;renderServiceLineGroup(_slCount,ctr,ln);});}else{_slCount++;renderServiceLineGroup(_slCount,ctr);}const ab=document.createElement('button');ab.className='btn-ghost btn-sm';ab.textContent='+ Add Service Line';ab.style.marginTop='8px';ab.setAttribute('onclick','addServiceLine()');sec.append(ab);modal.append(sec);return;}const value=String(values[f.k]!=null?values[f.k]:(f.v!=null?f.v:''));const field=document.createElement('div');field.className='field';field.style.marginBottom='12px';const label=document.createElement('label');label.textContent=f.label;field.append(label);if(f.type==='select'){const opts=(['payer','provider','billingProvider','loc'].includes(f.k)?getFormOptions(key,f.k):f.opts)||[];const select=document.createElement('select');select.id='ef-'+f.k;opts.forEach(o=>{const opt=document.createElement('option');opt.value=o;if(String(o)===String(value))opt.selected=true;opt.textContent=o;select.append(opt);});if(f.k==='loc'){const addOpt=document.createElement('option');addOpt.value='__add_loc__';addOpt.textContent='＋ Add location…';select.append(addOpt);select.addEventListener('change',()=>{if(select.value==='__add_loc__'){closeCreate();showSection('locations');}});}field.append(select);}else{const input=document.createElement('input');input.id='ef-'+f.k;input.value=safeText(value);field.append(input);}modal.append(field);});
+ spec.fields.forEach(f=>{if(f.type==='serviceLines'){_slCount=0;const sec=document.createElement('div');sec.style.cssText='margin:20px 0';const ttl=document.createElement('h3');ttl.textContent='Service Lines (Box 24)';ttl.style.cssText='margin:0 0 12px;font-size:15px';sec.append(ttl);const ctr=document.createElement('div');ctr.id='sl-container';sec.append(ctr);const existingLines=record.lines||[];if(existingLines.length>0){existingLines.forEach(ln=>{_slCount++;renderServiceLineGroup(_slCount,ctr,ln);});}else{_slCount++;renderServiceLineGroup(_slCount,ctr);}const ab=document.createElement('button');ab.className='btn-ghost btn-sm';ab.textContent='+ Add Service Line';ab.style.marginTop='8px';ab.setAttribute('onclick','addServiceLine()');sec.append(ab);modal.append(sec);return;}const value=String(values[f.k]!=null?values[f.k]:(f.v!=null?f.v:''));const field=document.createElement('div');field.className='field';field.style.marginBottom='12px';const label=document.createElement('label');label.textContent=f.label;field.append(label);if(f.type==='select'){const opts=(['payer','provider','billingProvider','loc'].includes(f.k)?getFormOptions(key,f.k):f.opts)||[];const select=document.createElement('select');select.id='ef-'+f.k;(opts[0]===''?opts:[''].concat(opts)).forEach(o=>{const opt=document.createElement('option');opt.value=o;if(String(o)===String(value))opt.selected=true;opt.textContent=o;select.append(opt);});if(f.k==='loc'){const addOpt=document.createElement('option');addOpt.value='__add_loc__';addOpt.textContent='＋ Add location…';select.append(addOpt);select.addEventListener('change',()=>{if(select.value==='__add_loc__'){closeCreate();showSection('locations');}});}field.append(select);}else{const input=document.createElement('input');input.id='ef-'+f.k;input.value=safeText(value);field.append(input);}modal.append(field);});
  const footer=document.createElement('div');footer.style.cssText='margin-top:16px;display:flex;gap:8px';const saveBtn=document.createElement('button');saveBtn.className='btn';saveBtn.textContent='Save changes';saveBtn.onclick=()=>submitEdit(activeDrawer.key,activeDrawer.index);const cancelBtn=document.createElement('button');cancelBtn.className='btn-ghost';cancelBtn.setAttribute('onclick','closeCreate()');cancelBtn.textContent='Cancel';footer.append(saveBtn,cancelBtn);modal.append(footer);
  document.getElementById('createOvl').classList.add('open');
 }
